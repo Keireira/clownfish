@@ -10,11 +10,9 @@ mod login_item {
     pub fn set_enabled(enable: bool) -> Result<(), String> {
         let service = unsafe { SMAppService::mainAppService() };
         if enable {
-            unsafe { service.registerAndReturnError() }
-                .map_err(|e| format!("{e}"))
+            unsafe { service.registerAndReturnError() }.map_err(|e| format!("{e}"))
         } else {
-            unsafe { service.unregisterAndReturnError() }
-                .map_err(|e| format!("{e}"))
+            unsafe { service.unregisterAndReturnError() }.map_err(|e| format!("{e}"))
         }
     }
 }
