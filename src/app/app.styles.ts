@@ -48,11 +48,38 @@ export const NoResults = styled.div`
 export const BottomBar = styled.div`
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
+	justify-content: space-between;
 	flex-shrink: 0;
 	padding-top: 8px;
 	margin-top: 8px;
 	border-top: 1px solid var(--border);
+`;
+
+export const BottomBarInfo = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 4px;
+`;
+
+export const BottomBarLink = styled.button`
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 10px;
+	color: var(--text-faint);
+	background: none;
+	border: none;
+	padding: 4px 6px;
+	border-radius: 6px;
+	transition:
+		color 0.15s,
+		background 0.15s;
+	cursor: pointer;
+
+	&:hover {
+		color: var(--text-bright);
+		background: var(--fill);
+	}
 `;
 
 export const BottomBarBtn = styled.button`

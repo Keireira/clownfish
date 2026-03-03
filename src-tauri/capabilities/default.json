@@ -18,6 +18,7 @@
     "store:allow-set",
     "store:allow-delete",
     "store:allow-save",
-    "store:allow-reload"
+    "store:allow-reload",
+    "opener:allow-open-url"
   ]
 }

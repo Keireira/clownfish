@@ -39,6 +39,11 @@ fn now_ms() -> u64 {
 }
 
 fn open_settings(app: &AppHandle) {
+    // Hide main window first to avoid focus race on Windows
+    if let Some(main_win) = app.get_webview_window("main") {
+        let _ = main_win.hide();
+    }
+
     if let Some(win) = app.get_webview_window("settings") {
         let _ = win.show();
         let _ = win.set_focus();
@@ -54,20 +59,30 @@ fn open_settings(app: &AppHandle) {
             .state(EffectState::Active)
             .build();
 
-        let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+        let mut builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
             .title("Hot Symbols Settings")
             .inner_size(660.0, 520.0)
             .min_inner_size(550.0, 400.0)
-            .transparent(true)
             .effects(effects)
-            .center()
-            .build();
+            .center();
+
+        // transparent(true) + decorations breaks rendering on Windows
+        if cfg!(target_os = "macos") {
+            builder = builder.transparent(true);
+        }
+
+        let _ = builder.build();
     }
 }
 
 #[tauri::command]
 fn open_settings_cmd(app: AppHandle) {
     open_settings(&app);
+}
+
+#[tauri::command]
+fn open_url_cmd(url: String) {
+    let _ = open::that(url);
 }
 
 #[cfg(target_os = "macos")]
@@ -167,6 +182,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             open_settings_cmd,
+            open_url_cmd,
             autostart_is_enabled,
             autostart_enable,
             autostart_disable,
