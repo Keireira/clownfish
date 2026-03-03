@@ -173,6 +173,31 @@ export const SettingsRowLabel = styled.span`
 	color: var(--text-primary);
 `;
 
+export const Footer = styled.div`
+	padding: 0 20px 12px;
+`;
+
+export const Copyright = styled.button`
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10px;
+	color: var(--text-faint);
+	background: none;
+	border: none;
+	padding: 4px 6px;
+	border-radius: 6px;
+	cursor: pointer;
+	transition:
+		color 0.15s,
+		background 0.15s;
+
+	&:hover {
+		color: var(--text-bright);
+		background: var(--fill);
+	}
+`;
+
 export default styled.div`
 	background: var(--bg-solid);
 	color: var(--text-secondary);
