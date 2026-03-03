@@ -4,7 +4,7 @@ mod login_item {
 
     pub fn is_enabled() -> bool {
         let service = unsafe { SMAppService::mainAppService() };
-        unsafe { service.status() }.0 == 1 // SMAppServiceStatusEnabled
+        unsafe { service.status() }.0 == 1
     }
 
     pub fn set_enabled(enable: bool) -> Result<(), String> {
@@ -103,83 +103,35 @@ fn autostart_disable() -> Result<(), String> {
     login_item::set_enabled(false)
 }
 
-#[cfg(target_os = "windows")]
-mod win_autostart {
-    use winreg::enums::*;
-    use winreg::RegKey;
-
-    const APP_NAME: &str = "HotSymbols";
-    const RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
-
-    pub fn is_enabled() -> bool {
-        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let Ok(key) = hkcu.open_subkey(RUN_KEY) else {
-            return false;
-        };
-        key.get_value::<String, _>(APP_NAME).is_ok()
-    }
-
-    pub fn enable() -> Result<(), String> {
-        let exe = std::env::current_exe().map_err(|e| format!("Failed to get exe path: {e}"))?;
-        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let key = hkcu
-            .open_subkey_with_flags(RUN_KEY, KEY_SET_VALUE)
-            .map_err(|e| format!("Failed to open registry: {e}"))?;
-        key.set_value(APP_NAME, &exe.to_string_lossy().as_ref())
-            .map_err(|e| format!("Failed to set registry value: {e}"))
-    }
-
-    pub fn disable() -> Result<(), String> {
-        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-        let key = hkcu
-            .open_subkey_with_flags(RUN_KEY, KEY_SET_VALUE)
-            .map_err(|e| format!("Failed to open registry: {e}"))?;
-        key.delete_value(APP_NAME)
-            .map_err(|e| format!("Failed to delete registry value: {e}"))
-    }
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+fn autostart_is_enabled(app: AppHandle) -> bool {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().unwrap_or(false)
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(not(target_os = "macos"))]
 #[tauri::command]
-fn autostart_is_enabled() -> bool {
-    win_autostart::is_enabled()
+fn autostart_enable(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().enable().map_err(|e| format!("{e}"))
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(not(target_os = "macos"))]
 #[tauri::command]
-fn autostart_enable() -> Result<(), String> {
-    win_autostart::enable()
-}
-
-#[cfg(target_os = "windows")]
-#[tauri::command]
-fn autostart_disable() -> Result<(), String> {
-    win_autostart::disable()
-}
-
-// Stub for other platforms (Linux, etc.)
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-#[tauri::command]
-fn autostart_is_enabled() -> bool {
-    false
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-#[tauri::command]
-fn autostart_enable() -> Result<(), String> {
-    Ok(())
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-#[tauri::command]
-fn autostart_disable() -> Result<(), String> {
-    Ok(())
+fn autostart_disable(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().disable().map_err(|e| format!("{e}"))
 }
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .invoke_handler(tauri::generate_handler![
             open_settings_cmd,
             open_url_cmd,
