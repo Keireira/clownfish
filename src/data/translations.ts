@@ -19,6 +19,7 @@ export const translations: Record<string, TranslationRecord> = {
 		// Settings tabs
 		tab_categories: 'Categories',
 		tab_appearance: 'Appearance',
+		tab_system: 'System',
 
 		// Settings empty
 		no_category_selected: 'No category selected. Add one to get started.',
@@ -74,73 +75,68 @@ export const translations: Record<string, TranslationRecord> = {
 	},
 
 	ru: {
-		search_placeholder: '\u041F\u043E\u0438\u0441\u043A \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432\u2026',
-		nothing_found: '\u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E',
-		settings: '\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438',
-		copied_char: (char) => `${char} \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D`,
+		search_placeholder: 'Поиск символов…',
+		nothing_found: 'Ничего не найдено',
+		settings: 'Настройки',
+		copied_char: (char) => `${char} скопирован`,
 
-		settings_title: '\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438',
-		reset_to_default: '\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C',
-		save_changes: '\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C',
-		saved: '\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E',
+		settings_title: 'Настройки',
+		reset_to_default: 'Сбросить',
+		save_changes: 'Сохранить',
+		saved: 'Сохранено',
 
-		tab_categories: '\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0438',
-		tab_appearance: '\u041E\u0444\u043E\u0440\u043C\u043B\u0435\u043D\u0438\u0435',
+		tab_categories: 'Категории',
+		tab_appearance: 'Оформление',
+		tab_system: 'Система',
 
-		no_category_selected:
-			'\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D\u0430. \u0414\u043E\u0431\u0430\u0432\u044C\u0442\u0435 \u043D\u043E\u0432\u0443\u044E.',
+		no_category_selected: 'Категория не выбрана. Добавьте новую.',
 
-		delete_category:
-			'\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044E',
-		add_category: '+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C',
+		delete_category: 'Удалить категорию',
+		add_category: '+ Добавить',
 
-		category_name_label: '\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435',
-		characters_count: (n) => `\u0421\u0438\u043C\u0432\u043E\u043B\u044B (${n})`,
-		from_presets: '+ \u0418\u0437 \u043D\u0430\u0431\u043E\u0440\u043E\u0432',
-		placeholder_symbol: '\u0421\u0438\u043C\u0432\u043E\u043B',
-		placeholder_name_optional: '\u0418\u043C\u044F (\u043D\u0435\u043E\u0431\u044F\u0437.)',
-		placeholder_category_name:
-			'\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0438',
-		add: '\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C',
+		category_name_label: 'Название',
+		characters_count: (n) => `Символы (${n})`,
+		from_presets: '+ Из наборов',
+		placeholder_symbol: 'Символ',
+		placeholder_name_optional: 'Имя (необяз.)',
+		placeholder_category_name: 'Название категории',
+		add: 'Добавить',
 
-		add_from_presets:
-			'\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0438\u0437 \u043D\u0430\u0431\u043E\u0440\u043E\u0432',
-		n_selected: (n) => `\u0412\u044B\u0431\u0440\u0430\u043D\u043E: ${n}`,
-		cancel: '\u041E\u0442\u043C\u0435\u043D\u0430',
-		add_selected: '\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C',
-		already_added: '\u0443\u0436\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u043E',
+		add_from_presets: 'Добавить из наборов',
+		n_selected: (n) => `Выбрано: ${n}`,
+		cancel: 'Отмена',
+		add_selected: 'Добавить',
+		already_added: 'уже добавлено',
 
-		theme_label: '\u0422\u0435\u043C\u0430',
-		theme_auto: '\u0410\u0432\u0442\u043E',
-		theme_light: '\u0421\u0432\u0435\u0442\u043B\u0430\u044F',
-		theme_dark: '\u0422\u0451\u043C\u043D\u0430\u044F',
-		theme_auto_desc: '\u041A\u0430\u043A \u0432 \u0441\u0438\u0441\u0442\u0435\u043C\u0435',
-		theme_light_desc: '\u0412\u0441\u0435\u0433\u0434\u0430 \u0441\u0432\u0435\u0442\u043B\u0430\u044F',
-		theme_dark_desc: '\u0412\u0441\u0435\u0433\u0434\u0430 \u0442\u0451\u043C\u043D\u0430\u044F',
+		theme_label: 'Тема',
+		theme_auto: 'Авто',
+		theme_light: 'Светлая',
+		theme_dark: 'Тёмная',
+		theme_auto_desc: 'Как в системе',
+		theme_light_desc: 'Всегда светлая',
+		theme_dark_desc: 'Всегда тёмная',
 
-		language_label: '\u042F\u0437\u044B\u043A',
+		language_label: 'Язык',
 
-		autostart_label:
-			'\u0417\u0430\u043F\u0443\u0441\u043A\u0430\u0442\u044C \u043F\u0440\u0438 \u0432\u0445\u043E\u0434\u0435',
+		autostart_label: 'Запускать при входе',
 
-		cat_arrows: '\u0421\u0442\u0440\u0435\u043B\u043A\u0438',
-		cat_math: '\u041C\u0430\u0442\u0435\u043C\u0430\u0442\u0438\u043A\u0430',
-		cat_currency: '\u0412\u0430\u043B\u044E\u0442\u044B',
-		cat_typography: '\u0422\u0438\u043F\u043E\u0433\u0440\u0430\u0444\u0438\u043A\u0430',
-		cat_checks_marks: '\u0413\u0430\u043B\u043E\u0447\u043A\u0438 \u0438 \u043C\u0435\u0442\u043A\u0438',
-		cat_stars_shapes: '\u0417\u0432\u0451\u0437\u0434\u044B \u0438 \u0444\u0438\u0433\u0443\u0440\u044B',
-		cat_greek: '\u0413\u0440\u0435\u0447\u0435\u0441\u043A\u0438\u0435',
-		cat_misc: '\u0420\u0430\u0437\u043D\u043E\u0435',
+		cat_arrows: 'Стрелки',
+		cat_math: 'Математика',
+		cat_currency: 'Валюты',
+		cat_typography: 'Типографика',
+		cat_checks_marks: 'Галочки и метки',
+		cat_stars_shapes: 'Звёзды и фигуры',
+		cat_greek: 'Греческие',
+		cat_misc: 'Разное',
 
-		cat_sub_super:
-			'\u041F\u043E\u0434\u0441\u0442\u0440\u043E\u0447\u043D\u044B\u0435 \u0438 \u043D\u0430\u0434\u0441\u0442\u0440\u043E\u0447\u043D\u044B\u0435',
-		cat_lines_boxes: '\u041B\u0438\u043D\u0438\u0438 \u0438 \u0440\u0430\u043C\u043A\u0438',
-		cat_latin_ext: '\u041B\u0430\u0442\u0438\u043D\u0438\u0446\u0430 \u0440\u0430\u0441\u0448.'
+		cat_sub_super: 'Подстрочные и надстрочные',
+		cat_lines_boxes: 'Линии и рамки',
+		cat_latin_ext: 'Латиница расш.'
 	},
 
 	es: {
-		search_placeholder: 'Buscar caracteres\u2026',
-		nothing_found: 'No se encontr\u00F3 nada',
+		search_placeholder: 'Buscar caracteres…',
+		nothing_found: 'No se encontró nada',
 		settings: 'Ajustes',
 		copied_char: (char) => `${char} copiado`,
 
@@ -149,27 +145,28 @@ export const translations: Record<string, TranslationRecord> = {
 		save_changes: 'Guardar',
 		saved: 'Guardado',
 
-		tab_categories: 'Categor\u00EDas',
+		tab_categories: 'Categorías',
 		tab_appearance: 'Apariencia',
+		tab_system: 'Sistema',
 
-		no_category_selected: 'Ninguna categor\u00EDa seleccionada. A\u00F1ade una para empezar.',
+		no_category_selected: 'Ninguna categoría seleccionada. Añade una para empezar.',
 
-		delete_category: 'Eliminar categor\u00EDa',
-		add_category: '+ A\u00F1adir',
+		delete_category: 'Eliminar categoría',
+		add_category: '+ Añadir',
 
 		category_name_label: 'Nombre',
 		characters_count: (n) => `Caracteres (${n})`,
 		from_presets: '+ De preajustes',
-		placeholder_symbol: 'S\u00EDmbolo',
+		placeholder_symbol: 'Símbolo',
 		placeholder_name_optional: 'Nombre (opcional)',
-		placeholder_category_name: 'Nombre de categor\u00EDa',
-		add: 'A\u00F1adir',
+		placeholder_category_name: 'Nombre de categoría',
+		add: 'Añadir',
 
-		add_from_presets: 'A\u00F1adir de preajustes',
+		add_from_presets: 'Añadir de preajustes',
 		n_selected: (n) => `${n} seleccionados`,
 		cancel: 'Cancelar',
-		add_selected: 'A\u00F1adir',
-		already_added: 'ya a\u00F1adido',
+		add_selected: 'Añadir',
+		already_added: 'ya añadido',
 
 		theme_label: 'Tema',
 		theme_auto: 'Auto',
@@ -184,76 +181,76 @@ export const translations: Record<string, TranslationRecord> = {
 		autostart_label: 'Iniciar con el sistema',
 
 		cat_arrows: 'Flechas',
-		cat_math: 'Matem\u00E1ticas',
+		cat_math: 'Matemáticas',
 		cat_currency: 'Monedas',
-		cat_typography: 'Tipograf\u00EDa',
+		cat_typography: 'Tipografía',
 		cat_checks_marks: 'Marcas y checks',
 		cat_stars_shapes: 'Estrellas y formas',
 		cat_greek: 'Griego',
 		cat_misc: 'Varios',
 
-		cat_sub_super: 'Sub\u00EDndices y super\u00EDndices',
-		cat_lines_boxes: 'L\u00EDneas y marcos',
-		cat_latin_ext: 'Lat\u00EDn extendido'
+		cat_sub_super: 'Subíndices y superíndices',
+		cat_lines_boxes: 'Líneas y marcos',
+		cat_latin_ext: 'Latín extendido'
 	},
 
 	ja: {
-		search_placeholder: '\u6587\u5B57\u3092\u691C\u7D22\u2026',
-		nothing_found: '\u898B\u3064\u304B\u308A\u307E\u305B\u3093',
-		settings: '\u8A2D\u5B9A',
-		copied_char: (char) => `${char} \u3092\u30B3\u30D4\u30FC`,
+		search_placeholder: '文字を検索…',
+		nothing_found: '見つかりません',
+		settings: '設定',
+		copied_char: (char) => `${char} をコピー`,
 
-		settings_title: '\u8A2D\u5B9A',
-		reset_to_default: '\u30EA\u30BB\u30C3\u30C8',
-		save_changes: '\u4FDD\u5B58',
-		saved: '\u4FDD\u5B58\u6E08\u307F',
+		settings_title: '設定',
+		reset_to_default: 'リセット',
+		save_changes: '保存',
+		saved: '保存済み',
 
-		tab_categories: '\u30AB\u30C6\u30B4\u30EA\u30FC',
-		tab_appearance: '\u5916\u89B3',
+		tab_categories: 'カテゴリー',
+		tab_appearance: '外観',
+		tab_system: 'システム',
 
-		no_category_selected:
-			'\u30AB\u30C6\u30B4\u30EA\u30FC\u304C\u672A\u9078\u629E\u3067\u3059\u3002\u8FFD\u52A0\u3057\u3066\u304F\u3060\u3055\u3044\u3002',
+		no_category_selected: 'カテゴリーが未選択です。追加してください。',
 
-		delete_category: '\u30AB\u30C6\u30B4\u30EA\u30FC\u3092\u524A\u9664',
-		add_category: '+ \u8FFD\u52A0',
+		delete_category: 'カテゴリーを削除',
+		add_category: '+ 追加',
 
-		category_name_label: '\u30AB\u30C6\u30B4\u30EA\u30FC\u540D',
-		characters_count: (n) => `\u6587\u5B57 (${n})`,
-		from_presets: '+ \u30D7\u30EA\u30BB\u30C3\u30C8\u304B\u3089',
-		placeholder_symbol: '\u8A18\u53F7',
-		placeholder_name_optional: '\u540D\u524D\uFF08\u4EFB\u610F\uFF09',
-		placeholder_category_name: '\u30AB\u30C6\u30B4\u30EA\u30FC\u540D',
-		add: '\u8FFD\u52A0',
+		category_name_label: 'カテゴリー名',
+		characters_count: (n) => `文字 (${n})`,
+		from_presets: '+ プリセットから',
+		placeholder_symbol: '記号',
+		placeholder_name_optional: '名前（任意）',
+		placeholder_category_name: 'カテゴリー名',
+		add: '追加',
 
-		add_from_presets: '\u30D7\u30EA\u30BB\u30C3\u30C8\u304B\u3089\u8FFD\u52A0',
-		n_selected: (n) => `${n}\u4EF6\u9078\u629E`,
-		cancel: '\u30AD\u30E3\u30F3\u30BB\u30EB',
-		add_selected: '\u8FFD\u52A0',
-		already_added: '\u8FFD\u52A0\u6E08\u307F',
+		add_from_presets: 'プリセットから追加',
+		n_selected: (n) => `${n}件選択`,
+		cancel: 'キャンセル',
+		add_selected: '追加',
+		already_added: '追加済み',
 
-		theme_label: '\u30C6\u30FC\u30DE',
-		theme_auto: '\u81EA\u52D5',
-		theme_light: '\u30E9\u30A4\u30C8',
-		theme_dark: '\u30C0\u30FC\u30AF',
-		theme_auto_desc: '\u30B7\u30B9\u30C6\u30E0\u306E\u5916\u89B3\u306B\u5408\u308F\u305B\u308B',
-		theme_light_desc: '\u5E38\u306B\u30E9\u30A4\u30C8\u30C6\u30FC\u30DE',
-		theme_dark_desc: '\u5E38\u306B\u30C0\u30FC\u30AF\u30C6\u30FC\u30DE',
+		theme_label: 'テーマ',
+		theme_auto: '自動',
+		theme_light: 'ライト',
+		theme_dark: 'ダーク',
+		theme_auto_desc: 'システムの外観に合わせる',
+		theme_light_desc: '常にライトテーマ',
+		theme_dark_desc: '常にダークテーマ',
 
-		language_label: '\u8A00\u8A9E',
+		language_label: '言語',
 
-		autostart_label: '\u30ED\u30B0\u30A4\u30F3\u6642\u306B\u8D77\u52D5',
+		autostart_label: 'ログイン時に起動',
 
-		cat_arrows: '\u77E2\u5370',
-		cat_math: '\u6570\u5B66',
-		cat_currency: '\u901A\u8CA8',
-		cat_typography: '\u7D44\u7248',
-		cat_checks_marks: '\u30C1\u30A7\u30C3\u30AF\u30DE\u30FC\u30AF',
-		cat_stars_shapes: '\u661F\u3068\u56F3\u5F62',
-		cat_greek: '\u30AE\u30EA\u30B7\u30E3\u6587\u5B57',
-		cat_misc: '\u305D\u306E\u4ED6',
+		cat_arrows: '矢印',
+		cat_math: '数学',
+		cat_currency: '通貨',
+		cat_typography: '組版',
+		cat_checks_marks: 'チェックマーク',
+		cat_stars_shapes: '星と図形',
+		cat_greek: 'ギリシャ文字',
+		cat_misc: 'その他',
 
-		cat_sub_super: '\u4E0A\u4ED8\u304D\u30FB\u4E0B\u4ED8\u304D',
-		cat_lines_boxes: '\u7F6B\u7DDA\u30FB\u56F2\u307F',
-		cat_latin_ext: '\u30E9\u30C6\u30F3\u62E1\u5F35'
+		cat_sub_super: '上付き・下付き',
+		cat_lines_boxes: '罫線・囲み',
+		cat_latin_ext: 'ラテン拡張'
 	}
 };

@@ -28,7 +28,7 @@ import type { Category, CharEntry } from '../types';
 
 const Settings = () => {
 	const t = useLanguage();
-	const [tab, setTab] = useState<'categories' | 'appearance'>('categories');
+	const [tab, setTab] = useState<'categories' | 'appearance' | 'system'>('categories');
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [selectedIdx, setSelectedIdx] = useState(0);
 	const [showPresets, setShowPresets] = useState(false);
@@ -141,10 +141,13 @@ const Settings = () => {
 						<Segment $active={tab === 'appearance'} onClick={() => setTab('appearance')}>
 							{t('tab_appearance')}
 						</Segment>
+						<Segment $active={tab === 'system'} onClick={() => setTab('system')}>
+							{t('tab_system')}
+						</Segment>
 					</SegmentedControl>
 				</SegmentedWrapper>
 
-				{tab === 'categories' ? (
+				{tab === 'categories' && (
 					<Body>
 						<CategoryList
 							categories={categories}
@@ -167,12 +170,21 @@ const Settings = () => {
 							)}
 						</Main>
 					</Body>
-				) : (
+				)}
+
+				{tab === 'appearance' && (
 					<Body>
 						<Main>
 							<SettingsGroup>
 								<ThemePicker />
 							</SettingsGroup>
+						</Main>
+					</Body>
+				)}
+
+				{tab === 'system' && (
+					<Body>
+						<Main>
 							<SettingsGroup>
 								<SettingsRow>
 									<SettingsRowLabel>{t('language_label')}</SettingsRowLabel>

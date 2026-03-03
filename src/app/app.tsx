@@ -81,13 +81,22 @@ export default function App() {
 		if (!el) return;
 
 		const ro = new ResizeObserver(() => {
-			const border = el.offsetHeight - el.clientHeight;
-			const height = Math.min(el.scrollHeight + border, MAX_HEIGHT);
-			if (Math.abs(height - lastHeight.current) < 2) return;
-			lastHeight.current = height;
+			// Sum up actual children heights + Root padding/border to get natural content height
+			let contentH = 0;
+			for (const child of el.children) {
+				contentH += (child as HTMLElement).scrollHeight;
+			}
+			const style = getComputedStyle(el);
+			const paddingY = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+			const borderY = Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.borderBottomWidth);
+			const gapH = (el.children.length - 1) * (Number.parseFloat(style.rowGap) || 0);
+			const desired = Math.min(Math.ceil(contentH + paddingY + borderY + gapH), MAX_HEIGHT);
+
+			if (Math.abs(desired - lastHeight.current) < 2) return;
+			lastHeight.current = desired;
 			import('@tauri-apps/api/window')
 				.then(({ getCurrentWindow, LogicalSize }) => {
-					getCurrentWindow().setSize(new LogicalSize(WIDTH, height));
+					getCurrentWindow().setSize(new LogicalSize(WIDTH, desired));
 				})
 				.catch(() => {});
 		});

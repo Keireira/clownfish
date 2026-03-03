@@ -7,9 +7,9 @@ const OPTIONS: LanguageChoice[] = ['auto', 'en', 'ru', 'es', 'ja'];
 const NATIVE_LABELS: Record<LanguageChoice, string> = {
 	auto: 'Auto',
 	en: 'English',
-	ru: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439',
-	es: 'Espa\u00F1ol',
-	ja: '\u65E5\u672C\u8A9E'
+	ru: 'Русский',
+	es: 'Español',
+	ja: '日本語'
 };
 
 const LanguagePicker = () => {

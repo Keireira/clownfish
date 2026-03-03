@@ -105,8 +105,7 @@ mod win_autostart {
     }
 
     pub fn enable() -> Result<(), String> {
-        let exe = std::env::current_exe()
-            .map_err(|e| format!("Failed to get exe path: {e}"))?;
+        let exe = std::env::current_exe().map_err(|e| format!("Failed to get exe path: {e}"))?;
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         let key = hkcu
             .open_subkey_with_flags(RUN_KEY, KEY_SET_VALUE)
@@ -242,20 +241,38 @@ pub fn run() {
                                 let tray_pos = rect.position.to_logical::<f64>(scale);
                                 let tray_size = rect.size.to_logical::<f64>(scale);
 
-                                let window_width = 420.0_f64;
-                                let x = tray_pos.x - (window_width / 2.0) + (tray_size.width / 2.0);
+                                let win_w = 420.0_f64;
+                                let win_h = window
+                                    .inner_size()
+                                    .map(|s| s.to_logical::<f64>(scale).height)
+                                    .unwrap_or(520.0);
 
-                                // macOS: menu bar at top → open below tray
-                                // Windows: taskbar at bottom → open above tray
+                                let x = tray_pos.x - (win_w / 2.0) + (tray_size.width / 2.0);
+
                                 let y = if cfg!(target_os = "macos") {
+                                    // macOS: menu bar at top → open below tray
                                     tray_pos.y + tray_size.height
                                 } else {
-                                    let win_h = window
-                                        .inner_size()
-                                        .map(|s| s.to_logical::<f64>(scale).height)
-                                        .unwrap_or(520.0);
-                                    tray_pos.y - win_h - 8.0
+                                    // Windows: open above tray icon
+                                    // Use monitor work area to handle overflow tray & edge cases
+                                    let screen_h = window
+                                        .current_monitor()
+                                        .ok()
+                                        .flatten()
+                                        .map(|m| m.size().to_logical::<f64>(scale).height)
+                                        .unwrap_or(1080.0);
+
+                                    // If tray is near screen bottom, position above it;
+                                    // otherwise (overflow popup), use screen bottom with taskbar offset
+                                    if tray_pos.y > screen_h * 0.7 {
+                                        tray_pos.y - win_h - 8.0
+                                    } else {
+                                        screen_h - win_h - 52.0
+                                    }
                                 };
+
+                                // Clamp to screen bounds
+                                let y = y.max(0.0);
 
                                 // Record open time so blur handler won't immediately hide
                                 LAST_OPEN.store(now_ms(), Ordering::Relaxed);

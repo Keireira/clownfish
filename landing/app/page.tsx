@@ -663,7 +663,7 @@ export default function Home() {
 						<p className="mb-4 text-center text-xs text-text-muted">{_('download_windows_req')}</p>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<a
-								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.msi"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.exe"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
 								<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
@@ -671,7 +671,7 @@ export default function Home() {
 								<span className="text-xs text-text-muted">{_('dl_win_x64_desc')}</span>
 							</a>
 							<a
-								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.msi"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.exe"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
 								<WindowsIcon className="text-text-muted transition group-hover:text-accent" />

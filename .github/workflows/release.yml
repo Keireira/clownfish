@@ -37,8 +37,8 @@ jobs:
           find artifacts/macos-apple-silicon -name '*.dmg' -exec cp {} release/Hot-Symbols-apple-silicon.dmg \;
           find artifacts/macos-intel -name '*.dmg' -exec cp {} release/Hot-Symbols-intel.dmg \;
 
-          find artifacts/windows-x86_64 -name '*.msi' -exec cp {} release/Hot-Symbols-x64.msi \;
-          find artifacts/windows-arm64 -name '*.msi' -exec cp {} release/Hot-Symbols-arm64.msi \;
+          find artifacts/windows-x86_64 -name '*.exe' -exec cp {} release/Hot-Symbols-x64.exe \;
+          find artifacts/windows-arm64 -name '*.exe' -exec cp {} release/Hot-Symbols-arm64.exe \;
 
           ls -la release/
 

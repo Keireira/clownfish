@@ -80,7 +80,7 @@ export const Empty = styled.div`
 
 export const SegmentedWrapper = styled.div.attrs({ className: 'settings-tabs' })`
 	display: flex;
-	justify-content: flex-start;
+	justify-content: center;
 	padding: 10px 20px;
 	border-bottom: 1px solid var(--border);
 	-webkit-user-select: none;

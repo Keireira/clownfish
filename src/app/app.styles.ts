@@ -14,6 +14,8 @@ export const AppGlobalStyle = createGlobalStyle`
 		-webkit-user-select: none;
 		margin: 0;
 		padding: 0;
+		height: 100%;
+		overflow: hidden;
 	}
 `;
 
@@ -84,8 +86,9 @@ export default styled.div`
 	border-radius: var(--radius-l);
 	box-shadow: var(--glass-shadow);
 	padding: 12px;
-	width: 420px;
-	max-height: 520px;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
 	color: var(--text-primary);
 	display: flex;
 	flex-direction: column;
