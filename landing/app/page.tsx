@@ -175,9 +175,17 @@ const WindowsIcon = ({ className }: { className?: string }) => (
 	</svg>
 );
 
+function detectPlatform(): 'macos' | 'windows' {
+	if (typeof navigator === 'undefined') return 'macos';
+	const ua = navigator.userAgent.toLowerCase();
+	if (ua.includes('win')) return 'windows';
+	return 'macos';
+}
+
 export default function Home() {
 	const [locale, setLocale] = useLocale();
-	const [dlPlatform, setDlPlatform] = useState<'macos' | 'windows'>('macos');
+	const [userOS] = useState<'macos' | 'windows'>(detectPlatform);
+	const [dlPlatform, setDlPlatform] = useState<'macos' | 'windows'>(detectPlatform);
 	const _ = (key: string) => t(locale, key);
 
 	return (
@@ -251,21 +259,45 @@ export default function Home() {
 
 				<Reveal animation="anim-fade-up" delay="delay-4">
 					<div className="mt-10 flex flex-wrap justify-center gap-3">
-						<a
-							href="#download"
-							className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover hover:shadow-[0_0_30px_rgba(52,120,246,0.3)]"
-						>
-							<AppleIcon />
-							{_('download_cta')}
-						</a>
-						<a
-							href="#download"
-							onClick={() => setDlPlatform('windows')}
-							className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-7 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover hover:border-border-strong"
-						>
-							<WindowsIcon />
-							Windows
-						</a>
+						{userOS === 'macos' ? (
+							<>
+								<a
+									href="#download"
+									onClick={() => setDlPlatform('macos')}
+									className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover hover:shadow-[0_0_30px_rgba(52,120,246,0.3)]"
+								>
+									<AppleIcon />
+									{_('download_cta')}
+								</a>
+								<a
+									href="#download"
+									onClick={() => setDlPlatform('windows')}
+									className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-7 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover hover:border-border-strong"
+								>
+									<WindowsIcon />
+									Windows
+								</a>
+							</>
+						) : (
+							<>
+								<a
+									href="#download"
+									onClick={() => setDlPlatform('windows')}
+									className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover hover:shadow-[0_0_30px_rgba(52,120,246,0.3)]"
+								>
+									<WindowsIcon />
+									{_('download_cta_win')}
+								</a>
+								<a
+									href="#download"
+									onClick={() => setDlPlatform('macos')}
+									className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-7 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover hover:border-border-strong"
+								>
+									<AppleIcon />
+									macOS
+								</a>
+							</>
+						)}
 					</div>
 				</Reveal>
 
@@ -630,48 +662,22 @@ export default function Home() {
 					<Reveal animation="anim-fade-scale">
 						<p className="mb-4 text-center text-xs text-text-muted">{_('download_windows_req')}</p>
 						<div className="grid gap-4 sm:grid-cols-2">
-							{/* x64 */}
-							<div className="rounded-2xl border border-border bg-bg-card p-6">
-								<h3 className="mb-1 text-center text-sm font-semibold">x86_64</h3>
-								<p className="mb-4 text-center text-xs text-text-muted">{_('dl_win_x64_desc')}</p>
-								<div className="flex flex-col gap-2">
-									<a
-										href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.msi"
-										className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition"
-									>
-										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
-										{_('dl_win_msi')}
-									</a>
-									<a
-										href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.exe"
-										className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition"
-									>
-										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
-										{_('dl_win_exe')}
-									</a>
-								</div>
-							</div>
-							{/* ARM */}
-							<div className="rounded-2xl border border-border bg-bg-card p-6">
-								<h3 className="mb-1 text-center text-sm font-semibold">ARM64</h3>
-								<p className="mb-4 text-center text-xs text-text-muted">{_('dl_win_arm_desc')}</p>
-								<div className="flex flex-col gap-2">
-									<a
-										href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.msi"
-										className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition"
-									>
-										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
-										{_('dl_win_msi')}
-									</a>
-									<a
-										href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.exe"
-										className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition"
-									>
-										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
-										{_('dl_win_exe')}
-									</a>
-								</div>
-							</div>
+							<a
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.msi"
+								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
+							>
+								<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
+								<span className="text-sm font-semibold">x86_64</span>
+								<span className="text-xs text-text-muted">{_('dl_win_x64_desc')}</span>
+							</a>
+							<a
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.msi"
+								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
+							>
+								<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
+								<span className="text-sm font-semibold">ARM64</span>
+								<span className="text-xs text-text-muted">{_('dl_win_arm_desc')}</span>
+							</a>
 						</div>
 					</Reveal>
 				)}

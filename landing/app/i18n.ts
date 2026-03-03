@@ -48,6 +48,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		tagline: 'Gaslight everyone into thinking you use AI for texts.',
 		subtitle: "⌘ → ± ∞ © and more from your menu bar. Click — and it's copied.",
 		download_cta: 'Download for macOS',
+		download_cta_win: 'Download for Windows',
 		search_placeholder: 'Search symbols…',
 
 		// How it works
@@ -117,8 +118,6 @@ const translations: Record<Locale, Record<string, string>> = {
 		dl_intel_desc: 'x86_64',
 		dl_win_x64_desc: 'Most Windows PCs',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PCs',
-		dl_win_msi: '.msi installer',
-		dl_win_exe: '.exe portable',
 
 		// Support
 		support_heading: 'Like it? Fuel it.',
@@ -159,6 +158,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		tagline: 'Загазлайть всех, что ты пишешь им с AI.',
 		subtitle: '⌘ → ± ∞ © и не только — из меню-бара. Клик — и скопировано.',
 		download_cta: 'Скачать для macOS',
+		download_cta_win: 'Скачать для Windows',
 		search_placeholder: 'Поиск символов…',
 
 		how_heading: 'Как это работает',
@@ -223,8 +223,6 @@ const translations: Record<Locale, Record<string, string>> = {
 		dl_intel_desc: 'x86_64',
 		dl_win_x64_desc: 'Большинство ПК',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PC',
-		dl_win_msi: '.msi установщик',
-		dl_win_exe: '.exe портативный',
 
 		support_heading: 'Нравится? Поддержи.',
 		support_desc: 'Бесплатно и опен сорс. Если сэкономило хотя бы один гугл — купи кофе.',
@@ -263,6 +261,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		tagline: 'Gaslight a todos de que escribes con IA.',
 		subtitle: '⌘ → ± ∞ © y más desde tu barra de menú. Clic — y copiado.',
 		download_cta: 'Descargar para macOS',
+		download_cta_win: 'Descargar para Windows',
 		search_placeholder: 'Buscar símbolos…',
 
 		how_heading: 'Cómo funciona',
@@ -327,8 +326,6 @@ const translations: Record<Locale, Record<string, string>> = {
 		dl_intel_desc: 'x86_64',
 		dl_win_x64_desc: 'La mayoría de PCs',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PC',
-		dl_win_msi: '.msi instalador',
-		dl_win_exe: '.exe portable',
 
 		support_heading: '¿Te gusta? Apóyalo.',
 		support_desc: 'Gratuito y abierto. Si te ahorró un solo google — invítame un café.',
@@ -367,6 +364,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		tagline: 'AIで書いてるとみんなに思わせよう。',
 		subtitle: '⌘ → ± ∞ © などメニューバーから。クリックでコピー。',
 		download_cta: 'macOS版をダウンロード',
+		download_cta_win: 'Windows版をダウンロード',
 		search_placeholder: 'シンボルを検索…',
 
 		how_heading: '使い方',
@@ -430,8 +428,6 @@ const translations: Record<Locale, Record<string, string>> = {
 		dl_intel_desc: 'x86_64',
 		dl_win_x64_desc: 'ほとんどのPC',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PC',
-		dl_win_msi: '.msi インストーラー',
-		dl_win_exe: '.exe ポータブル',
 
 		support_heading: '気に入った？応援しよう。',
 		support_desc: '無料・オープンソース。一回でもググる手間が減ったら——コーヒーをおごってください。',
