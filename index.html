@@ -10,9 +10,10 @@
       if(window.__TAURI_INTERNALS__){
         var p=navigator.platform;
         var label=window.__TAURI_INTERNALS__.metadata&&window.__TAURI_INTERNALS__.metadata.currentWindow&&window.__TAURI_INTERNALS__.metadata.currentWindow.label;
-        var isSettingsOnWin=label==="settings"&&p.indexOf("Win")===0;
-        if(!isSettingsOnWin&&(p.indexOf("Mac")===0||p.indexOf("Win")===0)){
+        var isSettings=label==="settings";
+        if(!isSettings&&(p.indexOf("Mac")===0||p.indexOf("Win")===0)){
           document.documentElement.classList.add("glass");
+          document.documentElement.classList.add("popup");
         }
       }
       var t=localStorage.getItem("theme");
@@ -26,7 +27,7 @@
     html,body{background:#1e1e22;}
     html[data-theme="light"],html[data-theme="light"] body{background:#f0f0f2;}
     html.glass,html.glass body{background:transparent;}
-    html.glass{clip-path:inset(0 round 14px);}
+    html.glass.popup{clip-path:inset(0 round 14px);}
   </style>
 </head>
 <body>

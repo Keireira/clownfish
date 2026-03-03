@@ -39,39 +39,20 @@ fn now_ms() -> u64 {
 }
 
 fn open_settings(app: &AppHandle) {
-    // Hide main window first to avoid focus race on Windows
-    if let Some(main_win) = app.get_webview_window("main") {
-        let _ = main_win.hide();
-    }
+    // Don't explicitly hide main — the blur handler already hides it
+    // when the settings window takes focus. Hiding early caused a blank
+    // screen if the settings webview was slow to initialise.
 
     if let Some(win) = app.get_webview_window("settings") {
         let _ = win.show();
         let _ = win.set_focus();
     } else {
-        let effects = EffectsBuilder::new()
-            .effects(vec![
-                // macOS: standard window vibrancy
-                Effect::WindowBackground,
-                // Windows 11/10 fallbacks
-                Effect::Mica,
-                Effect::Acrylic,
-            ])
-            .state(EffectState::Active)
-            .build();
-
-        let mut builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+        let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
             .title("Hot Symbols Settings")
             .inner_size(660.0, 520.0)
             .min_inner_size(550.0, 400.0)
-            .effects(effects)
-            .center();
-
-        // transparent(true) + decorations breaks rendering on Windows
-        if cfg!(target_os = "macos") {
-            builder = builder.transparent(true);
-        }
-
-        let _ = builder.build();
+            .center()
+            .build();
     }
 }
 

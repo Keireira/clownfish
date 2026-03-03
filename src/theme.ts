@@ -58,8 +58,8 @@ function detectGlass(): void {
 	if (!tauri) return;
 	const p = navigator.platform;
 	const label = tauri.metadata?.currentWindow?.label as string | undefined;
-	// Settings window on Windows has no transparent background, skip glass
-	if (label === 'settings' && p.startsWith('Win')) return;
+	// Settings is a normal decorated window — no transparent background
+	if (label === 'settings') return;
 	if (p.startsWith('Mac') || p.startsWith('Win')) {
 		document.documentElement.classList.add('glass');
 	}
