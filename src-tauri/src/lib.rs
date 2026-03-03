@@ -90,6 +90,24 @@ fn autostart_disable() -> Result<(), String> {
     login_item::set_enabled(false)
 }
 
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+fn autostart_is_enabled() -> bool {
+    false
+}
+
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+fn autostart_enable() -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+fn autostart_disable() -> Result<(), String> {
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())

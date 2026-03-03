@@ -39,6 +39,23 @@ pnpm tauri build
 
 The `.app` bundle is output to `src-tauri/target/release/bundle/macos/`.
 
+### Generate icons
+
+`pnpm tauri icon src-tauri/icons/icon.png`
+
+### Apple Silicon
+
+`pnpm tauri build --target aarch64-apple-darwin`
+
+### Apple Intel
+
+`pnpm tauri build --target x86_64-apple-darwin`
+
+# Apple Universal (fat binary, both architectures)
+
+`rustup target add x86_64-apple-darwin`
+`pnpm tauri build --target universal-apple-darwin`
+
 ### App Store build
 
 Requires an Apple Developer account with Team ID and provisioning profiles configured.
@@ -47,4 +64,4 @@ Requires an Apple Developer account with Team ID and provisioning profiles confi
 pnpm tauri build --bundles app
 ```
 
-Then submit via Transporter or `xcrun altool`.
+Then submit via Transporter
