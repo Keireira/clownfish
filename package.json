@@ -1,7 +1,12 @@
 {
   "name": "clownfish",
   "version": "1.0.2",
-  "private": true,
+  "license": "AGPL-3.0",
+  "author": "Alena Dzhukich <github@alena.red>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Keireira/clownfish.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -31,5 +36,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^6.3.5"
-  }
+  },
+  "private": true
 }
