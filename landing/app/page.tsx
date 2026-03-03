@@ -1,7 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { t, LOCALES, type Locale } from './i18n';
+
+/* ── Intersection Observer hook ── */
+function useInView(threshold = 0.15) {
+	const ref = useRef<HTMLDivElement>(null);
+	const [visible, setVisible] = useState(false);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el) return;
+		const obs = new IntersectionObserver(
+			([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
+			{ threshold },
+		);
+		obs.observe(el);
+		return () => obs.disconnect();
+	}, [threshold]);
+	return { ref, visible };
+}
+
+/* ── Animated wrapper ── */
+function Reveal({ children, className = '', animation = 'anim-fade-up', delay = '' }: {
+	children: ReactNode;
+	className?: string;
+	animation?: string;
+	delay?: string;
+}) {
+	const { ref, visible } = useInView();
+	return (
+		<div ref={ref} className={`${animation} ${delay} ${visible ? 'visible' : ''} ${className}`}>
+			{children}
+		</div>
+	);
+}
 
 /* ── Actual symbols from the app ── */
 const SHOWCASE = [
@@ -26,63 +58,99 @@ const AppleIcon = ({ className }: { className?: string }) => (
 	</svg>
 );
 
+const WindowsIcon = ({ className }: { className?: string }) => (
+	<svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+		<path d="M3 5.548l7.206-0.987v6.952H3V5.548zM3 18.452l7.206 0.987v-6.952H3V18.452zM11.206 4.453L22 3v8.513H11.206V4.453zM11.206 19.547L22 21v-8.513H11.206V19.547z" />
+	</svg>
+);
+
 export default function Home() {
 	const [locale, setLocale] = useState<Locale>('en');
+	const [dlPlatform, setDlPlatform] = useState<'macos' | 'windows'>('macos');
 	const _ = (key: string) => t(locale, key);
 
 	return (
 		<main className="min-h-screen overflow-x-hidden">
-			{/* ── Language Switcher ── */}
-			<nav className="fixed top-0 right-0 z-50 p-4">
-				<div className="flex gap-1 rounded-lg border border-border bg-bg/80 p-1 backdrop-blur-md">
-					{LOCALES.map((l) => (
-						<button
-							key={l.code}
-							onClick={() => setLocale(l.code)}
-							className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-								locale === l.code
-									? 'bg-accent text-white'
-									: 'text-text-muted hover:text-text-primary'
-							}`}
-						>
-							{l.label}
-						</button>
-					))}
+			{/* ── Navbar ── */}
+			<nav className="nav-glass fixed top-0 left-0 right-0 z-50">
+				<div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+					<a href="#" className="text-sm font-bold tracking-tight">
+						<span className="text-hot">Hot</span> Symbols
+					</a>
+					<div className="hidden items-center gap-6 sm:flex">
+						<a href="#features" className="text-xs text-text-secondary transition hover:text-text-primary">{_('nav_features')}</a>
+						<a href="#showcase" className="text-xs text-text-secondary transition hover:text-text-primary">{_('nav_symbols')}</a>
+						<a href="#download" className="text-xs text-text-secondary transition hover:text-text-primary">{_('nav_download')}</a>
+						<a href="#support" className="text-xs text-text-secondary transition hover:text-text-primary">{_('nav_support')}</a>
+					</div>
+					<div className="flex gap-1 rounded-lg border border-border bg-bg/60 p-1">
+						{LOCALES.map((l) => (
+							<button
+								key={l.code}
+								onClick={() => setLocale(l.code)}
+								className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
+									locale === l.code
+										? 'bg-accent text-white'
+										: 'text-text-muted hover:text-text-primary'
+								}`}
+							>
+								{l.label}
+							</button>
+						))}
+					</div>
 				</div>
 			</nav>
 
 			{/* ── Hero ── */}
 			<section className="relative flex flex-col items-center justify-center px-6 pt-32 pb-20 md:pt-44 md:pb-28">
-				<div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-accent/[0.07] blur-[120px]" />
+				<div className="hero-blob pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-accent/[0.07] blur-[120px]" />
 
 				{/* badge */}
-				<div className="relative mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-bg-card px-4 py-1.5 text-xs text-text-secondary">
-					<span className="h-1.5 w-1.5 rounded-full bg-green" />
-					{_('feat_instant_title')}
-				</div>
+				<Reveal animation="anim-fade-scale">
+					<div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-bg-card px-4 py-1.5 text-xs text-text-secondary">
+						<span className="h-1.5 w-1.5 rounded-full bg-green" />
+						{_('feat_instant_title')}
+					</div>
+				</Reveal>
 
-				<h1 className="relative text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl">
-					Hot Symbols
-				</h1>
-				<p className="relative mt-6 max-w-lg text-center text-lg text-text-secondary md:text-xl">
-					{_('tagline')}
-				</p>
-				<p className="relative mt-2 max-w-lg text-center text-sm text-text-muted">
-					{_('subtitle')}
-				</p>
+				<Reveal animation="anim-fade-up" delay="delay-1">
+					<h1 className="text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl">
+						<span className="text-hot">Hot</span> Symbols
+					</h1>
+				</Reveal>
+				<Reveal animation="anim-fade-up" delay="delay-2">
+					<p className="mt-6 max-w-lg text-center text-lg text-text-secondary md:text-xl">
+						{_('tagline')}
+					</p>
+				</Reveal>
+				<Reveal animation="anim-fade-up" delay="delay-3">
+					<p className="mt-2 max-w-lg text-center text-sm text-text-muted">
+						{_('subtitle')}
+					</p>
+				</Reveal>
 
-				<div className="relative mt-10 flex gap-4">
-					<a
-						href="#download"
-						className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover"
-					>
-						<AppleIcon />
-						{_('download_cta')}
-					</a>
-				</div>
+				<Reveal animation="anim-fade-up" delay="delay-4">
+					<div className="mt-10 flex flex-wrap justify-center gap-3">
+						<a
+							href="#download"
+							className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover hover:shadow-[0_0_30px_rgba(52,120,246,0.3)]"
+						>
+							<AppleIcon />
+							{_('download_cta')}
+						</a>
+						<a
+							href="#download"
+							onClick={() => setDlPlatform('windows')}
+							className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-7 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover hover:border-border-strong"
+						>
+							<WindowsIcon />
+							Windows
+						</a>
+					</div>
+				</Reveal>
 
 				{/* ── App Mockup ── */}
-				<div className="relative mt-16 w-full max-w-sm">
+				<Reveal animation="anim-fade-scale" delay="delay-5" className="relative mt-16 w-full max-w-sm">
 					<div className="glass glow rounded-2xl p-4">
 						{/* title bar dots */}
 						<div className="mb-3 flex gap-1.5">
@@ -104,7 +172,7 @@ export default function Home() {
 									{cat.chars.map((s) => (
 										<div
 											key={s}
-											className="flex aspect-square items-center justify-center rounded-md border border-border bg-white/[0.03] text-sm transition hover:bg-white/[0.08] hover:border-border-strong"
+											className="symbol-hover flex aspect-square items-center justify-center rounded-md border border-border bg-white/[0.03] text-sm"
 										>
 											{s}
 										</div>
@@ -113,246 +181,353 @@ export default function Home() {
 							</div>
 						))}
 					</div>
-				</div>
+				</Reveal>
 			</section>
 
 			{/* ── How It Works ── */}
 			<section className="mx-auto max-w-4xl px-6 py-20 md:py-28">
-				<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
-					{_('how_heading')}
-				</h2>
+				<Reveal>
+					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
+						{_('how_heading')}
+					</h2>
+				</Reveal>
 				<div className="grid gap-8 md:grid-cols-3">
 					{[
-						{ num: '1', title: 'how_step1_title', desc: 'how_step1_desc', icon: (
+						{ num: '1', title: 'how_step1_title', desc: 'how_step1_desc', delay: 'delay-1', icon: (
 							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
 								<rect x="2" y="3" width="20" height="2" rx="1" />
 								<circle cx="12" cy="4" r="0.5" fill="currentColor" stroke="none" />
 							</svg>
 						)},
-						{ num: '2', title: 'how_step2_title', desc: 'how_step2_desc', icon: (
+						{ num: '2', title: 'how_step2_title', desc: 'how_step2_desc', delay: 'delay-2', icon: (
 							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
 								<circle cx="11" cy="11" r="7" />
 								<path d="M21 21l-4.35-4.35" />
 							</svg>
 						)},
-						{ num: '3', title: 'how_step3_title', desc: 'how_step3_desc', icon: (
+						{ num: '3', title: 'how_step3_title', desc: 'how_step3_desc', delay: 'delay-3', icon: (
 							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
 								<rect x="8" y="2" width="13" height="16" rx="2" />
 								<path d="M16 18v2a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h2" />
 							</svg>
 						)},
 					].map((step) => (
-						<div key={step.num} className="text-center">
-							<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-bg-card text-accent">
-								{step.icon}
+						<Reveal key={step.num} delay={step.delay}>
+							<div className="text-center">
+								<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-bg-card text-accent">
+									{step.icon}
+								</div>
+								<h3 className="mb-2 text-sm font-semibold">{_(step.title)}</h3>
+								<p className="text-sm leading-relaxed text-text-secondary">{_(step.desc)}</p>
 							</div>
-							<h3 className="mb-2 text-sm font-semibold">{_(step.title)}</h3>
-							<p className="text-sm leading-relaxed text-text-secondary">{_(step.desc)}</p>
-						</div>
+						</Reveal>
 					))}
 				</div>
 			</section>
 
 			{/* ── Features ── */}
-			<section className="mx-auto max-w-5xl px-6 py-20 md:py-28">
+			<section id="features" className="mx-auto max-w-5xl px-6 py-20 md:py-28">
 				<div className="grid gap-6 md:grid-cols-3">
-					<div className="rounded-2xl border border-border bg-bg-card p-8 transition hover:bg-bg-card-hover">
-						<div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-bg text-accent">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-								<rect x="2" y="3" width="20" height="2" rx="1" />
-								<rect x="6" y="7" width="12" height="14" rx="2" />
-							</svg>
-						</div>
-						<h3 className="mb-2 text-lg font-semibold">{_('feat_instant_title')}</h3>
-						<p className="text-sm leading-relaxed text-text-secondary">{_('feat_instant_desc')}</p>
-					</div>
-					<div className="rounded-2xl border border-border bg-bg-card p-8 transition hover:bg-bg-card-hover">
-						<div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-bg text-accent">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-								<rect x="3" y="3" width="7" height="7" rx="1.5" />
-								<rect x="14" y="3" width="7" height="7" rx="1.5" />
-								<rect x="3" y="14" width="7" height="7" rx="1.5" />
-								<rect x="14" y="14" width="7" height="7" rx="1.5" />
-							</svg>
-						</div>
-						<h3 className="mb-2 text-lg font-semibold">{_('feat_symbols_title')}</h3>
-						<p className="text-sm leading-relaxed text-text-secondary">{_('feat_symbols_desc')}</p>
-					</div>
-					<div className="rounded-2xl border border-border bg-bg-card p-8 transition hover:bg-bg-card-hover">
-						<div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-bg text-accent">
-							<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-								<path d="M12 3v3m0 12v3M3 12h3m12 0h3" />
-								<circle cx="12" cy="12" r="4" />
-							</svg>
-						</div>
-						<h3 className="mb-2 text-lg font-semibold">{_('feat_custom_title')}</h3>
-						<p className="text-sm leading-relaxed text-text-secondary">{_('feat_custom_desc')}</p>
-					</div>
+					{[
+						{
+							delay: 'delay-1',
+							icon: (
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+									<rect x="2" y="3" width="20" height="2" rx="1" />
+									<rect x="6" y="7" width="12" height="14" rx="2" />
+								</svg>
+							),
+							title: 'feat_instant_title',
+							desc: 'feat_instant_desc',
+						},
+						{
+							delay: 'delay-2',
+							icon: (
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+									<rect x="3" y="3" width="7" height="7" rx="1.5" />
+									<rect x="14" y="3" width="7" height="7" rx="1.5" />
+									<rect x="3" y="14" width="7" height="7" rx="1.5" />
+									<rect x="14" y="14" width="7" height="7" rx="1.5" />
+								</svg>
+							),
+							title: 'feat_symbols_title',
+							desc: 'feat_symbols_desc',
+						},
+						{
+							delay: 'delay-3',
+							icon: (
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+									<path d="M12 3v3m0 12v3M3 12h3m12 0h3" />
+									<circle cx="12" cy="12" r="4" />
+								</svg>
+							),
+							title: 'feat_custom_title',
+							desc: 'feat_custom_desc',
+						},
+					].map((f) => (
+						<Reveal key={f.title} delay={f.delay}>
+							<div className="card-hover rounded-2xl border border-border bg-bg-card p-8">
+								<div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-bg text-accent">
+									{f.icon}
+								</div>
+								<h3 className="mb-2 text-lg font-semibold">{_(f.title)}</h3>
+								<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
+							</div>
+						</Reveal>
+					))}
 				</div>
 			</section>
 
 			{/* ── Showcase ── */}
-			<section className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-				<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
-					{_('showcase_heading')}
-				</h2>
+			<section id="showcase" className="mx-auto max-w-5xl px-6 py-20 md:py-28">
+				<Reveal>
+					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
+						{_('showcase_heading')}
+					</h2>
+				</Reveal>
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{SHOWCASE.map((cat) => (
-						<div key={cat.key} className="rounded-xl border border-border bg-bg-card p-5">
-							<span className="mb-3 block text-xs font-semibold uppercase tracking-wider text-accent">
-								{_(cat.key)}
-							</span>
-							<div className="flex flex-wrap gap-1.5">
-								{cat.symbols.map((s) => (
-									<span
-										key={s}
-										className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white/[0.03] text-base"
-									>
-										{s}
-									</span>
-								))}
+					{SHOWCASE.map((cat, i) => (
+						<Reveal key={cat.key} delay={`delay-${Math.min(i + 1, 6)}`}>
+							<div className="card-hover rounded-xl border border-border bg-bg-card p-5">
+								<span className="mb-3 block text-xs font-semibold uppercase tracking-wider text-accent">
+									{_(cat.key)}
+								</span>
+								<div className="flex flex-wrap gap-1.5">
+									{cat.symbols.map((s) => (
+										<span
+											key={s}
+											className="symbol-hover flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white/[0.03] text-base"
+										>
+											{s}
+										</span>
+									))}
+								</div>
 							</div>
-						</div>
+						</Reveal>
 					))}
 				</div>
 			</section>
 
 			{/* ── Who It's For ── */}
 			<section className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-				<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
-					{_('who_heading')}
-				</h2>
+				<Reveal>
+					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
+						{_('who_heading')}
+					</h2>
+				</Reveal>
 				<div className="grid gap-6 sm:grid-cols-2">
 					{[
-						{ title: 'who_writers_title', desc: 'who_writers_desc', symbols: '\u2014 \u201C\u201D \u2026 \u2022' },
-						{ title: 'who_devs_title', desc: 'who_devs_desc', symbols: '\u2318 \u2325 \u21E7 \u2192 \u2260' },
-						{ title: 'who_designers_title', desc: 'who_designers_desc', symbols: '\u00A9 \u00AE \u2122 \u2190 \u2022' },
-						{ title: 'who_academics_title', desc: 'who_academics_desc', symbols: '\u03B1 \u03B2 \u222B \u2211 \u00B2' },
+						{ title: 'who_writers_title', desc: 'who_writers_desc', symbols: '\u2014 \u201C\u201D \u2026 \u2022', delay: 'delay-1' },
+						{ title: 'who_devs_title', desc: 'who_devs_desc', symbols: '\u2318 \u2325 \u21E7 \u2192 \u2260', delay: 'delay-2' },
+						{ title: 'who_designers_title', desc: 'who_designers_desc', symbols: '\u00A9 \u00AE \u2122 \u2190 \u2022', delay: 'delay-3' },
+						{ title: 'who_academics_title', desc: 'who_academics_desc', symbols: '\u03B1 \u03B2 \u222B \u2211 \u00B2', delay: 'delay-4' },
 					].map((item) => (
-						<div key={item.title} className="rounded-2xl border border-border bg-bg-card p-6 transition hover:bg-bg-card-hover">
-							<div className="mb-3 flex items-center gap-3">
-								<span className="text-sm font-mono text-accent tracking-wider">{item.symbols}</span>
+						<Reveal key={item.title} delay={item.delay}>
+							<div className="card-hover rounded-2xl border border-border bg-bg-card p-6">
+								<div className="mb-3 flex items-center gap-3">
+									<span className="text-sm font-mono text-accent tracking-wider">{item.symbols}</span>
+								</div>
+								<h3 className="mb-1.5 text-sm font-semibold">{_(item.title)}</h3>
+								<p className="text-sm leading-relaxed text-text-secondary">{_(item.desc)}</p>
 							</div>
-							<h3 className="mb-1.5 text-sm font-semibold">{_(item.title)}</h3>
-							<p className="text-sm leading-relaxed text-text-secondary">{_(item.desc)}</p>
-						</div>
+						</Reveal>
 					))}
 				</div>
 			</section>
 
 			{/* ── Details ── */}
 			<section className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-				<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
-					{_('also_heading')}
-				</h2>
+				<Reveal>
+					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">
+						{_('also_heading')}
+					</h2>
+				</Reveal>
 				<div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
 					{[
-						{ title: 'extra_theme_title', desc: 'extra_theme_desc' },
-						{ title: 'extra_search_title', desc: 'extra_search_desc' },
-						{ title: 'extra_lang_title', desc: 'extra_lang_desc' },
-						{ title: 'extra_light_title', desc: 'extra_light_desc' },
-						{ title: 'extra_private_title', desc: 'extra_private_desc' },
-						{ title: 'extra_login_title', desc: 'extra_login_desc' },
+						{ title: 'extra_theme_title', desc: 'extra_theme_desc', delay: 'delay-1' },
+						{ title: 'extra_search_title', desc: 'extra_search_desc', delay: 'delay-2' },
+						{ title: 'extra_lang_title', desc: 'extra_lang_desc', delay: 'delay-3' },
+						{ title: 'extra_light_title', desc: 'extra_light_desc', delay: 'delay-4' },
+						{ title: 'extra_private_title', desc: 'extra_private_desc', delay: 'delay-5' },
+						{ title: 'extra_login_title', desc: 'extra_login_desc', delay: 'delay-6' },
 					].map((f) => (
-						<div key={f.title} className="border-l-2 border-border pl-4">
-							<h3 className="mb-1 text-sm font-semibold">{_(f.title)}</h3>
-							<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
-						</div>
+						<Reveal key={f.title} animation="anim-slide-in" delay={f.delay}>
+							<div className="border-l-2 border-accent/30 pl-4 transition hover:border-accent">
+								<h3 className="mb-1 text-sm font-semibold">{_(f.title)}</h3>
+								<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
+							</div>
+						</Reveal>
 					))}
 				</div>
 			</section>
 
 			{/* ── Download ── */}
 			<section id="download" className="mx-auto max-w-3xl px-6 py-20 md:py-28">
-				<h2 className="mb-4 text-center text-3xl font-bold tracking-tight md:text-4xl">
-					{_('download_heading')}
-				</h2>
-				<p className="mx-auto mb-10 max-w-md text-center text-sm text-text-secondary">
-					{_('download_desc')}
-				</p>
-				<div className="grid gap-4 sm:grid-cols-3">
-					<a
-						href="#"
-						className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6 transition hover:border-accent/40 hover:bg-bg-card-hover"
-					>
-						<AppleIcon className="text-text-muted transition group-hover:text-accent" />
-						<span className="text-sm font-semibold">{_('dl_universal')}</span>
-						<span className="text-xs text-text-muted">{_('dl_universal_desc')}</span>
-					</a>
-					<a
-						href="#"
-						className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6 transition hover:border-accent/40 hover:bg-bg-card-hover"
-					>
-						<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-							<rect x="4" y="4" width="16" height="16" rx="4" />
-							<circle cx="12" cy="12" r="3" />
-							<path d="M12 4v2m0 12v2M4 12h2m12 0h2" />
-						</svg>
-						<span className="text-sm font-semibold">{_('dl_arm')}</span>
-						<span className="text-xs text-text-muted">{_('dl_arm_desc')}</span>
-					</a>
-					<a
-						href="#"
-						className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6 transition hover:border-accent/40 hover:bg-bg-card-hover"
-					>
-						<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-							<rect x="6" y="6" width="12" height="12" rx="2" />
-							<path d="M6 9h-2M6 12h-2M6 15h-2M18 9h2M18 12h2M18 15h2M9 6v-2M12 6v-2M15 6v-2M9 18v2M12 18v2M15 18v2" />
-						</svg>
-						<span className="text-sm font-semibold">{_('dl_intel')}</span>
-						<span className="text-xs text-text-muted">{_('dl_intel_desc')}</span>
-					</a>
-				</div>
+				<Reveal>
+					<h2 className="mb-4 text-center text-3xl font-bold tracking-tight md:text-4xl">
+						{_('download_heading')}
+					</h2>
+				</Reveal>
+				<Reveal delay="delay-1">
+					<p className="mx-auto mb-8 max-w-md text-center text-sm text-text-secondary">
+						{_('download_desc')}
+					</p>
+				</Reveal>
+
+				{/* Platform tabs */}
+				<Reveal delay="delay-2">
+					<div className="mx-auto mb-8 flex w-fit rounded-lg border border-border bg-bg-card p-1">
+						<button
+							onClick={() => setDlPlatform('macos')}
+							className={`inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-medium transition ${
+								dlPlatform === 'macos' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
+							}`}
+						>
+							<AppleIcon className="h-4 w-4" />
+							macOS
+						</button>
+						<button
+							onClick={() => setDlPlatform('windows')}
+							className={`inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-medium transition ${
+								dlPlatform === 'windows' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
+							}`}
+						>
+							<WindowsIcon className="h-4 w-4" />
+							Windows
+						</button>
+					</div>
+				</Reveal>
+
+				{/* macOS downloads */}
+				{dlPlatform === 'macos' && (
+					<Reveal animation="anim-fade-scale">
+						<p className="mb-4 text-center text-xs text-text-muted">{_('download_macos_req')}</p>
+						<div className="grid gap-4 sm:grid-cols-3">
+							<a
+								href="#"
+								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
+							>
+								<AppleIcon className="text-text-muted transition group-hover:text-accent" />
+								<span className="text-sm font-semibold">{_('dl_universal')}</span>
+								<span className="text-xs text-text-muted">{_('dl_universal_desc')}</span>
+							</a>
+							<a
+								href="#"
+								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
+							>
+								<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+									<rect x="4" y="4" width="16" height="16" rx="4" />
+									<circle cx="12" cy="12" r="3" />
+									<path d="M12 4v2m0 12v2M4 12h2m12 0h2" />
+								</svg>
+								<span className="text-sm font-semibold">{_('dl_arm')}</span>
+								<span className="text-xs text-text-muted">{_('dl_arm_desc')}</span>
+							</a>
+							<a
+								href="#"
+								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
+							>
+								<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+									<rect x="6" y="6" width="12" height="12" rx="2" />
+									<path d="M6 9h-2M6 12h-2M6 15h-2M18 9h2M18 12h2M18 15h2M9 6v-2M12 6v-2M15 6v-2M9 18v2M12 18v2M15 18v2" />
+								</svg>
+								<span className="text-sm font-semibold">{_('dl_intel')}</span>
+								<span className="text-xs text-text-muted">{_('dl_intel_desc')}</span>
+							</a>
+						</div>
+					</Reveal>
+				)}
+
+				{/* Windows downloads */}
+				{dlPlatform === 'windows' && (
+					<Reveal animation="anim-fade-scale">
+						<p className="mb-4 text-center text-xs text-text-muted">{_('download_windows_req')}</p>
+						<div className="grid gap-4 sm:grid-cols-2">
+							{/* x64 */}
+							<div className="rounded-2xl border border-border bg-bg-card p-6">
+								<h3 className="mb-1 text-center text-sm font-semibold">x86_64</h3>
+								<p className="mb-4 text-center text-xs text-text-muted">{_('dl_win_x64_desc')}</p>
+								<div className="flex flex-col gap-2">
+									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
+										{_('dl_win_msi')}
+									</a>
+									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
+										{_('dl_win_exe')}
+									</a>
+								</div>
+							</div>
+							{/* ARM */}
+							<div className="rounded-2xl border border-border bg-bg-card p-6">
+								<h3 className="mb-1 text-center text-sm font-semibold">ARM64</h3>
+								<p className="mb-4 text-center text-xs text-text-muted">{_('dl_win_arm_desc')}</p>
+								<div className="flex flex-col gap-2">
+									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
+										{_('dl_win_msi')}
+									</a>
+									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
+										{_('dl_win_exe')}
+									</a>
+								</div>
+							</div>
+						</div>
+					</Reveal>
+				)}
 			</section>
 
 			{/* ── Support ── */}
-			<section className="mx-auto max-w-3xl px-6 py-20 md:py-28">
-				<div className="rounded-2xl border border-border bg-bg-card p-10 text-center md:p-14">
-					<h2 className="mb-3 text-2xl font-bold tracking-tight md:text-3xl">
-						{_('support_heading')}
-					</h2>
-					<p className="mx-auto mb-8 max-w-md text-sm leading-relaxed text-text-secondary">
-						{_('support_desc')}
-					</p>
-					<div className="flex flex-wrap items-center justify-center gap-3">
-						<a
-							href="#"
-							className="inline-flex items-center gap-2 rounded-xl bg-[#FFDD00] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#FFE433]"
-						>
-							{_('buy_coffee')}
-						</a>
-						<a
-							href="#"
-							className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover"
-						>
-							{_('sponsor_gh')}
-						</a>
-						<a
-							href="https://boosty.to"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-2 rounded-xl bg-[#F15F2C] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#E04E1B]"
-						>
-							Boosty
-						</a>
-						<a
-							href="https://patreon.com"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-2 rounded-xl bg-[#FF424D] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#E63940]"
-						>
-							Patreon
-						</a>
-						<a
-							href="https://opencollective.com/"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-2 rounded-xl bg-[#7FADF2] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6B9AE0]"
-						>
-							Open Collective
-						</a>
+			<section id="support" className="mx-auto max-w-3xl px-6 py-20 md:py-28">
+				<Reveal animation="anim-fade-scale">
+					<div className="rounded-2xl border border-border bg-bg-card p-10 text-center md:p-14">
+						<h2 className="mb-3 text-2xl font-bold tracking-tight md:text-3xl">
+							{_('support_heading')}
+						</h2>
+						<p className="mx-auto mb-8 max-w-md text-sm leading-relaxed text-text-secondary">
+							{_('support_desc')}
+						</p>
+						<div className="flex flex-wrap items-center justify-center gap-3">
+							<a
+								href="#"
+								className="inline-flex items-center gap-2 rounded-xl bg-[#FFDD00] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#FFE433] hover:shadow-[0_0_20px_rgba(255,221,0,0.3)]"
+							>
+								{_('buy_coffee')}
+							</a>
+							<a
+								href="#"
+								className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg px-5 py-3 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover"
+							>
+								{_('sponsor_gh')}
+							</a>
+							<a
+								href="https://boosty.to"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-2 rounded-xl bg-[#F15F2C] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#E04E1B] hover:shadow-[0_0_20px_rgba(241,95,44,0.3)]"
+							>
+								Boosty
+							</a>
+							<a
+								href="https://patreon.com"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-2 rounded-xl bg-[#FF424D] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#E63940] hover:shadow-[0_0_20px_rgba(255,66,77,0.3)]"
+							>
+								Patreon
+							</a>
+							<a
+								href="https://opencollective.com/"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-2 rounded-xl bg-[#7FADF2] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6B9AE0] hover:shadow-[0_0_20px_rgba(127,173,242,0.3)]"
+							>
+								Open Collective
+							</a>
+						</div>
 					</div>
-				</div>
+				</Reveal>
 			</section>
 
 			{/* ── Footer ── */}
