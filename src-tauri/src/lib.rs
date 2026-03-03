@@ -88,19 +88,75 @@ fn autostart_disable() -> Result<(), String> {
     login_item::set_enabled(false)
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+mod win_autostart {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    const APP_NAME: &str = "HotSymbols";
+    const RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
+
+    pub fn is_enabled() -> bool {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let Ok(key) = hkcu.open_subkey(RUN_KEY) else {
+            return false;
+        };
+        key.get_value::<String, _>(APP_NAME).is_ok()
+    }
+
+    pub fn enable() -> Result<(), String> {
+        let exe = std::env::current_exe()
+            .map_err(|e| format!("Failed to get exe path: {e}"))?;
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let key = hkcu
+            .open_subkey_with_flags(RUN_KEY, KEY_SET_VALUE)
+            .map_err(|e| format!("Failed to open registry: {e}"))?;
+        key.set_value(APP_NAME, &exe.to_string_lossy().as_ref())
+            .map_err(|e| format!("Failed to set registry value: {e}"))
+    }
+
+    pub fn disable() -> Result<(), String> {
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let key = hkcu
+            .open_subkey_with_flags(RUN_KEY, KEY_SET_VALUE)
+            .map_err(|e| format!("Failed to open registry: {e}"))?;
+        key.delete_value(APP_NAME)
+            .map_err(|e| format!("Failed to delete registry value: {e}"))
+    }
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn autostart_is_enabled() -> bool {
+    win_autostart::is_enabled()
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn autostart_enable() -> Result<(), String> {
+    win_autostart::enable()
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn autostart_disable() -> Result<(), String> {
+    win_autostart::disable()
+}
+
+// Stub for other platforms (Linux, etc.)
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 #[tauri::command]
 fn autostart_is_enabled() -> bool {
     false
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 #[tauri::command]
 fn autostart_enable() -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 #[tauri::command]
 fn autostart_disable() -> Result<(), String> {
     Ok(())
@@ -189,16 +245,16 @@ pub fn run() {
                                 let window_width = 420.0_f64;
                                 let x = tray_pos.x - (window_width / 2.0) + (tray_size.width / 2.0);
 
-                                // macOS: menu bar at top -> open below tray
-                                // Windows: taskbar at bottom -> open above tray
+                                // macOS: menu bar at top → open below tray
+                                // Windows: taskbar at bottom → open above tray
                                 let y = if cfg!(target_os = "macos") {
                                     tray_pos.y + tray_size.height
                                 } else {
                                     let win_h = window
-                                        .outer_size()
+                                        .inner_size()
                                         .map(|s| s.to_logical::<f64>(scale).height)
                                         .unwrap_or(520.0);
-                                    tray_pos.y - win_h
+                                    tray_pos.y - win_h - 8.0
                                 };
 
                                 // Record open time so blur handler won't immediately hide
