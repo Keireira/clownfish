@@ -7,6 +7,10 @@ dist/
 # Tauri
 src-tauri/target/
 
+# Next.js
+landing/.next/
+landing/out/
+
 # macOS
 .DS_Store
 
