@@ -335,7 +335,7 @@ dependencies = [
 
 [[package]]
 name = "clownfish"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "objc2",
  "objc2-foundation",

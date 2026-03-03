@@ -63,7 +63,7 @@ export function t(key: string, ...args: unknown[]): string {
 	return typeof val === 'function' ? val(...args) : val;
 }
 
-// Category name mapping (English name → translation key)
+// Category name mapping (English name -> translation key)
 const CATEGORY_KEY_MAP: Record<string, string> = {
 	Arrows: 'cat_arrows',
 	Math: 'cat_math',

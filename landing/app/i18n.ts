@@ -1,4 +1,9 @@
+import { useState, useCallback } from 'react';
+
 export type Locale = 'en' | 'ru' | 'es' | 'ja';
+
+const LOCALE_CODES: Locale[] = ['en', 'ru', 'es', 'ja'];
+const STORAGE_KEY = 'hs-locale';
 
 export const LOCALES: { code: Locale; label: string }[] = [
 	{ code: 'en', label: 'EN' },
@@ -6,6 +11,30 @@ export const LOCALES: { code: Locale; label: string }[] = [
 	{ code: 'es', label: 'ES' },
 	{ code: 'ja', label: 'JA' }
 ];
+
+function detectLocale(): Locale {
+	if (typeof window === 'undefined') return 'en';
+
+	const saved = localStorage.getItem(STORAGE_KEY);
+	if (saved && LOCALE_CODES.includes(saved as Locale)) return saved as Locale;
+
+	const lang = navigator.language.toLowerCase();
+	for (const code of LOCALE_CODES) {
+		if (lang === code || lang.startsWith(code + '-')) return code;
+	}
+	return 'en';
+}
+
+export function useLocale() {
+	const [locale, setLocaleState] = useState<Locale>(detectLocale);
+
+	const setLocale = useCallback((code: Locale) => {
+		setLocaleState(code);
+		localStorage.setItem(STORAGE_KEY, code);
+	}, []);
+
+	return [locale, setLocale] as const;
+}
 
 const translations: Record<Locale, Record<string, string>> = {
 	en: {
@@ -17,25 +46,24 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		// Hero
 		tagline: 'Gaslight everyone into thinking you use AI for texts.',
-		subtitle: "\u2318 \u2192 \u00B1 \u221E \u00A9 and more from your menu bar. Click \u2014 and it's copied.",
+		subtitle: "⌘ → ± ∞ © and more from your menu bar. Click — and it's copied.",
 		download_cta: 'Download for macOS',
-		search_placeholder: 'Search symbols\u2026',
+		search_placeholder: 'Search symbols…',
 
 		// How it works
 		how_heading: 'How it works',
 		how_step1_title: 'Click the menu bar',
 		how_step1_desc: 'Lives up top. No dock icon, no windows, zero clutter.',
 		how_step2_title: 'Find it',
-		how_step2_desc: '11 categories or just type. \u03C0 = "pi".',
-		how_step3_title: 'Click \u2192 copied',
+		how_step2_desc: '11 categories or just type. π = "pi".',
+		how_step3_title: 'Click → copied',
 		how_step3_desc: "One click, it's on your clipboard. Paste anywhere.",
 
 		// Features
 		feat_instant_title: 'Lives in menu bar',
 		feat_instant_desc: 'No dock icon. No window juggling. Click, grab, gone.',
 		feat_symbols_title: '11 categories',
-		feat_symbols_desc:
-			'Typography \u2022 Arrows \u2022 Math \u2022 Currency \u2022 Greek \u2022 Stars \u2022 Sub/Super \u2022 Box Drawing \u2022 Latin \u2022 Keys',
+		feat_symbols_desc: 'Typography • Arrows • Math • Currency • Greek • Stars • Sub/Super • Box Drawing • Latin • Keys',
 		feat_custom_title: 'Your layout',
 		feat_custom_desc: 'Add categories, drag to reorder, toss in your own symbols.',
 
@@ -51,23 +79,22 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Who it's for
 		who_heading: 'Built for',
 		who_writers_title: 'Writers & Editors',
-		who_writers_desc: 'Em dashes, curly quotes, ellipses \u2014 real typography without Alt codes.',
+		who_writers_desc: 'Em dashes, curly quotes, ellipses — real typography without Alt codes.',
 		who_devs_title: 'Developers',
-		who_devs_desc: '\u2318 \u2325 \u21E7 for docs, \u2192 for flow, box-drawing for ASCII art.',
+		who_devs_desc: '⌘ ⌥ ⇧ for docs, → for flow, box-drawing for ASCII art.',
 		who_designers_title: 'Designers',
-		who_designers_desc: '\u00A9 \u00AE \u2122 for mockups, arrows for flows. Paste straight into Figma.',
+		who_designers_desc: '© ® ™ for mockups, arrows for flows. Paste straight into Figma.',
 		who_academics_title: 'Academics',
-		who_academics_desc:
-			'\u03B1\u03B2\u03B3 Greek, \u222B\u2211\u221A operators, \u00B2\u00B3 superscripts. No LaTeX needed.',
+		who_academics_desc: 'αβγ Greek, ∫∑√ operators, ²³ superscripts. No LaTeX needed.',
 
 		// Details
 		also_heading: 'Under the hood',
 		extra_theme_title: 'Dark & Light',
 		extra_theme_desc: 'Follows macOS appearance automatically.',
 		extra_search_title: 'Type to find',
-		extra_search_desc: '"arrow" \u2192 \u2190 \u2192 \u2191 \u2193. Instant.',
+		extra_search_desc: '"arrow" → ← → ↑ ↓. Instant.',
 		extra_lang_title: '4 languages',
-		extra_lang_desc: 'EN \u00B7 RU \u00B7 ES \u00B7 JA \u2014 full interface.',
+		extra_lang_desc: 'EN · RU · ES · JA — full interface.',
 		extra_light_title: '< 10 MB',
 		extra_light_desc: 'Tauri, not Electron. Native WebView.',
 		extra_private_title: 'Offline-only',
@@ -95,91 +122,95 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		// Support
 		support_heading: 'Like it? Fuel it.',
-		support_desc: 'Free and open source. If it saves you even one google search \u2014 consider buying me a coffee.',
+		support_desc: 'Free and open source. If it saves you even one google search — consider buying me a coffee.',
 		buy_coffee: 'Buy Me a Coffee',
 		sponsor_gh: 'Sponsor on GitHub',
-		footer_built: 'Built with Tauri & React'
+		footer_built: 'Built with Tauri & React',
+
+		// Privacy
+		privacy_back: '← Back',
+		privacy_title: 'Privacy Policy',
+		privacy_short: 'Hot Symbols collects nothing. Zero. Nada.',
+		privacy_short_label: 'Short version:',
+		privacy_no_data_title: 'No data collection',
+		privacy_no_data_desc:
+			'Hot Symbols does not collect, store, process, or transmit any personal data or usage information. The app runs entirely on your device.',
+		privacy_no_analytics_title: 'No analytics',
+		privacy_no_analytics_desc:
+			"There are no analytics, telemetry, crash reporters, or tracking of any kind. We don't know how many users we have, and we like it that way.",
+		privacy_no_network_title: 'No network requests',
+		privacy_no_network_desc:
+			'The app works completely offline. It never connects to the internet. No APIs, no servers, no cloud sync, no update pings.',
+		privacy_no_accounts_title: 'No accounts',
+		privacy_no_accounts_desc: "No sign-ups, no logins, no email addresses. You download it, you use it. That's it.",
+		privacy_local_title: 'Local storage only',
+		privacy_local_desc:
+			'Your preferences (theme, language, custom categories) are stored locally on your machine. They never leave your device.',
+		privacy_third_title: 'Third parties',
+		privacy_third_desc: 'There are none. No SDKs, no embedded services, no third-party code that phones home.',
+		privacy_updated: 'Last updated: March 2026'
 	},
 	ru: {
-		nav_features: '\u0424\u0438\u0447\u0438',
-		nav_symbols: '\u0421\u0438\u043C\u0432\u043E\u043B\u044B',
-		nav_download: '\u0421\u043A\u0430\u0447\u0430\u0442\u044C',
-		nav_support: '\u0414\u043E\u043D\u0430\u0442',
+		nav_features: 'Фичи',
+		nav_symbols: 'Символы',
+		nav_download: 'Скачать',
+		nav_support: 'Донат',
 
-		tagline:
-			'\u0417\u0430\u0433\u0430\u0437\u043B\u0430\u0439\u0442\u044C \u0432\u0441\u0435\u0445, \u0447\u0442\u043E \u0442\u044B \u043F\u0438\u0448\u0435\u0448\u044C \u0438\u043C \u0441 AI.',
-		subtitle:
-			'\u2318 \u2192 \u00B1 \u221E \u00A9 \u0438 \u043D\u0435 \u0442\u043E\u043B\u044C\u043A\u043E \u2014 \u0438\u0437 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0430. \u041A\u043B\u0438\u043A \u2014 \u0438 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E.',
-		download_cta: '\u0421\u043A\u0430\u0447\u0430\u0442\u044C \u0434\u043B\u044F macOS',
-		search_placeholder: '\u041F\u043E\u0438\u0441\u043A \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432\u2026',
+		tagline: 'Загазлайть всех, что ты пишешь им с AI.',
+		subtitle: '⌘ → ± ∞ © и не только — из меню-бара. Клик — и скопировано.',
+		download_cta: 'Скачать для macOS',
+		search_placeholder: 'Поиск символов…',
 
-		how_heading: '\u041A\u0430\u043A \u044D\u0442\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442',
-		how_step1_title: '\u041A\u043B\u0438\u043A \u0432 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0435',
-		how_step1_desc:
-			'\u0416\u0438\u0432\u0451\u0442 \u043D\u0430\u0432\u0435\u0440\u0445\u0443. \u0411\u0435\u0437 \u0438\u043A\u043E\u043D\u043A\u0438 \u0432 \u0434\u043E\u043A\u0435, \u0431\u0435\u0437 \u043E\u043A\u043E\u043D.',
-		how_step2_title: '\u041D\u0430\u0439\u0434\u0438',
-		how_step2_desc:
-			'11 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0439 \u0438\u043B\u0438 \u043F\u043E\u0438\u0441\u043A. \u03C0 = \u00ABpi\u00BB.',
-		how_step3_title:
-			'\u041A\u043B\u0438\u043A \u2192 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E',
-		how_step3_desc:
-			'\u041E\u0434\u0438\u043D \u043A\u043B\u0438\u043A \u2014 \u0432 \u0431\u0443\u0444\u0435\u0440\u0435. \u0412\u0441\u0442\u0430\u0432\u043B\u044F\u0439 \u043A\u0443\u0434\u0430 \u0445\u043E\u0447\u0435\u0448\u044C.',
+		how_heading: 'Как это работает',
+		how_step1_title: 'Клик в меню-баре',
+		how_step1_desc: 'Живёт наверху. Без иконки в доке, без окон.',
+		how_step2_title: 'Найди',
+		how_step2_desc: '11 категорий или поиск. π = «pi».',
+		how_step3_title: 'Клик → скопировано',
+		how_step3_desc: 'Один клик — в буфере. Вставляй куда хочешь.',
 
-		feat_instant_title: '\u0412 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0435',
-		feat_instant_desc:
-			'\u0411\u0435\u0437 \u0434\u043E\u043A\u0430, \u0431\u0435\u0437 \u043E\u043A\u043E\u043D. \u041A\u043B\u0438\u043A\u043D\u0443\u043B, \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043B, \u0432\u0441\u0442\u0430\u0432\u0438\u043B.',
-		feat_symbols_title: '11 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0439',
+		feat_instant_title: 'В меню-баре',
+		feat_instant_desc: 'Без дока, без окон. Кликнул, скопировал, вставил.',
+		feat_symbols_title: '11 категорий',
 		feat_symbols_desc:
-			'\u0422\u0438\u043F\u043E\u0433\u0440\u0430\u0444\u0438\u043A\u0430 \u2022 \u0421\u0442\u0440\u0435\u043B\u043A\u0438 \u2022 \u041C\u0430\u0442\u0435\u043C\u0430\u0442\u0438\u043A\u0430 \u2022 \u0412\u0430\u043B\u044E\u0442\u044B \u2022 \u0413\u0440\u0435\u0447\u0435\u0441\u043A\u0438\u0439 \u2022 \u0424\u043E\u0440\u043C\u044B \u2022 \u0418\u043D\u0434\u0435\u043A\u0441\u044B \u2022 \u0420\u0430\u043C\u043A\u0438 \u2022 \u041B\u0430\u0442\u0438\u043D\u0438\u0446\u0430 \u2022 \u041A\u043B\u0430\u0432\u0438\u0448\u0438',
-		feat_custom_title: '\u041F\u043E\u0434 \u0441\u0435\u0431\u044F',
-		feat_custom_desc:
-			'\u0421\u0432\u043E\u0438 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0438, DnD, \u043B\u044E\u0431\u044B\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B.',
+			'Типографика • Стрелки • Математика • Валюты • Греческий • Формы • Индексы • Рамки • Латиница • Клавиши',
+		feat_custom_title: 'Под себя',
+		feat_custom_desc: 'Свои категории, DnD, любые символы.',
 
-		showcase_heading: '\u0427\u0442\u043E \u0432\u043D\u0443\u0442\u0440\u0438',
-		typo_cat: '\u0422\u0438\u043F\u043E\u0433\u0440\u0430\u0444\u0438\u043A\u0430',
-		arrows_cat: '\u0421\u0442\u0440\u0435\u043B\u043A\u0438',
-		math_cat: '\u041C\u0430\u0442\u0435\u043C\u0430\u0442\u0438\u043A\u0430',
-		currency_cat: '\u0412\u0430\u043B\u044E\u0442\u044B',
-		greek_cat: '\u0413\u0440\u0435\u0447\u0435\u0441\u043A\u0438\u0439',
-		misc_cat: '\u041A\u043B\u0430\u0432\u0438\u0448\u0438',
+		showcase_heading: 'Что внутри',
+		typo_cat: 'Типографика',
+		arrows_cat: 'Стрелки',
+		math_cat: 'Математика',
+		currency_cat: 'Валюты',
+		greek_cat: 'Греческий',
+		misc_cat: 'Клавиши',
 
-		who_heading: '\u0414\u043B\u044F \u043A\u043E\u0433\u043E',
-		who_writers_title:
-			'\u041F\u0438\u0441\u0430\u0442\u0435\u043B\u0438 \u0438 \u0440\u0435\u0434\u0430\u043A\u0442\u043E\u0440\u044B',
-		who_writers_desc:
-			'\u0422\u0438\u0440\u0435, \u043A\u0430\u0432\u044B\u0447\u043A\u0438-\u0451\u043B\u043E\u0447\u043A\u0438, \u043C\u043D\u043E\u0433\u043E\u0442\u043E\u0447\u0438\u044F \u2014 \u043D\u043E\u0440\u043C\u0430\u043B\u044C\u043D\u0430\u044F \u0442\u0438\u043F\u043E\u0433\u0440\u0430\u0444\u0438\u043A\u0430 \u0431\u0435\u0437 Alt-\u043A\u043E\u0434\u043E\u0432.',
-		who_devs_title: '\u0420\u0430\u0437\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u0438',
-		who_devs_desc:
-			'\u2318 \u2325 \u21E7 \u0434\u043B\u044F \u0434\u043E\u043A\u043E\u0432, \u2192 \u0434\u043B\u044F \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u043E\u0432, \u0440\u0430\u043C\u043A\u0438 \u0434\u043B\u044F ASCII-\u0430\u0440\u0442\u0430.',
-		who_designers_title: '\u0414\u0438\u0437\u0430\u0439\u043D\u0435\u0440\u044B',
-		who_designers_desc:
-			'\u00A9 \u00AE \u2122 \u0434\u043B\u044F \u043C\u0430\u043A\u0435\u0442\u043E\u0432, \u0441\u0442\u0440\u0435\u043B\u043A\u0438 \u0434\u043B\u044F \u0441\u0445\u0435\u043C. \u041F\u0440\u044F\u043C\u043E \u0432 Figma.',
-		who_academics_title: '\u0423\u0447\u0451\u043D\u044B\u0435',
-		who_academics_desc:
-			'\u0413\u0440\u0435\u0447\u0435\u0441\u043A\u0438\u0439 \u03B1\u03B2\u03B3, \u043E\u043F\u0435\u0440\u0430\u0442\u043E\u0440\u044B \u222B\u2211\u221A, \u0438\u043D\u0434\u0435\u043A\u0441\u044B \u00B2\u00B3. \u0411\u0435\u0437 LaTeX.',
+		who_heading: 'Для кого',
+		who_writers_title: 'Писатели и редакторы',
+		who_writers_desc: 'Тире, кавычки-ёлочки, многоточия — нормальная типографика без Alt-кодов.',
+		who_devs_title: 'Разработчики',
+		who_devs_desc: '⌘ ⌥ ⇧ для доков, → для комментов, рамки для ASCII-арта.',
+		who_designers_title: 'Дизайнеры',
+		who_designers_desc: '© ® ™ для макетов, стрелки для схем. Прямо в Figma.',
+		who_academics_title: 'Учёные',
+		who_academics_desc: 'Греческий αβγ, операторы ∫∑√, индексы ²³. Без LaTeX.',
 
-		also_heading: '\u041F\u043E\u0434 \u043A\u0430\u043F\u043E\u0442\u043E\u043C',
-		extra_theme_title: '\u0422\u0451\u043C\u043D\u0430\u044F \u0438 \u0441\u0432\u0435\u0442\u043B\u0430\u044F',
-		extra_theme_desc:
-			'\u0421\u043B\u0435\u0434\u0443\u0435\u0442 \u0437\u0430 macOS \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438.',
-		extra_search_title: '\u041F\u0438\u0448\u0438 \u2014 \u043D\u0430\u0445\u043E\u0434\u0438',
-		extra_search_desc:
-			'\u00ABarrow\u00BB \u2192 \u2190 \u2192 \u2191 \u2193. \u041C\u0433\u043D\u043E\u0432\u0435\u043D\u043D\u043E.',
-		extra_lang_title: '4 \u044F\u0437\u044B\u043A\u0430',
-		extra_lang_desc:
-			'EN \u00B7 RU \u00B7 ES \u00B7 JA \u2014 \u0432\u0435\u0441\u044C \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441.',
-		extra_light_title: '< 10 \u041C\u0411',
-		extra_light_desc: 'Tauri, \u043D\u0435 Electron. \u041D\u0430\u0442\u0438\u0432\u043D\u044B\u0439 WebView.',
-		extra_private_title: '\u0422\u043E\u043B\u044C\u043A\u043E \u043E\u0444\u0444\u043B\u0430\u0439\u043D',
-		extra_private_desc:
-			'\u041D\u0438\u043A\u0430\u043A\u0438\u0445 \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u043E\u0432, \u043E\u0431\u043B\u0430\u043A\u0430, \u0442\u0440\u0435\u043A\u0438\u043D\u0433\u0430.',
-		extra_login_title: '\u0410\u0432\u0442\u043E\u0437\u0430\u043F\u0443\u0441\u043A',
-		extra_login_desc:
-			'\u0422\u0438\u0445\u043E \u0441\u0442\u0430\u0440\u0442\u0443\u0435\u0442 \u0441 macOS. \u0412\u0441\u0435\u0433\u0434\u0430 \u043D\u0430\u0433\u043E\u0442\u043E\u0432\u0435.',
+		also_heading: 'Под капотом',
+		extra_theme_title: 'Тёмная и светлая',
+		extra_theme_desc: 'Следует за macOS автоматически.',
+		extra_search_title: 'Пиши — находи',
+		extra_search_desc: '«arrow» → ← → ↑ ↓. Мгновенно.',
+		extra_lang_title: '4 языка',
+		extra_lang_desc: 'EN · RU · ES · JA — весь интерфейс.',
+		extra_light_title: '< 10 МБ',
+		extra_light_desc: 'Tauri, не Electron. Нативный WebView.',
+		extra_private_title: 'Только оффлайн',
+		extra_private_desc: 'Никаких аккаунтов, облака, трекинга.',
+		extra_login_title: 'Автозапуск',
+		extra_login_desc: 'Тихо стартует с macOS. Всегда наготове.',
 
-		download_heading: '\u0421\u043A\u0430\u0447\u0430\u0442\u044C',
-		download_desc:
-			'\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u043E \u0438 \u043E\u043F\u0435\u043D \u0441\u043E\u0440\u0441.',
+		download_heading: 'Скачать',
+		download_desc: 'Бесплатно и опен сорс.',
 		download_macos: 'macOS',
 		download_windows: 'Windows',
 		download_macos_req: 'macOS 15+',
@@ -187,75 +218,94 @@ const translations: Record<Locale, Record<string, string>> = {
 		dl_universal: 'Universal',
 		dl_universal_desc: 'Apple Silicon + Intel',
 		dl_arm: 'Apple Silicon',
-		dl_arm_desc: '\u0427\u0438\u043F\u044B M-\u0441\u0435\u0440\u0438\u0438',
+		dl_arm_desc: 'Чипы M-серии',
 		dl_intel: 'Intel',
 		dl_intel_desc: 'x86_64',
-		dl_win_x64_desc: '\u0411\u043E\u043B\u044C\u0448\u0438\u043D\u0441\u0442\u0432\u043E \u041F\u041A',
+		dl_win_x64_desc: 'Большинство ПК',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PC',
-		dl_win_msi: '.msi \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u0449\u0438\u043A',
-		dl_win_exe: '.exe \u043F\u043E\u0440\u0442\u0430\u0442\u0438\u0432\u043D\u044B\u0439',
+		dl_win_msi: '.msi установщик',
+		dl_win_exe: '.exe портативный',
 
-		support_heading:
-			'\u041D\u0440\u0430\u0432\u0438\u0442\u0441\u044F? \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0438.',
-		support_desc:
-			'\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u043E \u0438 \u043E\u043F\u0435\u043D \u0441\u043E\u0440\u0441. \u0415\u0441\u043B\u0438 \u0441\u044D\u043A\u043E\u043D\u043E\u043C\u0438\u043B\u043E \u0445\u043E\u0442\u044F \u0431\u044B \u043E\u0434\u0438\u043D \u0433\u0443\u0433\u043B \u2014 \u043A\u0443\u043F\u0438 \u043A\u043E\u0444\u0435.',
-		buy_coffee: '\u041A\u0443\u043F\u0438\u0442\u044C \u043A\u043E\u0444\u0435',
-		sponsor_gh: '\u0421\u043F\u043E\u043D\u0441\u043E\u0440 \u043D\u0430 GitHub',
-		footer_built: '\u0421\u0434\u0435\u043B\u0430\u043D\u043E \u043D\u0430 Tauri \u0438 React'
+		support_heading: 'Нравится? Поддержи.',
+		support_desc: 'Бесплатно и опен сорс. Если сэкономило хотя бы один гугл — купи кофе.',
+		buy_coffee: 'Купить кофе',
+		sponsor_gh: 'Спонсор на GitHub',
+		footer_built: 'Сделано на Tauri и React',
+
+		privacy_back: '← Назад',
+		privacy_title: 'Политика конфиденциальности',
+		privacy_short: 'Hot Symbols ничего не собирает. Ноль. Зеро. Nada.',
+		privacy_short_label: 'Коротко:',
+		privacy_no_data_title: 'Никакого сбора данных',
+		privacy_no_data_desc:
+			'Hot Symbols не собирает, не хранит, не обрабатывает и не передаёт никаких персональных данных. Приложение работает полностью на вашем устройстве.',
+		privacy_no_analytics_title: 'Никакой аналитики',
+		privacy_no_analytics_desc:
+			'Никакой аналитики, телеметрии, краш-репортеров или трекинга. Мы не знаем, сколько у нас пользователей, и нам это нравится.',
+		privacy_no_network_title: 'Никаких сетевых запросов',
+		privacy_no_network_desc:
+			'Приложение работает полностью оффлайн. Никогда не подключается к интернету. Никаких API, серверов, облачной синхронизации.',
+		privacy_no_accounts_title: 'Никаких аккаунтов',
+		privacy_no_accounts_desc: 'Никакой регистрации, логинов, email. Скачал — пользуешься. Всё.',
+		privacy_local_title: 'Только локальное хранение',
+		privacy_local_desc:
+			'Ваши настройки (тема, язык, категории) хранятся локально. Они никогда не покидают ваше устройство.',
+		privacy_third_title: 'Третьи стороны',
+		privacy_third_desc: 'Их нет. Никаких SDK, встроенных сервисов, стороннего кода.',
+		privacy_updated: 'Последнее обновление: март 2026'
 	},
 	es: {
 		nav_features: 'Funciones',
-		nav_symbols: 'S\u00EDmbolos',
+		nav_symbols: 'Símbolos',
 		nav_download: 'Descargar',
 		nav_support: 'Donar',
 
 		tagline: 'Gaslight a todos de que escribes con IA.',
-		subtitle: '\u2318 \u2192 \u00B1 \u221E \u00A9 y m\u00E1s desde tu barra de men\u00FA. Clic \u2014 y copiado.',
+		subtitle: '⌘ → ± ∞ © y más desde tu barra de menú. Clic — y copiado.',
 		download_cta: 'Descargar para macOS',
-		search_placeholder: 'Buscar s\u00EDmbolos\u2026',
+		search_placeholder: 'Buscar símbolos…',
 
-		how_heading: 'C\u00F3mo funciona',
-		how_step1_title: 'Clic en la barra de men\u00FA',
+		how_heading: 'Cómo funciona',
+		how_step1_title: 'Clic en la barra de menú',
 		how_step1_desc: 'Vive arriba. Sin icono en el Dock, sin ventanas.',
-		how_step2_title: 'Enc\u00FAentralo',
-		how_step2_desc: '11 categor\u00EDas o busca. \u03C0 = "pi".',
-		how_step3_title: 'Clic \u2192 copiado',
-		how_step3_desc: 'Un clic y est\u00E1 en tu portapapeles. P\u00E9galo donde quieras.',
+		how_step2_title: 'Encuéntralo',
+		how_step2_desc: '11 categorías o busca. π = "pi".',
+		how_step3_title: 'Clic → copiado',
+		how_step3_desc: 'Un clic y está en tu portapapeles. Pégalo donde quieras.',
 
 		feat_instant_title: 'Nativo en la barra',
 		feat_instant_desc: 'Sin Dock, sin ventanas extra. Clic, toma, listo.',
-		feat_symbols_title: '11 categor\u00EDas',
+		feat_symbols_title: '11 categorías',
 		feat_symbols_desc:
-			'Tipograf\u00EDa \u2022 Flechas \u2022 Matem\u00E1ticas \u2022 Monedas \u2022 Griego \u2022 Formas \u2022 \u00CDndices \u2022 Diagramas \u2022 Lat\u00EDn \u2022 Teclas',
+			'Tipografía • Flechas • Matemáticas • Monedas • Griego • Formas • Índices • Diagramas • Latín • Teclas',
 		feat_custom_title: 'A tu medida',
-		feat_custom_desc: 'Tus categor\u00EDas, DnD, cualquier s\u00EDmbolo.',
+		feat_custom_desc: 'Tus categorías, DnD, cualquier símbolo.',
 
-		showcase_heading: 'Qu\u00E9 incluye',
-		typo_cat: 'Tipograf\u00EDa',
+		showcase_heading: 'Qué incluye',
+		typo_cat: 'Tipografía',
 		arrows_cat: 'Flechas',
-		math_cat: 'Matem\u00E1ticas',
+		math_cat: 'Matemáticas',
 		currency_cat: 'Monedas',
 		greek_cat: 'Griego',
 		misc_cat: 'Teclado',
 
 		who_heading: 'Hecho para',
 		who_writers_title: 'Escritores y editores',
-		who_writers_desc: 'Rayas, comillas tipogr\u00E1ficas, puntos suspensivos \u2014 sin c\u00F3digos Alt.',
+		who_writers_desc: 'Rayas, comillas tipográficas, puntos suspensivos — sin códigos Alt.',
 		who_devs_title: 'Desarrolladores',
-		who_devs_desc: '\u2318 \u2325 \u21E7 para docs, \u2192 para flujos, l\u00EDneas para ASCII art.',
-		who_designers_title: 'Dise\u00F1adores',
-		who_designers_desc: '\u00A9 \u00AE \u2122 para mockups, flechas para flujos. Directo a Figma.',
-		who_academics_title: 'Acad\u00E9micos',
-		who_academics_desc:
-			'\u03B1\u03B2\u03B3 griego, \u222B\u2211\u221A operadores, \u00B2\u00B3 super\u00EDndices. Sin LaTeX.',
+		who_devs_desc: '⌘ ⌥ ⇧ para docs, → para flujos, líneas para ASCII art.',
+		who_designers_title: 'Diseñadores',
+		who_designers_desc: '© ® ™ para mockups, flechas para flujos. Directo a Figma.',
+		who_academics_title: 'Académicos',
+		who_academics_desc: 'αβγ griego, ∫∑√ operadores, ²³ superíndices. Sin LaTeX.',
 
-		also_heading: 'Bajo el cap\u00F3',
+		also_heading: 'Bajo el capó',
 		extra_theme_title: 'Oscuro y claro',
-		extra_theme_desc: 'Sigue la apariencia de macOS autom\u00E1ticamente.',
+		extra_theme_desc: 'Sigue la apariencia de macOS automáticamente.',
 		extra_search_title: 'Escribe y encuentra',
-		extra_search_desc: '"arrow" \u2192 \u2190 \u2192 \u2191 \u2193. Instant\u00E1neo.',
+		extra_search_desc: '"arrow" → ← → ↑ ↓. Instantáneo.',
 		extra_lang_title: '4 idiomas',
-		extra_lang_desc: 'EN \u00B7 RU \u00B7 ES \u00B7 JA \u2014 toda la interfaz.',
+		extra_lang_desc: 'EN · RU · ES · JA — toda la interfaz.',
 		extra_light_title: '< 10 MB',
 		extra_light_desc: 'Tauri, no Electron. WebView nativo.',
 		extra_private_title: 'Solo offline',
@@ -264,7 +314,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		extra_login_desc: 'Arranca en silencio. Siempre listo.',
 
 		download_heading: 'Descargar',
-		download_desc: 'Gratuito y c\u00F3digo abierto.',
+		download_desc: 'Gratuito y código abierto.',
 		download_macos: 'macOS',
 		download_windows: 'Windows',
 		download_macos_req: 'macOS 15+',
@@ -275,111 +325,141 @@ const translations: Record<Locale, Record<string, string>> = {
 		dl_arm_desc: 'Chips serie M',
 		dl_intel: 'Intel',
 		dl_intel_desc: 'x86_64',
-		dl_win_x64_desc: 'La mayor\u00EDa de PCs',
+		dl_win_x64_desc: 'La mayoría de PCs',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PC',
 		dl_win_msi: '.msi instalador',
 		dl_win_exe: '.exe portable',
 
-		support_heading: '\u00BFTe gusta? Ap\u00F3yalo.',
-		support_desc: 'Gratuito y abierto. Si te ahorr\u00F3 un solo google \u2014 inv\u00EDtame un caf\u00E9.',
-		buy_coffee: 'Inv\u00EDtame un caf\u00E9',
+		support_heading: '¿Te gusta? Apóyalo.',
+		support_desc: 'Gratuito y abierto. Si te ahorró un solo google — invítame un café.',
+		buy_coffee: 'Invítame un café',
 		sponsor_gh: 'Patrocinar en GitHub',
-		footer_built: 'Hecho con Tauri y React'
+		footer_built: 'Hecho con Tauri y React',
+
+		privacy_back: '← Volver',
+		privacy_title: 'Política de privacidad',
+		privacy_short: 'Hot Symbols no recopila nada. Cero. Nada.',
+		privacy_short_label: 'En resumen:',
+		privacy_no_data_title: 'Sin recolección de datos',
+		privacy_no_data_desc:
+			'Hot Symbols no recopila, almacena, procesa ni transmite ningún dato personal. La app funciona completamente en tu dispositivo.',
+		privacy_no_analytics_title: 'Sin analíticas',
+		privacy_no_analytics_desc:
+			'No hay analíticas, telemetría, reportes de errores ni rastreo de ningún tipo. No sabemos cuántos usuarios tenemos, y nos gusta así.',
+		privacy_no_network_title: 'Sin peticiones de red',
+		privacy_no_network_desc:
+			'La app funciona completamente offline. Nunca se conecta a internet. Sin APIs, sin servidores, sin sincronización en la nube.',
+		privacy_no_accounts_title: 'Sin cuentas',
+		privacy_no_accounts_desc: 'Sin registros, sin logins, sin correos electrónicos. La descargas, la usas. Punto.',
+		privacy_local_title: 'Solo almacenamiento local',
+		privacy_local_desc:
+			'Tus preferencias (tema, idioma, categorías) se almacenan localmente en tu máquina. Nunca salen de tu dispositivo.',
+		privacy_third_title: 'Terceros',
+		privacy_third_desc: 'No hay ninguno. Sin SDKs, sin servicios integrados, sin código de terceros.',
+		privacy_updated: 'Última actualización: marzo 2026'
 	},
 	ja: {
-		nav_features: '\u6A5F\u80FD',
-		nav_symbols: '\u30B7\u30F3\u30DC\u30EB',
-		nav_download: '\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9',
-		nav_support: '\u5BC4\u4ED8',
+		nav_features: '機能',
+		nav_symbols: 'シンボル',
+		nav_download: 'ダウンロード',
+		nav_support: '寄付',
 
-		tagline: 'AI\u3067\u66F8\u3044\u3066\u308B\u3068\u307F\u3093\u306A\u306B\u601D\u308F\u305B\u3088\u3046\u3002',
-		subtitle:
-			'\u2318 \u2192 \u00B1 \u221E \u00A9 \u306A\u3069\u30E1\u30CB\u30E5\u30FC\u30D0\u30FC\u304B\u3089\u3002\u30AF\u30EA\u30C3\u30AF\u3067\u30B3\u30D4\u30FC\u3002',
-		download_cta: 'macOS\u7248\u3092\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9',
-		search_placeholder: '\u30B7\u30F3\u30DC\u30EB\u3092\u691C\u7D22\u2026',
+		tagline: 'AIで書いてるとみんなに思わせよう。',
+		subtitle: '⌘ → ± ∞ © などメニューバーから。クリックでコピー。',
+		download_cta: 'macOS版をダウンロード',
+		search_placeholder: 'シンボルを検索…',
 
-		how_heading: '\u4F7F\u3044\u65B9',
-		how_step1_title: '\u30E1\u30CB\u30E5\u30FC\u30D0\u30FC\u3092\u30AF\u30EA\u30C3\u30AF',
-		how_step1_desc:
-			'\u4E0A\u306B\u5E38\u99D0\u3002Dock\u30A2\u30A4\u30B3\u30F3\u306A\u3057\u3001\u30A6\u30A3\u30F3\u30C9\u30A6\u306A\u3057\u3002',
-		how_step2_title: '\u898B\u3064\u3051\u308B',
-		how_step2_desc: '11\u30AB\u30C6\u30B4\u30EA\u307E\u305F\u306F\u691C\u7D22\u3002\u03C0 = \u300Cpi\u300D\u3002',
-		how_step3_title: '\u30AF\u30EA\u30C3\u30AF \u2192 \u30B3\u30D4\u30FC',
-		how_step3_desc:
-			'\u30EF\u30F3\u30AF\u30EA\u30C3\u30AF\u3067\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u3078\u3002\u3069\u3053\u306B\u3067\u3082\u8CBC\u308A\u4ED8\u3051\u3002',
+		how_heading: '使い方',
+		how_step1_title: 'メニューバーをクリック',
+		how_step1_desc: '上に常駐。Dockアイコンなし、ウィンドウなし。',
+		how_step2_title: '見つける',
+		how_step2_desc: '11カテゴリまたは検索。π = 「pi」。',
+		how_step3_title: 'クリック → コピー',
+		how_step3_desc: 'ワンクリックでクリップボードへ。どこにでも貼り付け。',
 
-		feat_instant_title: '\u30E1\u30CB\u30E5\u30FC\u30D0\u30FC\u5E38\u99D0',
-		feat_instant_desc:
-			'Dock\u306A\u3057\u3002\u30A6\u30A3\u30F3\u30C9\u30A6\u306A\u3057\u3002\u30AF\u30EA\u30C3\u30AF\u3057\u3066\u53D6\u5F97\u3002',
-		feat_symbols_title: '11\u30AB\u30C6\u30B4\u30EA',
-		feat_symbols_desc:
-			'\u30BF\u30A4\u30DD \u2022 \u77E2\u5370 \u2022 \u6570\u5B66 \u2022 \u901A\u8CA8 \u2022 \u30AE\u30EA\u30B7\u30E3 \u2022 \u56F3\u5F62 \u2022 \u4E0A\u4E0B\u4ED8\u304D \u2022 \u7F6B\u7DDA \u2022 \u30E9\u30C6\u30F3 \u2022 \u30AD\u30FC',
-		feat_custom_title: '\u81EA\u7531\u306B\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA',
-		feat_custom_desc:
-			'\u30AB\u30C6\u30B4\u30EA\u4F5C\u6210\u3001DnD\u3001\u597D\u304D\u306A\u30B7\u30F3\u30DC\u30EB\u3092\u8FFD\u52A0\u3002',
+		feat_instant_title: 'メニューバー常駐',
+		feat_instant_desc: 'Dockなし。ウィンドウなし。クリックして取得。',
+		feat_symbols_title: '11カテゴリ',
+		feat_symbols_desc: 'タイポ • 矢印 • 数学 • 通貨 • ギリシャ • 図形 • 上下付き • 罫線 • ラテン • キー',
+		feat_custom_title: '自由にカスタマイズ',
+		feat_custom_desc: 'カテゴリ作成、DnD、好きなシンボルを追加。',
 
-		showcase_heading: '\u53CE\u9332\u5185\u5BB9',
-		typo_cat: '\u30BF\u30A4\u30DD\u30B0\u30E9\u30D5\u30A3',
-		arrows_cat: '\u77E2\u5370',
-		math_cat: '\u6570\u5B66',
-		currency_cat: '\u901A\u8CA8',
-		greek_cat: '\u30AE\u30EA\u30B7\u30E3',
-		misc_cat: '\u30AD\u30FC\u30DC\u30FC\u30C9',
+		showcase_heading: '収録内容',
+		typo_cat: 'タイポグラフィ',
+		arrows_cat: '矢印',
+		math_cat: '数学',
+		currency_cat: '通貨',
+		greek_cat: 'ギリシャ',
+		misc_cat: 'キーボード',
 
-		who_heading: '\u3053\u3093\u306A\u4EBA\u306B',
-		who_writers_title: '\u30E9\u30A4\u30BF\u30FC\u30FB\u7DE8\u96C6\u8005',
-		who_writers_desc:
-			'\u30C0\u30C3\u30B7\u30E5\u3001\u5F15\u7528\u7B26\u3001\u4E09\u70B9\u30EA\u30FC\u30C0\u30FC\u2014\u2014Alt\u30B3\u30FC\u30C9\u4E0D\u8981\u3002',
-		who_devs_title: '\u958B\u767A\u8005',
-		who_devs_desc:
-			'\u2318 \u2325 \u21E7 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u7528\u3001\u2192 \u30D5\u30ED\u30FC\u7528\u3001\u7F6B\u7DDA\u3067ASCII\u30A2\u30FC\u30C8\u3002',
-		who_designers_title: '\u30C7\u30B6\u30A4\u30CA\u30FC',
-		who_designers_desc:
-			'\u00A9 \u00AE \u2122 \u30E2\u30C3\u30AF\u30A2\u30C3\u30D7\u7528\u3001\u77E2\u5370\u3067\u30D5\u30ED\u30FC\u3002Figma\u306B\u76F4\u63A5\u3002',
-		who_academics_title: '\u7814\u7A76\u8005',
-		who_academics_desc:
-			'\u03B1\u03B2\u03B3 \u30AE\u30EA\u30B7\u30E3\u3001\u222B\u2211\u221A \u6F14\u7B97\u5B50\u3001\u00B2\u00B3 \u4E0A\u4ED8\u304D\u3002LaTeX\u4E0D\u8981\u3002',
+		who_heading: 'こんな人に',
+		who_writers_title: 'ライター・編集者',
+		who_writers_desc: 'ダッシュ、引用符、三点リーダー——Altコード不要。',
+		who_devs_title: '開発者',
+		who_devs_desc: '⌘ ⌥ ⇧ ドキュメント用、→ フロー用、罫線でASCIIアート。',
+		who_designers_title: 'デザイナー',
+		who_designers_desc: '© ® ™ モックアップ用、矢印でフロー。Figmaに直接。',
+		who_academics_title: '研究者',
+		who_academics_desc: 'αβγ ギリシャ、∫∑√ 演算子、²³ 上付き。LaTeX不要。',
 
-		also_heading: '\u4E2D\u8EAB\u306E\u8A71',
-		extra_theme_title: '\u30C0\u30FC\u30AF & \u30E9\u30A4\u30C8',
-		extra_theme_desc: 'macOS\u306E\u5916\u89B3\u306B\u81EA\u52D5\u8FFD\u5F93\u3002',
-		extra_search_title: '\u6253\u3063\u3066\u63A2\u3059',
-		extra_search_desc: '\u300Carrow\u300D\u2192 \u2190 \u2192 \u2191 \u2193\u3002\u5373\u5EA7\u306B\u3002',
-		extra_lang_title: '4\u8A00\u8A9E\u5BFE\u5FDC',
-		extra_lang_desc:
-			'EN \u00B7 RU \u00B7 ES \u00B7 JA \u2014 \u30A4\u30F3\u30BF\u30FC\u30D5\u30A7\u30FC\u30B9\u5168\u4F53\u3002',
-		extra_light_title: '10MB\u672A\u6E80',
-		extra_light_desc:
-			'Tauri\u88FD\u3001Electron\u3067\u306F\u306A\u3044\u3002\u30CD\u30A4\u30C6\u30A3\u30D6WebView\u3002',
-		extra_private_title: '\u5B8C\u5168\u30AA\u30D5\u30E9\u30A4\u30F3',
-		extra_private_desc:
-			'\u30A2\u30AB\u30A6\u30F3\u30C8\u4E0D\u8981\u3002\u30AF\u30E9\u30A6\u30C9\u306A\u3057\u3002\u30C8\u30E9\u30C3\u30AD\u30F3\u30B0\u306A\u3057\u3002',
-		extra_login_title: '\u30ED\u30B0\u30A4\u30F3\u6642\u8D77\u52D5',
-		extra_login_desc: '\u9759\u304B\u306B\u8D77\u52D5\u3002\u3044\u3064\u3067\u3082\u6E96\u5099OK\u3002',
+		also_heading: '中身の話',
+		extra_theme_title: 'ダーク & ライト',
+		extra_theme_desc: 'macOSの外観に自動追従。',
+		extra_search_title: '打って探す',
+		extra_search_desc: '「arrow」→ ← → ↑ ↓。即座に。',
+		extra_lang_title: '4言語対応',
+		extra_lang_desc: 'EN · RU · ES · JA — インターフェース全体。',
+		extra_light_title: '10MB未満',
+		extra_light_desc: 'Tauri製、Electronではない。ネイティブWebView。',
+		extra_private_title: '完全オフライン',
+		extra_private_desc: 'アカウント不要。クラウドなし。トラッキングなし。',
+		extra_login_title: 'ログイン時起動',
+		extra_login_desc: '静かに起動。いつでも準備OK。',
 
-		download_heading: '\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9',
-		download_desc: '\u7121\u6599\u30FB\u30AA\u30FC\u30D7\u30F3\u30BD\u30FC\u30B9\u3002',
+		download_heading: 'ダウンロード',
+		download_desc: '無料・オープンソース。',
 		download_macos: 'macOS',
 		download_windows: 'Windows',
-		download_macos_req: 'macOS 15\u4EE5\u964D',
-		download_windows_req: 'Windows 10\u4EE5\u964D',
+		download_macos_req: 'macOS 15以降',
+		download_windows_req: 'Windows 10以降',
 		dl_universal: 'Universal',
 		dl_universal_desc: 'Apple Silicon + Intel',
 		dl_arm: 'Apple Silicon',
-		dl_arm_desc: 'M\u30B7\u30EA\u30FC\u30BA',
+		dl_arm_desc: 'Mシリーズ',
 		dl_intel: 'Intel',
 		dl_intel_desc: 'x86_64',
-		dl_win_x64_desc: '\u307B\u3068\u3093\u3069\u306EPC',
+		dl_win_x64_desc: 'ほとんどのPC',
 		dl_win_arm_desc: 'Snapdragon / Copilot+ PC',
-		dl_win_msi: '.msi \u30A4\u30F3\u30B9\u30C8\u30FC\u30E9\u30FC',
-		dl_win_exe: '.exe \u30DD\u30FC\u30BF\u30D6\u30EB',
+		dl_win_msi: '.msi インストーラー',
+		dl_win_exe: '.exe ポータブル',
 
-		support_heading: '\u6C17\u306B\u5165\u3063\u305F\uFF1F\u5FDC\u63F4\u3057\u3088\u3046\u3002',
-		support_desc:
-			'\u7121\u6599\u30FB\u30AA\u30FC\u30D7\u30F3\u30BD\u30FC\u30B9\u3002\u4E00\u56DE\u3067\u3082\u30B0\u30B0\u308B\u624B\u9593\u304C\u6E1B\u3063\u305F\u3089\u2014\u2014\u30B3\u30FC\u30D2\u30FC\u3092\u304A\u3054\u3063\u3066\u304F\u3060\u3055\u3044\u3002',
-		buy_coffee: '\u30B3\u30FC\u30D2\u30FC\u3092\u304A\u3054\u308B',
-		sponsor_gh: 'GitHub\u3067\u30B9\u30DD\u30F3\u30B5\u30FC',
-		footer_built: 'Tauri\u3068React\u3067\u69CB\u7BC9'
+		support_heading: '気に入った？応援しよう。',
+		support_desc: '無料・オープンソース。一回でもググる手間が減ったら——コーヒーをおごってください。',
+		buy_coffee: 'コーヒーをおごる',
+		sponsor_gh: 'GitHubでスポンサー',
+		footer_built: 'TauriとReactで構築',
+
+		privacy_back: '← 戻る',
+		privacy_title: 'プライバシーポリシー',
+		privacy_short: 'Hot Symbolsは何も収集しません。ゼロです。',
+		privacy_short_label: '要約:',
+		privacy_no_data_title: 'データ収集なし',
+		privacy_no_data_desc:
+			'Hot Symbolsは個人データや利用情報を収集・保存・処理・送信しません。アプリは完全にお使いのデバイス上で動作します。',
+		privacy_no_analytics_title: 'アナリティクスなし',
+		privacy_no_analytics_desc:
+			'アナリティクス、テレメトリー、クラッシュレポーター、トラッキングは一切ありません。ユーザー数も把握していません。',
+		privacy_no_network_title: 'ネットワークリクエストなし',
+		privacy_no_network_desc:
+			'アプリは完全にオフラインで動作します。インターネットに接続しません。API、サーバー、クラウド同期はありません。',
+		privacy_no_accounts_title: 'アカウント不要',
+		privacy_no_accounts_desc: 'サインアップ、ログイン、メールアドレスは不要です。ダウンロードして使うだけ。',
+		privacy_local_title: 'ローカル保存のみ',
+		privacy_local_desc:
+			'設定（テーマ、言語、カテゴリ）はお使いのマシンにローカル保存されます。デバイスの外に出ることはありません。',
+		privacy_third_title: 'サードパーティ',
+		privacy_third_desc: 'ありません。SDK、埋め込みサービス、外部コードは一切ありません。',
+		privacy_updated: '最終更新: 2026年3月'
 	}
 };
 

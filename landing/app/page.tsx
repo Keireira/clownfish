@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { t, LOCALES, type Locale } from './i18n';
+import { t, LOCALES, useLocale } from './i18n';
 
 /* ── Intersection Observer hook ── */
 function useInView(threshold = 0.15) {
@@ -176,7 +176,7 @@ const WindowsIcon = ({ className }: { className?: string }) => (
 );
 
 export default function Home() {
-	const [locale, setLocale] = useState<Locale>('en');
+	const [locale, setLocale] = useLocale();
 	const [dlPlatform, setDlPlatform] = useState<'macos' | 'windows'>('macos');
 	const _ = (key: string) => t(locale, key);
 
@@ -727,8 +727,11 @@ export default function Home() {
 
 			{/* ── Footer ── */}
 			<footer className="border-t border-border px-6 py-8">
-				<div className="mx-auto max-w-5xl text-center">
+				<div className="mx-auto flex max-w-5xl items-center justify-between">
 					<span className="text-sm text-text-muted">{_('footer_built')}</span>
+					<a href="/privacy" className="text-sm text-text-muted transition hover:text-text-primary">
+						Privacy
+					</a>
 				</div>
 			</footer>
 		</main>

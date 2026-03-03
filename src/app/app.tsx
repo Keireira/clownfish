@@ -81,7 +81,8 @@ export default function App() {
 		if (!el) return;
 
 		const ro = new ResizeObserver(() => {
-			const height = Math.min(el.scrollHeight, MAX_HEIGHT);
+			const border = el.offsetHeight - el.clientHeight;
+			const height = Math.min(el.scrollHeight + border, MAX_HEIGHT);
 			if (Math.abs(height - lastHeight.current) < 2) return;
 			lastHeight.current = height;
 			import('@tauri-apps/api/window')

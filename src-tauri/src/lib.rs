@@ -131,7 +131,7 @@ pub fn run() {
                     Effect::Acrylic,
                 ])
                 .state(EffectState::Active)
-                .radius(12.0)
+                .radius(14.0)
                 .build();
 
             // Create the main window (hidden by default)
@@ -188,7 +188,18 @@ pub fn run() {
 
                                 let window_width = 420.0_f64;
                                 let x = tray_pos.x - (window_width / 2.0) + (tray_size.width / 2.0);
-                                let y = tray_pos.y + tray_size.height;
+
+                                // macOS: menu bar at top -> open below tray
+                                // Windows: taskbar at bottom -> open above tray
+                                let y = if cfg!(target_os = "macos") {
+                                    tray_pos.y + tray_size.height
+                                } else {
+                                    let win_h = window
+                                        .outer_size()
+                                        .map(|s| s.to_logical::<f64>(scale).height)
+                                        .unwrap_or(520.0);
+                                    tray_pos.y - win_h
+                                };
 
                                 // Record open time so blur handler won't immediately hide
                                 LAST_OPEN.store(now_ms(), Ordering::Relaxed);
