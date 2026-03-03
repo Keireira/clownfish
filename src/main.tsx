@@ -59,7 +59,11 @@ const label = (window as any).__TAURI_INTERNALS__?.metadata?.currentWindow?.labe
 if (label === 'settings') {
 	import('./settings')
 		.then(({ default: Settings }) => {
-			root.render(<Settings />);
+			root.render(
+				<ErrorBoundary>
+					<Settings />
+				</ErrorBoundary>
+			);
 		})
 		.catch((e) => {
 			root.render(<div style={{ color: 'red', padding: 16 }}>Settings load error: {String(e)}</div>);

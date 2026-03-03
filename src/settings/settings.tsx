@@ -14,7 +14,9 @@ import Root, {
 	BtnSecondary,
 	SettingsGroup,
 	SettingsRow,
-	SettingsRowLabel
+	SettingsRowLabel,
+	Footer,
+	Copyright
 } from './settings.styles';
 import { loadCategories, saveCategories, resetCategories, DEFAULT_CATEGORIES } from '../store';
 import CategoryList from '../components/category-list';
@@ -23,6 +25,7 @@ import PresetPicker from '../components/preset-picker';
 import ThemePicker from '../components/theme-picker';
 import LanguagePicker from '../components/language-picker';
 import AutostartToggle from '../components/autostart-toggle';
+import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
 import type { Category, CharEntry } from '../types';
 
@@ -198,6 +201,19 @@ const Settings = () => {
 						</Main>
 					</Body>
 				)}
+
+				<Footer>
+					<BottomBar
+						right={
+							<Copyright onClick={() => openUrl('https://github.com/keireira')}>
+								&copy; Alena Dzhukich (2026)
+								<svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
+									<path d="M3.5 3a.5.5 0 0 0 0 1h3.793L2.146 9.146a.5.5 0 1 0 .708.708L8 4.707V8.5a.5.5 0 0 0 1 0v-5a.5.5 0 0 0-.5-.5h-5z" />
+								</svg>
+							</Copyright>
+						}
+					/>
+				</Footer>
 
 				{showPresets && selected && (
 					<PresetPicker

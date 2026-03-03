@@ -54,8 +54,12 @@ export function applyTheme(choice: ThemeChoice): void {
 
 function detectGlass(): void {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	if (!(window as any).__TAURI_INTERNALS__) return;
+	const tauri = (window as any).__TAURI_INTERNALS__;
+	if (!tauri) return;
 	const p = navigator.platform;
+	const label = tauri.metadata?.currentWindow?.label as string | undefined;
+	// Settings is a normal decorated window — no transparent background
+	if (label === 'settings') return;
 	if (p.startsWith('Mac') || p.startsWith('Win')) {
 		document.documentElement.classList.add('glass');
 	}
