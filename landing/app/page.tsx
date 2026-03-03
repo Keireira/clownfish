@@ -102,7 +102,7 @@ export default function Home() {
 			</nav>
 
 			{/* ── Hero ── */}
-			<section className="relative flex flex-col items-center justify-center px-6 pt-32 pb-20 md:pt-44 md:pb-28">
+			<section className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-28 pb-16 md:pt-36 md:pb-20">
 				<div className="hero-blob pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-accent/[0.07] blur-[120px]" />
 
 				{/* badge */}
@@ -150,7 +150,7 @@ export default function Home() {
 				</Reveal>
 
 				{/* ── App Mockup ── */}
-				<Reveal animation="anim-fade-scale" delay="delay-5" className="relative mt-16 w-full max-w-sm">
+				<Reveal animation="anim-fade-scale" delay="delay-5" className="relative mt-10 w-full max-w-sm">
 					<div className="glass glow rounded-2xl p-4">
 						{/* title bar dots */}
 						<div className="mb-3 flex gap-1.5">
@@ -404,7 +404,7 @@ export default function Home() {
 						<p className="mb-4 text-center text-xs text-text-muted">{_('download_macos_req')}</p>
 						<div className="grid gap-4 sm:grid-cols-3">
 							<a
-								href="#"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-universal.dmg"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
 								<AppleIcon className="text-text-muted transition group-hover:text-accent" />
@@ -412,7 +412,7 @@ export default function Home() {
 								<span className="text-xs text-text-muted">{_('dl_universal_desc')}</span>
 							</a>
 							<a
-								href="#"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-apple-silicon.dmg"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
 								<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -424,7 +424,7 @@ export default function Home() {
 								<span className="text-xs text-text-muted">{_('dl_arm_desc')}</span>
 							</a>
 							<a
-								href="#"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-intel.dmg"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
 								<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -448,11 +448,11 @@ export default function Home() {
 								<h3 className="mb-1 text-center text-sm font-semibold">x86_64</h3>
 								<p className="mb-4 text-center text-xs text-text-muted">{_('dl_win_x64_desc')}</p>
 								<div className="flex flex-col gap-2">
-									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+									<a href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.msi" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
 										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
 										{_('dl_win_msi')}
 									</a>
-									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+									<a href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-x64.exe" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
 										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
 										{_('dl_win_exe')}
 									</a>
@@ -463,11 +463,11 @@ export default function Home() {
 								<h3 className="mb-1 text-center text-sm font-semibold">ARM64</h3>
 								<p className="mb-4 text-center text-xs text-text-muted">{_('dl_win_arm_desc')}</p>
 								<div className="flex flex-col gap-2">
-									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+									<a href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.msi" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
 										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
 										{_('dl_win_msi')}
 									</a>
-									<a href="#" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
+									<a href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-arm64.exe" className="card-hover group flex items-center justify-center gap-2 rounded-xl border border-border bg-bg p-3 text-sm font-medium transition">
 										<WindowsIcon className="text-text-muted transition group-hover:text-accent" />
 										{_('dl_win_exe')}
 									</a>

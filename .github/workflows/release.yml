@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-macos:
+    uses: ./.github/workflows/build-macos.yml
+    secrets: inherit
+
+  build-windows:
+    uses: ./.github/workflows/build-windows.yml
+    secrets: inherit
+
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Rename to stable filenames
+        run: |
+          mkdir release
+
+          cp artifacts/macos-universal/*.dmg release/Hot-Symbols-universal.dmg
+          cp artifacts/macos-apple-silicon/*.dmg release/Hot-Symbols-apple-silicon.dmg
+          cp artifacts/macos-intel/*.dmg release/Hot-Symbols-intel.dmg
+
+          cp artifacts/windows-x86_64/*.msi release/Hot-Symbols-x64.msi
+          cp artifacts/windows-x86_64/*.exe release/Hot-Symbols-x64.exe
+
+          cp artifacts/windows-arm64/*.msi release/Hot-Symbols-arm64.msi
+          cp artifacts/windows-arm64/*.exe release/Hot-Symbols-arm64.exe
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
