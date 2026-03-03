@@ -48,18 +48,3 @@ pnpm tauri build --bundles app
 ```
 
 Then submit via Transporter or `xcrun altool`.
-
-## Project structure
-
-```
-├── src/              # React frontend (TypeScript)
-├── src-tauri/        # Tauri/Rust backend
-│   ├── src/
-│   │   ├── lib.rs    # App setup, tray, windows
-│   │   └── main.rs   # Entry point
-│   ├── Cargo.toml
-│   ├── tauri.conf.json
-│   └── Entitlements.plist
-├── index.html
-└── package.json
-```

@@ -245,6 +245,21 @@ export default function Settings() {
     }
   };
 
+  const handleReorderCategory = (fromIdx: number, toIdx: number) => {
+    const newCats = [...categories];
+    const [moved] = newCats.splice(fromIdx, 1);
+    newCats.splice(toIdx, 0, moved);
+    update(newCats);
+    // Follow the moved category if it was selected
+    if (selectedIdx === fromIdx) {
+      setSelectedIdx(toIdx);
+    } else if (selectedIdx > fromIdx && selectedIdx <= toIdx) {
+      setSelectedIdx(selectedIdx - 1);
+    } else if (selectedIdx < fromIdx && selectedIdx >= toIdx) {
+      setSelectedIdx(selectedIdx + 1);
+    }
+  };
+
   const handleUpdateCategory = (idx: number, updatedCat: Category) => {
     const newCats = categories.map((c, i) => (i === idx ? updatedCat : c));
     update(newCats);
@@ -307,6 +322,7 @@ export default function Settings() {
               onSelect={setSelectedIdx}
               onDelete={handleDeleteCategory}
               onAdd={handleAddCategory}
+              onReorder={handleReorderCategory}
             />
 
             <Main>
