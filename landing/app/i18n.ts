@@ -16,8 +16,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		nav_support: 'Donate',
 
 		// Hero
-		tagline: 'Unicode without the googling.',
-		subtitle: '200+ symbols in your menu bar. Click one — it\'s copied.',
+		tagline: 'Gaslight everyone into thinking you use AI for texts.',
+		subtitle: '\u2318 \u2192 \u00B1 \u221E \u00A9 and more from your menu bar. Click \u2014 and it\'s copied.',
 		download_cta: 'Download for macOS',
 		search_placeholder: 'Search symbols\u2026',
 
@@ -31,7 +31,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		how_step3_desc: 'One click, it\'s on your clipboard. Paste anywhere.',
 
 		// Features
-		feat_instant_title: 'Menu bar native',
+		feat_instant_title: 'Lives in menu bar',
 		feat_instant_desc: 'No dock icon. No window juggling. Click, grab, gone.',
 		feat_symbols_title: '11 categories',
 		feat_symbols_desc: 'Typography \u2022 Arrows \u2022 Math \u2022 Currency \u2022 Greek \u2022 Stars \u2022 Sub/Super \u2022 Box Drawing \u2022 Latin \u2022 Keys',
@@ -96,7 +96,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		support_desc: 'Free and open source. If it saves you even one google search \u2014 consider buying me a coffee.',
 		buy_coffee: 'Buy Me a Coffee',
 		sponsor_gh: 'Sponsor on GitHub',
-		footer_built: 'Built with Tauri & React \u00B7 Open Source',
+		footer_built: 'Built with Tauri & React',
 	},
 	ru: {
 		nav_features: '\u0424\u0438\u0447\u0438',
@@ -104,25 +104,25 @@ const translations: Record<Locale, Record<string, string>> = {
 		nav_download: '\u0421\u043A\u0430\u0447\u0430\u0442\u044C',
 		nav_support: '\u0414\u043E\u043D\u0430\u0442',
 
-		tagline: '\u042E\u043D\u0438\u043A\u043E\u0434 \u0431\u0435\u0437 \u0433\u0443\u0433\u043B\u0435\u043D\u0438\u044F.',
-		subtitle: '200+ \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 \u0432 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0435. \u041A\u043B\u0438\u043A \u2014 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E.',
+		tagline: '\u0417\u0430\u0433\u0430\u0437\u043B\u0430\u0439\u0442\u044C \u0432\u0441\u0435\u0445, \u0447\u0442\u043E \u0442\u044B \u043F\u0438\u0448\u0435\u0448\u044C \u0438\u043C \u0441 AI.',
+		subtitle: '\u2318 \u2192 \u00B1 \u221E \u00A9 \u0438 \u043D\u0435 \u0442\u043E\u043B\u044C\u043A\u043E \u2014 \u0438\u0437 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0430. \u041A\u043B\u0438\u043A \u2014 \u0438 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E.',
 		download_cta: '\u0421\u043A\u0430\u0447\u0430\u0442\u044C \u0434\u043B\u044F macOS',
 		search_placeholder: '\u041F\u043E\u0438\u0441\u043A \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432\u2026',
 
 		how_heading: '\u041A\u0430\u043A \u044D\u0442\u043E \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442',
 		how_step1_title: '\u041A\u043B\u0438\u043A \u0432 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0435',
-		how_step1_desc: '\u0416\u0438\u0432\u0451\u0442 \u043D\u0430\u0432\u0435\u0440\u0445\u0443. \u0411\u0435\u0437 \u0438\u043A\u043E\u043D\u043A\u0438 \u0432 Dock, \u0431\u0435\u0437 \u043E\u043A\u043E\u043D.',
+		how_step1_desc: '\u0416\u0438\u0432\u0451\u0442 \u043D\u0430\u0432\u0435\u0440\u0445\u0443. \u0411\u0435\u0437 \u0438\u043A\u043E\u043D\u043A\u0438 \u0432 \u0434\u043E\u043A\u0435, \u0431\u0435\u0437 \u043E\u043A\u043E\u043D.',
 		how_step2_title: '\u041D\u0430\u0439\u0434\u0438',
 		how_step2_desc: '11 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0439 \u0438\u043B\u0438 \u043F\u043E\u0438\u0441\u043A. \u03C0 = \u00ABpi\u00BB.',
 		how_step3_title: '\u041A\u043B\u0438\u043A \u2192 \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E',
 		how_step3_desc: '\u041E\u0434\u0438\u043D \u043A\u043B\u0438\u043A \u2014 \u0432 \u0431\u0443\u0444\u0435\u0440\u0435. \u0412\u0441\u0442\u0430\u0432\u043B\u044F\u0439 \u043A\u0443\u0434\u0430 \u0445\u043E\u0447\u0435\u0448\u044C.',
 
 		feat_instant_title: '\u0412 \u043C\u0435\u043D\u044E-\u0431\u0430\u0440\u0435',
-		feat_instant_desc: '\u0411\u0435\u0437 Dock, \u0431\u0435\u0437 \u043E\u043A\u043E\u043D. \u041A\u043B\u0438\u043A, \u0432\u0437\u044F\u043B, \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0448\u044C.',
+		feat_instant_desc: '\u0411\u0435\u0437 \u0434\u043E\u043A\u0430, \u0431\u0435\u0437 \u043E\u043A\u043E\u043D. \u041A\u043B\u0438\u043A\u043D\u0443\u043B, \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043B, \u0432\u0441\u0442\u0430\u0432\u0438\u043B.',
 		feat_symbols_title: '11 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0439',
 		feat_symbols_desc: '\u0422\u0438\u043F\u043E\u0433\u0440\u0430\u0444\u0438\u043A\u0430 \u2022 \u0421\u0442\u0440\u0435\u043B\u043A\u0438 \u2022 \u041C\u0430\u0442\u0435\u043C\u0430\u0442\u0438\u043A\u0430 \u2022 \u0412\u0430\u043B\u044E\u0442\u044B \u2022 \u0413\u0440\u0435\u0447\u0435\u0441\u043A\u0438\u0439 \u2022 \u0424\u043E\u0440\u043C\u044B \u2022 \u0418\u043D\u0434\u0435\u043A\u0441\u044B \u2022 \u0420\u0430\u043C\u043A\u0438 \u2022 \u041B\u0430\u0442\u0438\u043D\u0438\u0446\u0430 \u2022 \u041A\u043B\u0430\u0432\u0438\u0448\u0438',
 		feat_custom_title: '\u041F\u043E\u0434 \u0441\u0435\u0431\u044F',
-		feat_custom_desc: '\u0421\u0432\u043E\u0438 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0438, \u043F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u043D\u0438\u0435, \u043B\u044E\u0431\u044B\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B.',
+		feat_custom_desc: '\u0421\u0432\u043E\u0438 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u0438, DnD, \u043B\u044E\u0431\u044B\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B.',
 
 		showcase_heading: '\u0427\u0442\u043E \u0432\u043D\u0443\u0442\u0440\u0438',
 		typo_cat: '\u0422\u0438\u043F\u043E\u0433\u0440\u0430\u0444\u0438\u043A\u0430',
@@ -177,7 +177,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		support_desc: '\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u043E \u0438 \u043E\u043F\u0435\u043D \u0441\u043E\u0440\u0441. \u0415\u0441\u043B\u0438 \u0441\u044D\u043A\u043E\u043D\u043E\u043C\u0438\u043B\u043E \u0445\u043E\u0442\u044F \u0431\u044B \u043E\u0434\u0438\u043D \u0433\u0443\u0433\u043B \u2014 \u043A\u0443\u043F\u0438 \u043A\u043E\u0444\u0435.',
 		buy_coffee: '\u041A\u0443\u043F\u0438\u0442\u044C \u043A\u043E\u0444\u0435',
 		sponsor_gh: '\u0421\u043F\u043E\u043D\u0441\u043E\u0440 \u043D\u0430 GitHub',
-		footer_built: '\u0421\u0434\u0435\u043B\u0430\u043D\u043E \u043D\u0430 Tauri \u0438 React \u00B7 Open Source',
+		footer_built: '\u0421\u0434\u0435\u043B\u0430\u043D\u043E \u043D\u0430 Tauri \u0438 React',
 	},
 	es: {
 		nav_features: 'Funciones',
@@ -185,8 +185,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		nav_download: 'Descargar',
 		nav_support: 'Donar',
 
-		tagline: 'Unicode sin googlearlo.',
-		subtitle: '200+ s\u00EDmbolos en tu barra de men\u00FA. Un clic \u2014 copiado.',
+		tagline: 'Gaslight a todos de que escribes con IA.',
+		subtitle: '\u2318 \u2192 \u00B1 \u221E \u00A9 y m\u00E1s desde tu barra de men\u00FA. Clic \u2014 y copiado.',
 		download_cta: 'Descargar para macOS',
 		search_placeholder: 'Buscar s\u00EDmbolos\u2026',
 
@@ -203,7 +203,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		feat_symbols_title: '11 categor\u00EDas',
 		feat_symbols_desc: 'Tipograf\u00EDa \u2022 Flechas \u2022 Matem\u00E1ticas \u2022 Monedas \u2022 Griego \u2022 Formas \u2022 \u00CDndices \u2022 Diagramas \u2022 Lat\u00EDn \u2022 Teclas',
 		feat_custom_title: 'A tu medida',
-		feat_custom_desc: 'Crea categor\u00EDas, arrastra para reordenar, a\u00F1ade tus s\u00EDmbolos.',
+		feat_custom_desc: 'Tus categor\u00EDas, DnD, cualquier s\u00EDmbolo.',
 
 		showcase_heading: 'Qu\u00E9 incluye',
 		typo_cat: 'Tipograf\u00EDa',
@@ -258,16 +258,16 @@ const translations: Record<Locale, Record<string, string>> = {
 		support_desc: 'Gratuito y abierto. Si te ahorr\u00F3 un solo google \u2014 inv\u00EDtame un caf\u00E9.',
 		buy_coffee: 'Inv\u00EDtame un caf\u00E9',
 		sponsor_gh: 'Patrocinar en GitHub',
-		footer_built: 'Hecho con Tauri y React \u00B7 Open Source',
+		footer_built: 'Hecho con Tauri y React',
 	},
 	ja: {
 		nav_features: '\u6A5F\u80FD',
 		nav_symbols: '\u30B7\u30F3\u30DC\u30EB',
 		nav_download: '\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9',
-		nav_support: '\u5BFF\u4ED8',
+		nav_support: '\u5BC4\u4ED8',
 
-		tagline: '\u30B0\u30B0\u3089\u306A\u3044Unicode\u3002',
-		subtitle: '\u30E1\u30CB\u30E5\u30FC\u30D0\u30FC\u306B200+\u8A18\u53F7\u3002\u30AF\u30EA\u30C3\u30AF\u3067\u30B3\u30D4\u30FC\u3002',
+		tagline: 'AI\u3067\u66F8\u3044\u3066\u308B\u3068\u307F\u3093\u306A\u306B\u601D\u308F\u305B\u3088\u3046\u3002',
+		subtitle: '\u2318 \u2192 \u00B1 \u221E \u00A9 \u306A\u3069\u30E1\u30CB\u30E5\u30FC\u30D0\u30FC\u304B\u3089\u3002\u30AF\u30EA\u30C3\u30AF\u3067\u30B3\u30D4\u30FC\u3002',
 		download_cta: 'macOS\u7248\u3092\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9',
 		search_placeholder: '\u30B7\u30F3\u30DC\u30EB\u3092\u691C\u7D22\u2026',
 
@@ -284,7 +284,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		feat_symbols_title: '11\u30AB\u30C6\u30B4\u30EA',
 		feat_symbols_desc: '\u30BF\u30A4\u30DD \u2022 \u77E2\u5370 \u2022 \u6570\u5B66 \u2022 \u901A\u8CA8 \u2022 \u30AE\u30EA\u30B7\u30E3 \u2022 \u56F3\u5F62 \u2022 \u4E0A\u4E0B\u4ED8\u304D \u2022 \u7F6B\u7DDA \u2022 \u30E9\u30C6\u30F3 \u2022 \u30AD\u30FC',
 		feat_custom_title: '\u81EA\u7531\u306B\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA',
-		feat_custom_desc: '\u30AB\u30C6\u30B4\u30EA\u4F5C\u6210\u3001\u30C9\u30E9\u30C3\u30B0\u3067\u4E26\u3079\u66FF\u3048\u3001\u81EA\u5206\u306E\u30B7\u30F3\u30DC\u30EB\u3092\u8FFD\u52A0\u3002',
+		feat_custom_desc: '\u30AB\u30C6\u30B4\u30EA\u4F5C\u6210\u3001DnD\u3001\u597D\u304D\u306A\u30B7\u30F3\u30DC\u30EB\u3092\u8FFD\u52A0\u3002',
 
 		showcase_heading: '\u53CE\u9332\u5185\u5BB9',
 		typo_cat: '\u30BF\u30A4\u30DD\u30B0\u30E9\u30D5\u30A3',
@@ -339,7 +339,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		support_desc: '\u7121\u6599\u30FB\u30AA\u30FC\u30D7\u30F3\u30BD\u30FC\u30B9\u3002\u4E00\u56DE\u3067\u3082\u30B0\u30B0\u308B\u624B\u9593\u304C\u6E1B\u3063\u305F\u3089\u2014\u2014\u30B3\u30FC\u30D2\u30FC\u3092\u304A\u3054\u3063\u3066\u304F\u3060\u3055\u3044\u3002',
 		buy_coffee: '\u30B3\u30FC\u30D2\u30FC\u3092\u304A\u3054\u308B',
 		sponsor_gh: 'GitHub\u3067\u30B9\u30DD\u30F3\u30B5\u30FC',
-		footer_built: 'Tauri\u3068React\u3067\u69CB\u7BC9 \u00B7 Open Source',
+		footer_built: 'Tauri\u3068React\u3067\u69CB\u7BC9',
 	},
 };
 

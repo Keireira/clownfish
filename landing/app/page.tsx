@@ -70,7 +70,14 @@ export default function Home() {
 	const _ = (key: string) => t(locale, key);
 
 	return (
-		<main className="min-h-screen overflow-x-hidden">
+		<main className="relative min-h-screen overflow-x-hidden">
+			{/* ── Background blobs ── */}
+			<div className="fixed inset-0 -z-10 overflow-hidden">
+				<div className="blob blob-1 top-[10%] left-[15%] h-[500px] w-[500px] bg-accent/[0.05]" />
+				<div className="blob blob-2 top-[40%] right-[10%] h-[400px] w-[400px] bg-hot/[0.04]" />
+				<div className="blob blob-3 top-[70%] left-[50%] h-[600px] w-[600px] bg-[#a87cff]/[0.04]" />
+			</div>
+
 			{/* ── Navbar ── */}
 			<nav className="nav-glass fixed top-0 left-0 right-0 z-50">
 				<div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
@@ -218,7 +225,11 @@ export default function Home() {
 									{step.icon}
 								</div>
 								<h3 className="mb-2 text-sm font-semibold">{_(step.title)}</h3>
-								<p className="text-sm leading-relaxed text-text-secondary">{_(step.desc)}</p>
+								<p className="text-sm leading-relaxed text-text-secondary">
+									{_(step.desc).split('. ').map((s, i, arr) => (
+										<span key={i}>{s}{i < arr.length - 1 ? '.' : ''}{i < arr.length - 1 && <br />}</span>
+									))}
+								</p>
 							</div>
 						</Reveal>
 					))}
@@ -271,7 +282,15 @@ export default function Home() {
 									{f.icon}
 								</div>
 								<h3 className="mb-2 text-lg font-semibold">{_(f.title)}</h3>
-								<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
+								{f.title === 'feat_symbols_title' ? (
+									<div className="flex flex-wrap gap-1.5">
+										{_(f.desc).split(' \u2022 ').map((cat) => (
+											<span key={cat} className="rounded-md border border-border bg-white/[0.03] px-2 py-0.5 text-xs text-text-secondary">{cat}</span>
+										))}
+									</div>
+								) : (
+									<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
+								)}
 							</div>
 						</Reveal>
 					))}
@@ -404,12 +423,15 @@ export default function Home() {
 						<p className="mb-4 text-center text-xs text-text-muted">{_('download_macos_req')}</p>
 						<div className="grid gap-4 sm:grid-cols-3">
 							<a
-								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-universal.dmg"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-intel.dmg"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
-								<AppleIcon className="text-text-muted transition group-hover:text-accent" />
-								<span className="text-sm font-semibold">{_('dl_universal')}</span>
-								<span className="text-xs text-text-muted">{_('dl_universal_desc')}</span>
+								<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+									<rect x="6" y="6" width="12" height="12" rx="2" />
+									<path d="M6 9h-2M6 12h-2M6 15h-2M18 9h2M18 12h2M18 15h2M9 6v-2M12 6v-2M15 6v-2M9 18v2M12 18v2M15 18v2" />
+								</svg>
+								<span className="text-sm font-semibold">{_('dl_intel')}</span>
+								<span className="text-xs text-text-muted">{_('dl_intel_desc')}</span>
 							</a>
 							<a
 								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-apple-silicon.dmg"
@@ -424,15 +446,12 @@ export default function Home() {
 								<span className="text-xs text-text-muted">{_('dl_arm_desc')}</span>
 							</a>
 							<a
-								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-intel.dmg"
+								href="https://github.com/Keireira/clownfish/releases/latest/download/Hot-Symbols-universal.dmg"
 								className="card-hover group flex flex-col items-center gap-3 rounded-2xl border border-border bg-bg-card p-6"
 							>
-								<svg className="text-text-muted transition group-hover:text-accent" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<rect x="6" y="6" width="12" height="12" rx="2" />
-									<path d="M6 9h-2M6 12h-2M6 15h-2M18 9h2M18 12h2M18 15h2M9 6v-2M12 6v-2M15 6v-2M9 18v2M12 18v2M15 18v2" />
-								</svg>
-								<span className="text-sm font-semibold">{_('dl_intel')}</span>
-								<span className="text-xs text-text-muted">{_('dl_intel_desc')}</span>
+								<AppleIcon className="text-text-muted transition group-hover:text-accent" />
+								<span className="text-sm font-semibold">{_('dl_universal')}</span>
+								<span className="text-xs text-text-muted">{_('dl_universal_desc')}</span>
 							</a>
 						</div>
 					</Reveal>
@@ -532,16 +551,8 @@ export default function Home() {
 
 			{/* ── Footer ── */}
 			<footer className="border-t border-border px-6 py-8">
-				<div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
+				<div className="mx-auto max-w-5xl text-center">
 					<span className="text-sm text-text-muted">{_('footer_built')}</span>
-					<a
-						href="https://github.com"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-sm text-text-secondary transition hover:text-text-primary"
-					>
-						GitHub &rarr;
-					</a>
 				</div>
 			</footer>
 		</main>
