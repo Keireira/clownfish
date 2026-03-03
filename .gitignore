@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# Tauri
+src-tauri/target/
+
+# macOS
+.DS_Store
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# local env files
+.env*.local
+
+# signing keys
+*.pem
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Claude Code
+.claude
