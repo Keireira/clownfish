@@ -23,6 +23,8 @@ export const GridArea = styled.div`
 	flex: 1;
 	overflow-y: auto;
 	min-height: 0;
+	margin: 0 -8px;
+	padding: 0 8px;
 
 	&::-webkit-scrollbar {
 		width: 6px;

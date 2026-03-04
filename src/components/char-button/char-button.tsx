@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import Root from './char-button.styles';
+import { useCharPreview } from '../char-preview';
 import { t } from '../../i18n';
 
 import { displayChar } from '../../types';
@@ -9,6 +10,7 @@ import type { Props } from './char-button.d';
 const CharButton = ({ char, name, onCopy }: Props) => {
 	const [copied, setCopied] = useState(false);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const { show, hide } = useCharPreview();
 
 	const handleClick = async () => {
 		try {
@@ -22,8 +24,19 @@ const CharButton = ({ char, name, onCopy }: Props) => {
 		}
 	};
 
+	const handleMouseEnter = useCallback(
+		(e: React.MouseEvent<HTMLButtonElement>) => {
+			show(char, name, e.currentTarget.getBoundingClientRect());
+		},
+		[char, name, show]
+	);
+
+	const handleMouseLeave = useCallback(() => {
+		hide();
+	}, [hide]);
+
 	return (
-		<Root $copied={copied} title={`${char} ${name}`} onClick={handleClick}>
+		<Root $copied={copied} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
 			{displayChar(char)}
 		</Root>
 	);

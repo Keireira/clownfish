@@ -22,6 +22,17 @@ export const SettingsGlobalStyle = createGlobalStyle`
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 	}
+
+	::-webkit-scrollbar {
+		width: 6px;
+	}
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: 3px;
+	}
 `;
 
 export const GlassOverrides = createGlobalStyle`

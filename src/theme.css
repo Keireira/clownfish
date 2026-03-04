@@ -61,7 +61,10 @@
   --sidebar-bg: rgba(255, 255, 255, 0.03);
 
   /* Grouped settings cards */
-  --card-bg: var(--fill-subtle);
+  --card-bg: rgba(255, 255, 255, 0.07);
+
+  /* Tooltip */
+  --tooltip-bg: #2a2a2e;
 
   /* Segmented control */
   --segmented-bg: var(--fill);
@@ -131,7 +134,10 @@
   --sidebar-bg: rgba(0, 0, 0, 0.03);
 
   /* Grouped settings cards */
-  --card-bg: var(--fill-subtle);
+  --card-bg: rgba(0, 0, 0, 0.05);
+
+  /* Tooltip */
+  --tooltip-bg: #ffffff;
 
   /* Segmented control */
   --segmented-bg: var(--fill);
@@ -143,7 +149,7 @@
   --bg-solid: transparent;
   --bg-elevated: rgba(40, 40, 46, 0.65);
   --sidebar-bg: rgba(255, 255, 255, 0.04);
-  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-bg: rgba(255, 255, 255, 0.08);
   --segmented-bg: rgba(255, 255, 255, 0.06);
   --segmented-active: rgba(255, 255, 255, 0.12);
   --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -153,7 +159,7 @@
   --bg-solid: transparent;
   --bg-elevated: rgba(255, 255, 255, 0.78);
   --sidebar-bg: rgba(255, 255, 255, 0.25);
-  --card-bg: rgba(255, 255, 255, 0.4);
+  --card-bg: rgba(255, 255, 255, 0.5);
   --segmented-bg: rgba(0, 0, 0, 0.06);
   --segmented-active: rgba(255, 255, 255, 0.7);
   --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
