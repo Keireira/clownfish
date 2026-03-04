@@ -389,6 +389,12 @@ unsafe fn run_win_hook() {
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
+    // Initialize COM (MTA) for UI Automation caret-position fallback.
+    {
+        use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+        let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+    }
+
     let hmod = GetModuleHandleW(std::ptr::null());
     let hook = SetWindowsHookExW(
         WH_KEYBOARD_LL,
@@ -993,10 +999,6 @@ fn resolve_lnk(path: &str) -> Option<String> {
 }
 
 // ---------------------------------------------------------------------------
-// Windows: caret position for hints placement
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
 // Running apps enumeration
 // ---------------------------------------------------------------------------
 
@@ -1150,10 +1152,23 @@ fn get_foreground_exe() -> Option<String> {
 // Windows: caret position for hints placement
 // ---------------------------------------------------------------------------
 
-/// Returns the screen-space caret (x, y) position of the foreground window,
-/// or `None` if unavailable.
+/// Returns the screen-space caret (x, y) position of the foreground window.
+///
+/// Tries two strategies in order:
+/// 1. **Win32 `GetGUIThreadInfo`** — fast, works for classic Win32 text controls
+///    (Notepad, WordPad, WPF, etc.).
+/// 2. **UI Automation `ITextPattern2::GetCaretRange`** — slower (COM cross-process),
+///    but works for Chrome, Firefox, Electron, UWP, and other accessibility-aware apps.
+///
+/// Returns `None` if neither method succeeds (hints fall back to corner mode).
 #[cfg(target_os = "windows")]
 pub fn get_caret_position() -> Option<(i32, i32)> {
+    get_caret_position_win32().or_else(get_caret_position_uia)
+}
+
+/// Fast path: Win32 `GetGUIThreadInfo` for classic text controls.
+#[cfg(target_os = "windows")]
+fn get_caret_position_win32() -> Option<(i32, i32)> {
     use windows_sys::Win32::Foundation::POINT;
     use windows_sys::Win32::Graphics::Gdi::ClientToScreen;
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
@@ -1176,8 +1191,7 @@ pub fn get_caret_position() -> Option<(i32, i32)> {
         }
 
         // If rcCaret is all zeros the app doesn't expose caret info
-        // (browsers, Electron apps, etc.). Return None so we fall back
-        // to corner positioning instead of showing at the window origin.
+        // (browsers, Electron apps, etc.) — fall through to UIA.
         let rc = &gui_info.rcCaret;
         if rc.left == 0 && rc.top == 0 && rc.right == 0 && rc.bottom == 0 {
             return None;
@@ -1200,6 +1214,81 @@ pub fn get_caret_position() -> Option<(i32, i32)> {
 
         Some((pt.x, pt.y))
     }
+}
+
+/// Slow path: UI Automation for browsers, Electron, UWP, and similar apps.
+///
+/// Uses a thread-local cached `IUIAutomation` instance to avoid repeated
+/// `CoCreateInstance` overhead.  The COM apartment is initialized as MTA
+/// in `run_win_hook`.
+#[cfg(target_os = "windows")]
+fn get_caret_position_uia() -> Option<(i32, i32)> {
+    use windows::Win32::System::Com::*;
+    use windows::Win32::UI::Accessibility::*;
+
+    thread_local! {
+        static UIA: Option<IUIAutomation> = unsafe {
+            CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL).ok()
+        };
+    }
+
+    UIA.with(|uia| {
+        let uia = uia.as_ref()?;
+
+        unsafe {
+            let element = uia.GetFocusedElement().ok()?;
+
+            // --- Strategy A: TextPattern2 → exact caret rectangle -----------
+            if let Ok(pattern) = element
+                .GetCurrentPatternAs::<IUIAutomationTextPattern2>(UIA_TextPattern2Id)
+            {
+                let mut is_active = windows::core::BOOL(0);
+                if let Ok(range) = pattern.GetCaretRange(&mut is_active) {
+                    if let Ok(rects_ptr) = range.GetBoundingRectangles() {
+                        let pos = parse_safearray_rect(rects_ptr);
+                        if !rects_ptr.is_null() {
+                            let _ = windows::Win32::System::Ole::SafeArrayDestroy(rects_ptr);
+                        }
+                        if pos.is_some() {
+                            return pos;
+                        }
+                    }
+                }
+            }
+
+            // --- Strategy B: focused element bounding rect (coarse) ---------
+            let rect = element.CurrentBoundingRectangle().ok()?;
+            if rect.right > rect.left && rect.bottom > rect.top {
+                Some((rect.left, rect.bottom))
+            } else {
+                None
+            }
+        }
+    })
+}
+
+/// Parses the first bounding rectangle from a SAFEARRAY of f64.
+///
+/// `GetBoundingRectangles` returns a 1-D SAFEARRAY of `VT_R8` (f64) with
+/// groups of 4: `[x, y, width, height, …]`.  We only need the first group
+/// to position the hints window below the caret.
+#[cfg(target_os = "windows")]
+unsafe fn parse_safearray_rect(
+    sa_ptr: *mut windows::Win32::System::Com::SAFEARRAY,
+) -> Option<(i32, i32)> {
+    if sa_ptr.is_null() {
+        return None;
+    }
+    let sa = &*sa_ptr;
+    let n = sa.rgsabound[0].cElements as usize;
+    if n < 4 || sa.pvData.is_null() {
+        return None;
+    }
+    let data = sa.pvData as *const f64;
+    let x = *data;
+    let y = *data.add(1);
+    let h = *data.add(3);
+    Some((x as i32, (y + h) as i32))
 }
 
 #[cfg(not(target_os = "windows"))]
