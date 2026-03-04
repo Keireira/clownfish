@@ -39,23 +39,24 @@ fn now_ms() -> u64 {
 }
 
 fn open_settings(app: &AppHandle) {
-    // Don't explicitly hide main — the blur handler already hides it
-    // when the settings window takes focus. Hiding early caused a blank
-    // screen if the settings webview was slow to initialise.
+    // Hide main (always-on-top) so it doesn't cover the settings window.
+    if let Some(main_win) = app.get_webview_window("main") {
+        let _ = main_win.hide();
+    }
 
     if let Some(win) = app.get_webview_window("settings") {
         let _ = win.show();
         let _ = win.set_focus();
     } else {
-        let mut builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+        // Settings is a plain decorated window — no transparency, no vibrancy.
+        // On Windows, Mica/Acrylic effects + WebView2 without transparent(true)
+        // cause a blank white screen, so we skip effects entirely.
+        let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
             .title("Hot Symbols Settings")
             .inner_size(660.0, 520.0)
             .min_inner_size(550.0, 400.0)
-            .center();
-        if let Some(icon) = app.default_window_icon().cloned() {
-            builder = builder.icon(icon).unwrap();
-        }
-        let _ = builder.build();
+            .center()
+            .build();
     }
 }
 
