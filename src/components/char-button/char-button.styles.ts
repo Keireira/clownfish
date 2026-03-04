@@ -6,7 +6,7 @@ export default styled.button<{ $copied?: boolean }>`
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid var(--border);
+	border: none;
 	border-radius: var(--radius-s);
 	background: ${(p) => (p.$copied ? 'var(--green-bg)' : 'var(--fill-medium)')};
 	color: ${(p) => (p.$copied ? 'var(--green)' : 'var(--text-primary)')};
@@ -14,14 +14,12 @@ export default styled.button<{ $copied?: boolean }>`
 	cursor: pointer;
 	transition:
 		background 0.15s,
-		transform 0.1s,
-		border-color 0.15s;
+		transform 0.1s;
 	position: relative;
 
 	&:hover {
 		background: var(--fill-active);
-		border-color: var(--border-hover);
-		transform: scale(1.05);
+		transform: scale(1.08);
 	}
 
 	&:active {

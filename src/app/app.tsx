@@ -3,6 +3,7 @@ import Root, { AppGlobalStyle, GridArea, NoResults, SettingsBtn } from './app.st
 import { CATEGORIES as DEFAULT_CATEGORIES } from '../data/characters';
 import SearchBar from '../components/search-bar';
 import Category from '../components/category';
+import CharPreview, { CharPreviewProvider } from '../components/char-preview';
 import Toast from '../components/toast';
 import BottomBar from '../components/bottom-bar';
 import { useLanguage, getLanguageChoice, applyLanguage } from '../i18n';
@@ -125,7 +126,7 @@ export default function App() {
 	};
 
 	return (
-		<>
+		<CharPreviewProvider>
 			<AppGlobalStyle />
 			<Root ref={appRef}>
 				<SearchBar value={query} onChange={setQuery} />
@@ -151,7 +152,8 @@ export default function App() {
 					}
 				/>
 				<Toast message={toast} />
+				<CharPreview />
 			</Root>
-		</>
+		</CharPreviewProvider>
 	);
 }

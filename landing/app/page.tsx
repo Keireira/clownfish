@@ -166,13 +166,6 @@ export default function Home() {
 
 	return (
 		<main className="relative min-h-screen overflow-x-hidden">
-			{/* ── Background blobs ── */}
-			<div className="fixed inset-0 -z-10 overflow-hidden">
-				<div className="blob blob-1 top-[10%] left-[15%] h-[500px] w-[500px] bg-accent/[0.05]" />
-				<div className="blob blob-2 top-[40%] right-[10%] h-[400px] w-[400px] bg-hot/[0.04]" />
-				<div className="blob blob-3 top-[70%] left-[50%] h-[600px] w-[600px] bg-[#a87cff]/[0.04]" />
-			</div>
-
 			{/* ── Navbar ── */}
 			<nav className="nav-glass fixed top-0 left-0 right-0 z-50">
 				<div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
@@ -433,10 +426,14 @@ export default function Home() {
 
 			{/* ── Features ── */}
 			<section id="features" className="mx-auto max-w-5xl px-6 py-20 md:py-28">
+				<Reveal>
+					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">{_('also_heading')}</h2>
+				</Reveal>
+
+				{/* Top: 3 feature cards with demos */}
 				<div className="grid gap-4 md:grid-cols-3">
 					<Reveal delay="delay-1">
 						<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
-							{/* mini menu bar mockup */}
 							<div className="mb-5 flex items-center gap-2 self-start rounded-lg border border-border bg-white/[0.03] px-3 py-1.5">
 								<span className="h-2 w-2 rounded-full bg-accent" />
 								<span className="text-[11px] font-medium text-text-primary">Hot Symbols</span>
@@ -449,7 +446,6 @@ export default function Home() {
 
 					<Reveal delay="delay-2">
 						<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
-							{/* mini category browser */}
 							<div className="mb-5 space-y-2">
 								{[
 									{ label: 'Typography', chars: ['—', '–', '…', '«', '»', '•', '°'] },
@@ -475,14 +471,13 @@ export default function Home() {
 							</div>
 							<h3 className="mb-1.5 text-base font-semibold">{_('feat_symbols_title')}</h3>
 							<p className="text-sm leading-relaxed text-text-secondary">
-								{_('feat_symbols_desc').split(' • ').slice(0, 4).join(', ')} & more
+								{_('feat_symbols_desc').split(' \u2022 ').slice(0, 4).join(', ')} & more
 							</p>
 						</div>
 					</Reveal>
 
 					<Reveal delay="delay-3">
 						<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
-							{/* drag reorder mockup */}
 							<div className="mb-5 space-y-1">
 								{[
 									{ name: 'Typography', n: 14, active: false },
@@ -505,6 +500,28 @@ export default function Home() {
 							<p className="text-sm leading-relaxed text-text-secondary">{_('feat_custom_desc')}</p>
 						</div>
 					</Reveal>
+				</div>
+
+				{/* Bottom: 6 detail cards */}
+				<div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					{[
+						{ icon: '🎨', title: 'extra_theme_title', desc: 'extra_theme_desc', delay: 'delay-1' },
+						{ icon: '🔍', title: 'extra_search_title', desc: 'extra_search_desc', delay: 'delay-2' },
+						{ icon: '🌍', title: 'extra_lang_title', desc: 'extra_lang_desc', delay: 'delay-3' },
+						{ icon: '⚡', title: 'extra_light_title', desc: 'extra_light_desc', delay: 'delay-4' },
+						{ icon: '🔒', title: 'extra_private_title', desc: 'extra_private_desc', delay: 'delay-5' },
+						{ icon: '🚀', title: 'extra_login_title', desc: 'extra_login_desc', delay: 'delay-6' }
+					].map((f) => (
+						<Reveal key={f.title} delay={f.delay}>
+							<div className="card-hover flex h-full items-start gap-3 rounded-xl border border-border bg-bg-card p-4">
+								<span className="mt-0.5 text-lg">{f.icon}</span>
+								<div>
+									<h3 className="mb-0.5 text-sm font-semibold">{_(f.title)}</h3>
+									<p className="text-xs leading-relaxed text-text-secondary">{_(f.desc)}</p>
+								</div>
+							</div>
+						</Reveal>
+					))}
 				</div>
 			</section>
 
@@ -563,30 +580,6 @@ export default function Home() {
 								</div>
 								<h3 className="mb-1.5 text-sm font-semibold">{_(item.title)}</h3>
 								<p className="text-sm leading-relaxed text-text-secondary">{_(item.desc)}</p>
-							</div>
-						</Reveal>
-					))}
-				</div>
-			</section>
-
-			{/* ── Details ── */}
-			<section className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-				<Reveal>
-					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">{_('also_heading')}</h2>
-				</Reveal>
-				<div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-					{[
-						{ title: 'extra_theme_title', desc: 'extra_theme_desc', delay: 'delay-1' },
-						{ title: 'extra_search_title', desc: 'extra_search_desc', delay: 'delay-2' },
-						{ title: 'extra_lang_title', desc: 'extra_lang_desc', delay: 'delay-3' },
-						{ title: 'extra_light_title', desc: 'extra_light_desc', delay: 'delay-4' },
-						{ title: 'extra_private_title', desc: 'extra_private_desc', delay: 'delay-5' },
-						{ title: 'extra_login_title', desc: 'extra_login_desc', delay: 'delay-6' }
-					].map((f) => (
-						<Reveal key={f.title} animation="anim-slide-in" delay={f.delay}>
-							<div className="border-l-2 border-accent/30 pl-4 transition hover:border-accent">
-								<h3 className="mb-1 text-sm font-semibold">{_(f.title)}</h3>
-								<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
 							</div>
 						</Reveal>
 					))}
