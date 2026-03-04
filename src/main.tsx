@@ -55,8 +55,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 const root = createRoot(document.getElementById('root')!);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const label = (window as any).__TAURI_INTERNALS__?.metadata?.currentWindow?.label as string | undefined;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isSettings = (window as any).__IS_SETTINGS_WINDOW__ || label === 'settings';
 
-if (label === 'settings') {
+if (isSettings) {
 	import('./settings')
 		.then(({ default: Settings }) => {
 			root.render(

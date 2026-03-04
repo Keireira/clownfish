@@ -1,6 +1,6 @@
 {
   "name": "hot-symbols-landing",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -8,17 +8,19 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "^15.3.4",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "i18next": "^25.8.14",
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-i18next": "^16.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.8",
-    "tailwindcss": "^4.1.8",
-    "typescript": "^5.9.3",
     "@types/node": "^22.16.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "postcss": "^8.5.6"
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.9.3"
   }
 }

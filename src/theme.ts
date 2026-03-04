@@ -1,9 +1,10 @@
-import { load } from '@tauri-apps/plugin-store';
+import { getStore } from './store';
+import { emitEvent } from './events';
 import type { ThemeChoice } from './types';
 
 export async function getThemeChoice(): Promise<ThemeChoice> {
 	try {
-		const store = await load('settings.json', { defaults: {}, autoSave: true });
+		const store = await getStore();
 		const val = await store.get<string>('theme');
 		if (val === 'light' || val === 'dark' || val === 'auto') return val;
 	} catch (e) {
@@ -13,26 +14,19 @@ export async function getThemeChoice(): Promise<ThemeChoice> {
 }
 
 export async function setThemeChoice(value: ThemeChoice): Promise<void> {
-	const store = await load('settings.json', { defaults: {}, autoSave: true });
+	const store = await getStore();
 	await store.set('theme', value);
 	await store.save();
 	localStorage.setItem('theme', value);
 	applyTheme(value);
-
-	// Notify other windows
-	try {
-		const { emit } = await import('@tauri-apps/api/event');
-		await emit('theme-changed', value);
-	} catch (err) {
-		console.error(err);
-	}
+	await emitEvent('theme-changed', value);
 }
 
 function getSystemTheme(): 'dark' | 'light' {
 	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-/** Set native window theme so vibrancy material matches */
+/** Set native window theme so vibrancy material matches. */
 async function setNativeTheme(choice: ThemeChoice): Promise<void> {
 	try {
 		const { setTheme } = await import('@tauri-apps/api/app');
@@ -58,8 +52,12 @@ function detectGlass(): void {
 	if (!tauri) return;
 	const p = navigator.platform;
 	const label = tauri.metadata?.currentWindow?.label as string | undefined;
-	// Settings is a normal decorated window — no transparent background
-	if (label === 'settings') return;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const isSettings = (window as any).__IS_SETTINGS_WINDOW__ || label === 'settings';
+	if (isSettings) {
+		document.documentElement.classList.remove('glass', 'popup');
+		return;
+	}
 	if (p.startsWith('Mac') || p.startsWith('Win')) {
 		document.documentElement.classList.add('glass');
 	}
@@ -72,7 +70,6 @@ export async function initTheme(): Promise<void> {
 	localStorage.setItem('theme', choice);
 	applyTheme(choice);
 
-	// Listen for theme changes from other windows
 	try {
 		const { listen } = await import('@tauri-apps/api/event');
 		await listen<string>('theme-changed', (event) => {
@@ -83,7 +80,6 @@ export async function initTheme(): Promise<void> {
 		console.error(err);
 	}
 
-	// Listen for system theme changes (for auto mode)
 	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async () => {
 		const current = await getThemeChoice();
 		if (current === 'auto') {

@@ -55,6 +55,15 @@ module.exports = defineConfig([
 	},
 
 	{
+		files: ['**/*.cjs'],
+		languageOptions: {
+			globals: {
+				...globals.node
+			}
+		}
+	},
+
+	{
 		ignores: ['node_modules/', 'dist/', 'build/', 'public/', 'src-tauri/']
 	}
 ]);

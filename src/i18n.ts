@@ -1,9 +1,9 @@
-import { load } from '@tauri-apps/plugin-store';
+import { getStore } from './store';
+import { emitEvent } from './events';
 import { useState, useEffect } from 'react';
 import { translations } from './data/translations';
 import type { LanguageChoice } from './types';
 
-const STORE_FILE = 'settings.json';
 const LANG_KEY = 'language';
 const SUPPORTED = ['en', 'ru', 'es', 'ja'] as const;
 
@@ -11,7 +11,7 @@ const SUPPORTED = ['en', 'ru', 'es', 'ja'] as const;
 
 export async function getLanguageChoice(): Promise<LanguageChoice> {
 	try {
-		const store = await load(STORE_FILE, { defaults: {}, autoSave: true });
+		const store = await getStore();
 		const val = await store.get<string>(LANG_KEY);
 		if (val === 'auto' || (SUPPORTED as readonly string[]).includes(val!)) return val as LanguageChoice;
 	} catch (e) {
@@ -21,19 +21,12 @@ export async function getLanguageChoice(): Promise<LanguageChoice> {
 }
 
 export async function setLanguageChoice(value: LanguageChoice): Promise<void> {
-	const store = await load(STORE_FILE, { defaults: {}, autoSave: true });
+	const store = await getStore();
 	await store.set(LANG_KEY, value);
 	await store.save();
 	localStorage.setItem('language', value);
 	applyLanguage(value);
-
-	// Notify other windows
-	try {
-		const { emit } = await import('@tauri-apps/api/event');
-		await emit('language-changed', value);
-	} catch (err) {
-		console.error(err);
-	}
+	await emitEvent('language-changed', value);
 }
 
 // --- Resolution ---
@@ -110,7 +103,6 @@ export async function initLanguage(): Promise<void> {
 	localStorage.setItem('language', choice);
 	applyLanguage(choice);
 
-	// Listen for language changes from other windows
 	try {
 		const { listen } = await import('@tauri-apps/api/event');
 		await listen<string>('language-changed', (event) => {
