@@ -6,7 +6,7 @@ export const Label = styled.span`
 	color: var(--text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
-	padding: 4px 4px 4px;
+	padding: 4px 4px 6px;
 	display: block;
 `;
 

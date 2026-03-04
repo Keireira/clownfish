@@ -45,57 +45,86 @@ function Reveal({
 	);
 }
 
-/* ── Mockup: first 3 categories for the hero app preview ── */
-const MOCKUP_CATS = [
+/* ── Symbol data for the interactive hero mockup ── */
+const MOCKUP_DATA: { name: string; chars: [string, string][] }[] = [
 	{
 		name: 'Typography',
 		chars: [
-			'\u2014',
-			'\u2013',
-			'\u2018',
-			'\u2019',
-			'\u201C',
-			'\u201D',
-			'\u2026',
-			'\u2022',
-			'\u00A9',
-			'\u00AE',
-			'\u2122',
-			'\u00A7'
+			['—', 'em dash'],
+			['–', 'en dash'],
+			['…', 'ellipsis'],
+			['«', 'left guillemet quote'],
+			['»', 'right guillemet quote'],
+			['•', 'bullet'],
+			['°', 'degree'],
+			['©', 'copyright'],
+			['®', 'registered'],
+			['™', 'trademark'],
+			['§', 'section'],
+			['¶', 'paragraph pilcrow']
 		]
 	},
 	{
 		name: 'Arrows',
 		chars: [
-			'\u2190',
-			'\u2192',
-			'\u2191',
-			'\u2193',
-			'\u21D0',
-			'\u21D2',
-			'\u21D1',
-			'\u21D3',
-			'\u21A9',
-			'\u21AA',
-			'\u27F5',
-			'\u27F6'
+			['←', 'left arrow'],
+			['→', 'right arrow'],
+			['↑', 'up arrow'],
+			['↓', 'down arrow'],
+			['↔', 'left right arrow'],
+			['⇐', 'double left arrow'],
+			['⇒', 'double right arrow implies'],
+			['⇑', 'double up arrow'],
+			['⇓', 'double down arrow'],
+			['➜', 'heavy right arrow']
 		]
 	},
 	{
 		name: 'Math',
 		chars: [
-			'\u221E',
-			'\u2260',
-			'\u2248',
-			'\u2211',
-			'\u221A',
-			'\u00B1',
-			'\u00D7',
-			'\u00F7',
-			'\u2202',
-			'\u222B',
-			'\u2206',
-			'\u03C0'
+			['±', 'plus minus'],
+			['×', 'multiply times'],
+			['÷', 'divide'],
+			['√', 'square root'],
+			['∞', 'infinity'],
+			['≈', 'approximately'],
+			['≠', 'not equal'],
+			['∑', 'sum sigma'],
+			['∏', 'product'],
+			['∫', 'integral'],
+			['π', 'pi']
+		]
+	},
+	{
+		name: 'Currency',
+		chars: [
+			['$', 'dollar'],
+			['€', 'euro'],
+			['£', 'pound sterling'],
+			['¥', 'yen yuan'],
+			['₽', 'ruble'],
+			['₿', 'bitcoin'],
+			['₹', 'indian rupee'],
+			['₩', 'korean won'],
+			['₴', 'ukrainian hryvnia'],
+			['₱', 'philippine peso']
+		]
+	},
+	{
+		name: 'Greek',
+		chars: [
+			['α', 'alpha'],
+			['β', 'beta'],
+			['γ', 'gamma'],
+			['δ', 'delta'],
+			['ε', 'epsilon'],
+			['θ', 'theta'],
+			['λ', 'lambda'],
+			['μ', 'mu micro'],
+			['σ', 'sigma'],
+			['φ', 'phi'],
+			['ω', 'omega'],
+			['Ω', 'omega capital ohm']
 		]
 	}
 ];
@@ -123,7 +152,17 @@ export default function Home() {
 	const [locale, setLocale] = useLocale();
 	const [userOS] = useState<'macos' | 'windows'>(detectPlatform);
 	const [dlPlatform, setDlPlatform] = useState<'macos' | 'windows'>(detectPlatform);
+	const [mockupQuery, setMockupQuery] = useState('');
 	const _ = (key: string) => t(locale, key);
+
+	const mockupFiltered = (() => {
+		const q = mockupQuery.toLowerCase().trim();
+		if (!q) return MOCKUP_DATA.slice(0, 3);
+		return MOCKUP_DATA.map((cat) => ({
+			name: cat.name,
+			chars: cat.chars.filter(([ch, name]) => cat.name.toLowerCase().includes(q) || ch.includes(q) || name.includes(q))
+		})).filter((cat) => cat.chars.length > 0);
+	})();
 
 	return (
 		<main className="relative min-h-screen overflow-x-hidden">
@@ -245,27 +284,38 @@ export default function Home() {
 							<span className="h-2.5 w-2.5 rounded-full bg-[#28c840]/60" />
 						</div>
 						{/* search bar */}
-						<div className="mb-3 rounded-lg border border-border bg-white/[0.03] px-3 py-2 text-xs text-text-muted">
-							{'\uD83D\uDD0D'} {_('search_placeholder')}
+						<div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-white/[0.03] px-3 py-2">
+							<span className="text-text-muted text-xs">🔍</span>
+							<input
+								type="text"
+								value={mockupQuery}
+								onChange={(e) => setMockupQuery(e.target.value)}
+								placeholder={_('search_placeholder')}
+								className="flex-1 bg-transparent text-xs text-text-primary placeholder:text-text-muted outline-none"
+							/>
 						</div>
 						{/* symbol grid */}
-						{MOCKUP_CATS.map((cat) => (
-							<div key={cat.name} className="mb-3 last:mb-0">
-								<span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-									{cat.name}
-								</span>
-								<div className="grid grid-cols-12 gap-1">
-									{cat.chars.map((s) => (
-										<div
-											key={s}
-											className="symbol-hover flex aspect-square items-center justify-center rounded-md border border-border bg-white/[0.03] text-sm"
-										>
-											{s}
-										</div>
-									))}
+						{mockupFiltered.length > 0 ? (
+							mockupFiltered.map((cat) => (
+								<div key={cat.name} className="mb-3 last:mb-0">
+									<span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+										{cat.name}
+									</span>
+									<div className="flex flex-wrap gap-1">
+										{cat.chars.map(([ch]) => (
+											<div
+												key={ch}
+												className="symbol-hover flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white/[0.03] text-sm"
+											>
+												{ch}
+											</div>
+										))}
+									</div>
 								</div>
-							</div>
-						))}
+							))
+						) : (
+							<div className="py-6 text-center text-xs text-text-muted">No symbols found</div>
+						)}
 					</div>
 				</Reveal>
 			</section>
@@ -273,135 +323,188 @@ export default function Home() {
 			{/* ── How It Works ── */}
 			<section className="mx-auto max-w-4xl px-6 py-20 md:py-28">
 				<Reveal>
-					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">{_('how_heading')}</h2>
+					<h2 className="mb-16 text-center text-3xl font-bold tracking-tight md:text-4xl">{_('how_heading')}</h2>
 				</Reveal>
-				<div className="grid gap-8 md:grid-cols-3">
+
+				{/* mobile: simple list */}
+				<div className="relative pl-14 md:hidden">
+					<div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-accent/40 via-accent/20 to-transparent" />
 					{[
-						{
-							num: '1',
-							title: 'how_step1_title',
-							desc: 'how_step1_desc',
-							delay: 'delay-1',
-							icon: (
-								<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<rect x="2" y="3" width="20" height="2" rx="1" />
-									<circle cx="12" cy="4" r="0.5" fill="currentColor" stroke="none" />
-								</svg>
-							)
-						},
-						{
-							num: '2',
-							title: 'how_step2_title',
-							desc: 'how_step2_desc',
-							delay: 'delay-2',
-							icon: (
-								<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<circle cx="11" cy="11" r="7" />
-									<path d="M21 21l-4.35-4.35" />
-								</svg>
-							)
-						},
-						{
-							num: '3',
-							title: 'how_step3_title',
-							desc: 'how_step3_desc',
-							delay: 'delay-3',
-							icon: (
-								<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<rect x="8" y="2" width="13" height="16" rx="2" />
-									<path d="M16 18v2a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h2" />
-								</svg>
-							)
-						}
+						{ num: '1', title: 'how_step1_title', desc: 'how_step1_desc', delay: 'delay-1' },
+						{ num: '2', title: 'how_step2_title', desc: 'how_step2_desc', delay: 'delay-2' },
+						{ num: '3', title: 'how_step3_title', desc: 'how_step3_desc', delay: 'delay-3' }
 					].map((step) => (
 						<Reveal key={step.num} delay={step.delay}>
-							<div className="text-center">
-								<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-bg-card text-accent">
-									{step.icon}
+							<div className="relative pb-10 last:pb-0">
+								<div className="absolute -left-14 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-accent/30 bg-[#0a0a0a] text-sm font-bold text-accent">
+									{step.num}
 								</div>
-								<h3 className="mb-2 text-sm font-semibold">{_(step.title)}</h3>
-								<p className="text-sm leading-relaxed text-text-secondary">
-									{_(step.desc)
-										.split('. ')
-										.map((s, i, arr) => (
-											<span key={i}>
-												{s}
-												{i < arr.length - 1 ? '.' : ''}
-												{i < arr.length - 1 && <br />}
-											</span>
-										))}
-								</p>
+								<h3 className="text-sm font-semibold">{_(step.title)}</h3>
+								<p className="mt-1 text-sm leading-relaxed text-text-secondary">{_(step.desc)}</p>
 							</div>
 						</Reveal>
 					))}
+				</div>
+
+				{/* desktop: zigzag timeline */}
+				<div className="relative hidden md:block">
+					<div className="absolute left-1/2 top-6 bottom-6 w-px -translate-x-px bg-gradient-to-b from-accent/40 via-accent/20 to-transparent" />
+
+					{/* Step 1: text left, demo right */}
+					<Reveal delay="delay-1">
+						<div className="relative grid grid-cols-[1fr_48px_1fr] items-center py-8">
+							<div className="text-right pr-10">
+								<h3 className="text-base font-semibold">{_('how_step1_title')}</h3>
+								<p className="mt-1 text-sm leading-relaxed text-text-secondary">{_('how_step1_desc')}</p>
+							</div>
+							<div className="flex justify-center">
+								<div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-[#0a0a0a] text-lg font-bold text-accent">
+									1
+								</div>
+							</div>
+							<div className="pl-10">
+								<div className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-4 py-2.5">
+									<span className="h-2.5 w-2.5 rounded-full bg-accent" />
+									<span className="text-xs font-semibold text-text-primary">Hot Symbols</span>
+									<span className="text-[10px] text-text-muted">▾</span>
+								</div>
+							</div>
+						</div>
+					</Reveal>
+
+					{/* Step 2: demo left, text right */}
+					<Reveal delay="delay-2">
+						<div className="relative grid grid-cols-[1fr_48px_1fr] items-center py-8">
+							<div className="flex justify-end pr-10">
+								<div className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-4 py-2.5">
+									<span className="rounded-md border border-border bg-white/[0.05] px-2.5 py-1 text-xs text-text-muted">
+										🔍&emsp;pi
+									</span>
+									<span className="text-text-muted text-xs">→</span>
+									{['π', '∏'].map((s) => (
+										<span
+											key={s}
+											className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-sm"
+										>
+											{s}
+										</span>
+									))}
+								</div>
+							</div>
+							<div className="flex justify-center">
+								<div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-[#0a0a0a] text-lg font-bold text-accent">
+									2
+								</div>
+							</div>
+							<div className="pl-10">
+								<h3 className="text-base font-semibold">{_('how_step2_title')}</h3>
+								<p className="mt-1 text-sm leading-relaxed text-text-secondary">{_('how_step2_desc')}</p>
+							</div>
+						</div>
+					</Reveal>
+
+					{/* Step 3: text left, demo right */}
+					<Reveal delay="delay-3">
+						<div className="relative grid grid-cols-[1fr_48px_1fr] items-center py-8">
+							<div className="text-right pr-10">
+								<h3 className="text-base font-semibold">{_('how_step3_title')}</h3>
+								<p className="mt-1 text-sm leading-relaxed text-text-secondary">{_('how_step3_desc')}</p>
+							</div>
+							<div className="flex justify-center">
+								<div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-[#0a0a0a] text-lg font-bold text-accent">
+									3
+								</div>
+							</div>
+							<div className="pl-10">
+								<div className="inline-flex items-center gap-2.5 rounded-xl border border-border bg-bg-card px-4 py-2.5">
+									<span className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/40 bg-accent/15 text-base">
+										∞
+									</span>
+									<span className="text-text-muted text-xs">→</span>
+									<span className="rounded-md border border-green/30 bg-green/10 px-2.5 py-1 text-xs text-green">
+										copied!
+									</span>
+								</div>
+							</div>
+						</div>
+					</Reveal>
 				</div>
 			</section>
 
 			{/* ── Features ── */}
 			<section id="features" className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-				<div className="grid gap-6 md:grid-cols-3">
-					{[
-						{
-							delay: 'delay-1',
-							icon: (
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<rect x="2" y="3" width="20" height="2" rx="1" />
-									<rect x="6" y="7" width="12" height="14" rx="2" />
-								</svg>
-							),
-							title: 'feat_instant_title',
-							desc: 'feat_instant_desc'
-						},
-						{
-							delay: 'delay-2',
-							icon: (
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<rect x="3" y="3" width="7" height="7" rx="1.5" />
-									<rect x="14" y="3" width="7" height="7" rx="1.5" />
-									<rect x="3" y="14" width="7" height="7" rx="1.5" />
-									<rect x="14" y="14" width="7" height="7" rx="1.5" />
-								</svg>
-							),
-							title: 'feat_symbols_title',
-							desc: 'feat_symbols_desc'
-						},
-						{
-							delay: 'delay-3',
-							icon: (
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-									<path d="M12 3v3m0 12v3M3 12h3m12 0h3" />
-									<circle cx="12" cy="12" r="4" />
-								</svg>
-							),
-							title: 'feat_custom_title',
-							desc: 'feat_custom_desc'
-						}
-					].map((f) => (
-						<Reveal key={f.title} delay={f.delay}>
-							<div className="card-hover rounded-2xl border border-border bg-bg-card p-8">
-								<div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-bg text-accent">
-									{f.icon}
-								</div>
-								<h3 className="mb-2 text-lg font-semibold">{_(f.title)}</h3>
-								{f.title === 'feat_symbols_title' ? (
-									<div className="flex flex-wrap gap-1.5">
-										{_(f.desc)
-											.split(' \u2022 ')
-											.map((cat) => (
+				<div className="grid gap-4 md:grid-cols-3">
+					<Reveal delay="delay-1">
+						<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
+							{/* mini menu bar mockup */}
+							<div className="mb-5 flex items-center gap-2 self-start rounded-lg border border-border bg-white/[0.03] px-3 py-1.5">
+								<span className="h-2 w-2 rounded-full bg-accent" />
+								<span className="text-[11px] font-medium text-text-primary">Hot Symbols</span>
+								<span className="text-[9px] text-text-muted">▾</span>
+							</div>
+							<h3 className="mb-1.5 text-base font-semibold">{_('feat_instant_title')}</h3>
+							<p className="text-sm leading-relaxed text-text-secondary">{_('feat_instant_desc')}</p>
+						</div>
+					</Reveal>
+
+					<Reveal delay="delay-2">
+						<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
+							{/* mini category browser */}
+							<div className="mb-5 space-y-2">
+								{[
+									{ label: 'Typography', chars: ['—', '–', '…', '«', '»', '•', '°'] },
+									{ label: 'Math', chars: ['±', '×', '÷', '√', '∞', '≠', '≈'] },
+									{ label: 'Greek', chars: ['α', 'β', 'γ', 'δ', 'θ', 'λ', 'π'] }
+								].map((cat) => (
+									<div key={cat.label}>
+										<span className="mb-0.5 block text-[8px] font-semibold uppercase tracking-wider text-text-muted">
+											{cat.label}
+										</span>
+										<div className="grid grid-cols-7 gap-px">
+											{cat.chars.map((s) => (
 												<span
-													key={cat}
-													className="rounded-md border border-border bg-white/[0.03] px-2 py-0.5 text-xs text-text-secondary"
+													key={s}
+													className="symbol-hover flex aspect-square items-center justify-center rounded text-[11px] border border-border bg-white/[0.03]"
 												>
-													{cat}
+													{s}
 												</span>
 											))}
+										</div>
 									</div>
-								) : (
-									<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
-								)}
+								))}
 							</div>
-						</Reveal>
-					))}
+							<h3 className="mb-1.5 text-base font-semibold">{_('feat_symbols_title')}</h3>
+							<p className="text-sm leading-relaxed text-text-secondary">
+								{_('feat_symbols_desc').split(' • ').slice(0, 4).join(', ')} & more
+							</p>
+						</div>
+					</Reveal>
+
+					<Reveal delay="delay-3">
+						<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
+							{/* drag reorder mockup */}
+							<div className="mb-5 space-y-1">
+								{[
+									{ name: 'Typography', n: 14, active: false },
+									{ name: 'My Symbols', n: 5, active: true },
+									{ name: 'Arrows', n: 10, active: false }
+								].map((cat) => (
+									<div
+										key={cat.name}
+										className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[11px] ${cat.active ? 'border border-accent/30 bg-accent/10 text-text-primary' : 'border border-transparent text-text-secondary'}`}
+									>
+										<span className="flex items-center gap-2">
+											<span className="text-text-muted text-[9px]">⠿</span>
+											{cat.name}
+										</span>
+										<span className="text-[10px] text-text-muted">{cat.n}</span>
+									</div>
+								))}
+							</div>
+							<h3 className="mb-1.5 text-base font-semibold">{_('feat_custom_title')}</h3>
+							<p className="text-sm leading-relaxed text-text-secondary">{_('feat_custom_desc')}</p>
+						</div>
+					</Reveal>
 				</div>
 			</section>
 
@@ -415,32 +518,48 @@ export default function Home() {
 						{
 							title: 'who_writers_title',
 							desc: 'who_writers_desc',
-							symbols: '\u2014 \u201C\u201D \u2026 \u2022',
+							symbols: ['—', '“', '”', '…', '•', '«', '»'],
+							color: 'rgba(168,124,255,0.15)',
+							borderColor: 'rgba(168,124,255,0.4)',
 							delay: 'delay-1'
 						},
 						{
 							title: 'who_devs_title',
 							desc: 'who_devs_desc',
-							symbols: '\u2318 \u2325 \u21E7 \u2192 \u2260',
+							symbols: ['⌘', '⌥', '⇧', '→', '≠', '│', '├'],
+							color: 'rgba(52,120,246,0.15)',
+							borderColor: 'rgba(52,120,246,0.4)',
 							delay: 'delay-2'
 						},
 						{
 							title: 'who_designers_title',
 							desc: 'who_designers_desc',
-							symbols: '\u00A9 \u00AE \u2122 \u2190 \u2022',
+							symbols: ['©', '®', '™', '←', '→', '•', '–'],
+							color: 'rgba(255,69,58,0.12)',
+							borderColor: 'rgba(255,69,58,0.35)',
 							delay: 'delay-3'
 						},
 						{
 							title: 'who_academics_title',
 							desc: 'who_academics_desc',
-							symbols: '\u03B1 \u03B2 \u222B \u2211 \u00B2',
+							symbols: ['α', 'β', 'γ', '∫', '∑', '√', '²'],
+							color: 'rgba(52,199,89,0.12)',
+							borderColor: 'rgba(52,199,89,0.35)',
 							delay: 'delay-4'
 						}
 					].map((item) => (
 						<Reveal key={item.title} delay={item.delay}>
-							<div className="card-hover rounded-2xl border border-border bg-bg-card p-6">
-								<div className="mb-3 flex items-center gap-3">
-									<span className="text-sm font-mono text-accent tracking-wider">{item.symbols}</span>
+							<div className="who-card card-hover rounded-2xl border border-border bg-bg-card p-6 transition-all">
+								<div className="mb-4 flex flex-wrap gap-1.5">
+									{item.symbols.map((s) => (
+										<span
+											key={s}
+											className="symbol-hover flex h-8 w-8 items-center justify-center rounded-lg border text-sm"
+											style={{ borderColor: item.borderColor, background: item.color }}
+										>
+											{s}
+										</span>
+									))}
 								</div>
 								<h3 className="mb-1.5 text-sm font-semibold">{_(item.title)}</h3>
 								<p className="text-sm leading-relaxed text-text-secondary">{_(item.desc)}</p>
