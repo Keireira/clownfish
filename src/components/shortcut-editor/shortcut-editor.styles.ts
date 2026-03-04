@@ -15,7 +15,7 @@ export const Card = styled.div`
 	padding: 8px 4px 6px;
 	border-radius: 10px;
 	background: var(--fill);
-	cursor: default;
+	cursor: pointer;
 
 	&:hover button {
 		display: flex;
@@ -54,6 +54,40 @@ export const CardDelete = styled.button`
 	display: none;
 	align-items: center;
 	justify-content: center;
+`;
+
+export const EditRow = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 6px;
+	border-radius: 10px;
+	background: var(--fill-hover);
+	border: 1px solid var(--accent-border);
+`;
+
+const EditInput = styled.input`
+	padding: 3px 6px;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--fill-light);
+	color: var(--text-primary);
+	font-size: 12px;
+	outline: none;
+
+	&:focus {
+		border-color: var(--accent-border);
+	}
+`;
+
+export const EditTriggerInput = styled(EditInput)`
+	width: 70px;
+	font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+	font-size: 11px;
+`;
+
+export const EditExpansionInput = styled(EditInput)`
+	width: 60px;
 `;
 
 export const AddRow = styled.div`

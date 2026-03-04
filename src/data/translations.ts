@@ -21,6 +21,11 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_appearance: 'Appearance',
 		tab_system: 'System',
 
+		// Shortcuts sidebar sections
+		section_settings: 'Settings',
+		section_shortcuts: 'Shortcuts',
+		section_apps: 'Apps',
+
 		// Settings empty
 		no_category_selected: 'No category selected. Add one to get started.',
 
@@ -72,8 +77,9 @@ export const translations: Record<string, TranslationRecord> = {
 		hints_corner: 'Bottom-right corner',
 		hints_off: 'Disabled',
 		stoplist_label: 'Per-App Settings',
-		stoplist_expansion: 'Disable expansion',
-		stoplist_hints: 'Disable hints',
+		stoplist_expansion: 'Expansion',
+		stoplist_hints: 'Hints',
+		stoplist_hints_position: 'Hints position',
 		stoplist_empty: 'No per-app settings',
 		stoplist_add_app: 'Add app',
 		stoplist_no_apps: 'No running apps found',
@@ -81,6 +87,7 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_drop_hint: 'Drop .exe or shortcut here',
 		stoplist_direction: 'Direction',
 		stoplist_offset: 'Offset (px)',
+		stoplist_select_app: 'Select an app',
 
 		// Category names (defaults)
 		cat_arrows: 'Arrows',
@@ -111,6 +118,10 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_categories: 'Категории',
 		tab_appearance: 'Оформление',
 		tab_system: 'Система',
+
+		section_settings: 'Настройки',
+		section_shortcuts: 'Автозамена',
+		section_apps: 'Приложения',
 
 		no_category_selected: 'Категория не выбрана. Добавьте новую.',
 
@@ -155,8 +166,9 @@ export const translations: Record<string, TranslationRecord> = {
 		hints_corner: 'В углу экрана',
 		hints_off: 'Выключены',
 		stoplist_label: 'Настройки приложений',
-		stoplist_expansion: 'Откл. замену',
-		stoplist_hints: 'Откл. подсказки',
+		stoplist_expansion: 'Замена',
+		stoplist_hints: 'Подсказки',
+		stoplist_hints_position: 'Позиция подсказок',
 		stoplist_empty: 'Нет настроек приложений',
 		stoplist_add_app: 'Добавить',
 		stoplist_no_apps: 'Нет запущенных приложений',
@@ -164,6 +176,7 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_drop_hint: 'Перетащите .exe или ярлык сюда',
 		stoplist_direction: 'Направление',
 		stoplist_offset: 'Смещение (пикс.)',
+		stoplist_select_app: 'Выберите приложение',
 
 		cat_arrows: 'Стрелки',
 		cat_math: 'Математика',
@@ -193,6 +206,10 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_categories: 'Categorías',
 		tab_appearance: 'Apariencia',
 		tab_system: 'Sistema',
+
+		section_settings: 'Ajustes',
+		section_shortcuts: 'Atajos',
+		section_apps: 'Apps',
 
 		no_category_selected: 'Ninguna categoría seleccionada. Añade una para empezar.',
 
@@ -237,8 +254,9 @@ export const translations: Record<string, TranslationRecord> = {
 		hints_corner: 'Esquina inferior derecha',
 		hints_off: 'Desactivado',
 		stoplist_label: 'Ajustes por app',
-		stoplist_expansion: 'Desactivar expansión',
-		stoplist_hints: 'Desactivar sugerencias',
+		stoplist_expansion: 'Expansión',
+		stoplist_hints: 'Sugerencias',
+		stoplist_hints_position: 'Posición de sugerencias',
 		stoplist_empty: 'Sin ajustes por app',
 		stoplist_add_app: 'Añadir app',
 		stoplist_no_apps: 'No se encontraron apps',
@@ -246,6 +264,7 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_drop_hint: 'Suelta .exe o acceso directo aquí',
 		stoplist_direction: 'Dirección',
 		stoplist_offset: 'Desplazamiento (px)',
+		stoplist_select_app: 'Selecciona una app',
 
 		cat_arrows: 'Flechas',
 		cat_math: 'Matemáticas',
@@ -275,6 +294,10 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_categories: 'カテゴリー',
 		tab_appearance: '外観',
 		tab_system: 'システム',
+
+		section_settings: '設定',
+		section_shortcuts: 'ショートカット',
+		section_apps: 'アプリ',
 
 		no_category_selected: 'カテゴリーが未選択です。追加してください。',
 
@@ -319,8 +342,9 @@ export const translations: Record<string, TranslationRecord> = {
 		hints_corner: '右下コーナー',
 		hints_off: '無効',
 		stoplist_label: 'アプリ別設定',
-		stoplist_expansion: '展開を無効化',
-		stoplist_hints: 'ヒントを無効化',
+		stoplist_expansion: '展開',
+		stoplist_hints: 'ヒント',
+		stoplist_hints_position: 'ヒント位置',
 		stoplist_empty: 'アプリ別設定なし',
 		stoplist_add_app: 'アプリ追加',
 		stoplist_no_apps: '実行中のアプリなし',
@@ -328,6 +352,7 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_drop_hint: '.exe またはショートカットをドロップ',
 		stoplist_direction: '方向',
 		stoplist_offset: 'オフセット (px)',
+		stoplist_select_app: 'アプリを選択',
 
 		cat_arrows: '矢印',
 		cat_math: '数学',

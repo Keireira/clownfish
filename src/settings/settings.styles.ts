@@ -37,13 +37,11 @@ export const SettingsGlobalStyle = createGlobalStyle`
 
 export const GlassOverrides = createGlobalStyle`
 	html.glass .settings-header,
-	html.glass .settings-tabs,
 	html.glass .settings-main {
 		background: transparent;
 	}
 
 	html.glass[data-theme="light"] .settings-header,
-	html.glass[data-theme="light"] .settings-tabs,
 	html.glass[data-theme="light"] .settings-main {
 		background: transparent;
 	}
@@ -90,42 +88,6 @@ export const Empty = styled.div`
 	text-align: center;
 	padding-top: 80px;
 	font-size: 13px;
-`;
-
-export const SegmentedWrapper = styled.div.attrs({ className: 'settings-tabs' })`
-	display: flex;
-	justify-content: center;
-	padding: 10px 20px;
-	border-bottom: 1px solid var(--border);
-	-webkit-user-select: none;
-	user-select: none;
-`;
-
-export const SegmentedControl = styled.div`
-	display: flex;
-	background: var(--segmented-bg);
-	border-radius: var(--radius-s);
-	padding: 3px;
-`;
-
-export const Segment = styled.button<{ $active: boolean }>`
-	padding: 6px 22px;
-	border: none;
-	border-radius: 8px;
-	background: ${(p) => (p.$active ? 'var(--segmented-active)' : 'transparent')};
-	box-shadow: ${(p) => (p.$active ? '0 1px 3px rgba(0, 0, 0, 0.12)' : 'none')};
-	color: ${(p) => (p.$active ? 'var(--text-primary)' : 'var(--text-muted)')};
-	font-size: 12px;
-	font-weight: 500;
-	cursor: pointer;
-	transition:
-		background 0.2s,
-		color 0.2s,
-		box-shadow 0.2s;
-
-	&:hover {
-		color: ${(p) => (p.$active ? 'var(--text-primary)' : 'var(--text-secondary)')};
-	}
 `;
 
 const Btn = styled.button`
