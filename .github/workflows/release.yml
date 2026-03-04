@@ -15,6 +15,13 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     secrets: inherit
 
+  deploy-landing:
+    uses: ./.github/workflows/deploy-landing.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
   release:
     needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
