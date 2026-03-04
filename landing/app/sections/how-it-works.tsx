@@ -36,7 +36,7 @@ const HowItWorks = () => {
 			<div className="relative hidden md:block">
 				<div className="absolute left-1/2 top-6 bottom-6 w-px -translate-x-px bg-gradient-to-b from-accent/40 via-accent/20 to-transparent" />
 
-				{/* Step 1 */}
+				{/* Step 1 — Define shortcuts */}
 				<Reveal delay="delay-1">
 					<div className="relative grid grid-cols-[1fr_48px_1fr] items-center py-8">
 						<div className="text-right pr-10">
@@ -49,32 +49,37 @@ const HowItWorks = () => {
 							</div>
 						</div>
 						<div className="pl-10">
-							<div className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-4 py-2.5">
-								<span className="h-2.5 w-2.5 rounded-full bg-accent" />
-								<span className="text-xs font-semibold text-text-primary">Hot Symbols</span>
-								<span className="text-[10px] text-text-muted">▾</span>
+							<div className="space-y-1.5">
+								{[
+									{ trigger: ':shrug:', expansion: '¯\\_(ツ)_/¯' },
+									{ trigger: ':arrow:', expansion: '→' },
+									{ trigger: ':tm:', expansion: '™' }
+								].map((row) => (
+									<div key={row.trigger} className="flex items-center gap-2 rounded-lg border border-border bg-bg-card px-3 py-1.5 text-[11px]">
+										<span className="font-mono text-text-muted">{row.trigger}</span>
+										<span className="text-text-muted">→</span>
+										<span className="text-text-primary">{row.expansion}</span>
+									</div>
+								))}
 							</div>
 						</div>
 					</div>
 				</Reveal>
 
-				{/* Step 2 */}
+				{/* Step 2 — Type — it expands */}
 				<Reveal delay="delay-2">
 					<div className="relative grid grid-cols-[1fr_48px_1fr] items-center py-8">
 						<div className="flex justify-end pr-10">
-							<div className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-4 py-2.5">
-								<span className="rounded-md border border-border bg-white/[0.05] px-2.5 py-1 text-xs text-text-muted">
-									🔍&emsp;pi
-								</span>
-								<span className="text-text-muted text-xs">→</span>
-								{['π', '∏'].map((s) => (
-									<span
-										key={s}
-										className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-sm"
-									>
-										{s}
-									</span>
-								))}
+							<div className="rounded-xl border border-border bg-bg-card px-4 py-3">
+								<div className="flex items-center gap-2 text-xs">
+									<span className="rounded-md border border-border bg-white/[0.05] px-2.5 py-1 font-mono text-text-muted">:shrug:</span>
+									<span className="text-text-muted">→</span>
+									<span className="text-text-primary text-sm">¯\_(ツ)_/¯</span>
+								</div>
+								<div className="mt-2 flex items-center gap-1.5">
+									<span className="h-1 w-8 rounded-full bg-accent/40" />
+									<span className="text-[9px] text-text-muted">instant</span>
+								</div>
 							</div>
 						</div>
 						<div className="flex justify-center">
@@ -89,7 +94,7 @@ const HowItWorks = () => {
 					</div>
 				</Reveal>
 
-				{/* Step 3 */}
+				{/* Step 3 — Or grab a symbol */}
 				<Reveal delay="delay-3">
 					<div className="relative grid grid-cols-[1fr_48px_1fr] items-center py-8">
 						<div className="text-right pr-10">
@@ -103,9 +108,14 @@ const HowItWorks = () => {
 						</div>
 						<div className="pl-10">
 							<div className="inline-flex items-center gap-2.5 rounded-xl border border-border bg-bg-card px-4 py-2.5">
-								<span className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/40 bg-accent/15 text-base">
-									∞
-								</span>
+								{['→', '←', '↑', '↓'].map((s) => (
+									<span
+										key={s}
+										className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-sm"
+									>
+										{s}
+									</span>
+								))}
 								<span className="text-text-muted text-xs">→</span>
 								<span className="rounded-md border border-green/30 bg-green/10 px-2.5 py-1 text-xs text-green">
 									copied!

@@ -5,7 +5,11 @@ const CARDS = [
 	{
 		title: 'who_writers_title',
 		desc: 'who_writers_desc',
-		symbols: ['—', '\u201c', '\u201d', '…', '•', '«', '»'],
+		triggers: [
+			{ from: ':mdash:', to: '—' },
+			{ from: ':laquo:', to: '«' },
+			{ from: ':hellip:', to: '…' }
+		],
 		color: 'rgba(168,124,255,0.15)',
 		borderColor: 'rgba(168,124,255,0.4)',
 		delay: 'delay-1'
@@ -13,7 +17,11 @@ const CARDS = [
 	{
 		title: 'who_devs_title',
 		desc: 'who_devs_desc',
-		symbols: ['⌘', '⌥', '⇧', '→', '≠', '│', '├'],
+		triggers: [
+			{ from: ':arrow:', to: '→' },
+			{ from: ':neq:', to: '≠' },
+			{ from: ':cmd:', to: '⌘' }
+		],
 		color: 'rgba(52,120,246,0.15)',
 		borderColor: 'rgba(52,120,246,0.4)',
 		delay: 'delay-2'
@@ -21,7 +29,11 @@ const CARDS = [
 	{
 		title: 'who_designers_title',
 		desc: 'who_designers_desc',
-		symbols: ['©', '®', '™', '←', '→', '•', '–'],
+		triggers: [
+			{ from: ':copy:', to: '©' },
+			{ from: ':reg:', to: '®' },
+			{ from: ':tm:', to: '™' }
+		],
 		color: 'rgba(255,69,58,0.12)',
 		borderColor: 'rgba(255,69,58,0.35)',
 		delay: 'delay-3'
@@ -29,7 +41,11 @@ const CARDS = [
 	{
 		title: 'who_academics_title',
 		desc: 'who_academics_desc',
-		symbols: ['α', 'β', 'γ', '∫', '∑', '√', '²'],
+		triggers: [
+			{ from: ':alpha:', to: 'α' },
+			{ from: ':sum:', to: '∑' },
+			{ from: ':sqrt:', to: '√' }
+		],
 		color: 'rgba(52,199,89,0.12)',
 		borderColor: 'rgba(52,199,89,0.35)',
 		delay: 'delay-4'
@@ -48,15 +64,18 @@ const Who = () => {
 				{CARDS.map((item) => (
 					<Reveal key={item.title} delay={item.delay}>
 						<div className="who-card card-hover rounded-2xl border border-border bg-bg-card p-6 transition-all">
-							<div className="mb-4 flex flex-wrap gap-1.5">
-								{item.symbols.map((s) => (
-									<span
-										key={s}
-										className="symbol-hover flex h-8 w-8 items-center justify-center rounded-lg border text-sm"
-										style={{ borderColor: item.borderColor, background: item.color }}
-									>
-										{s}
-									</span>
+							<div className="mb-4 space-y-1.5">
+								{item.triggers.map((tr) => (
+									<div key={tr.from} className="flex items-center gap-2 text-[11px]">
+										<span
+											className="rounded-md border px-2 py-1 font-mono"
+											style={{ borderColor: item.borderColor, background: item.color }}
+										>
+											{tr.from}
+										</span>
+										<span className="text-text-muted">→</span>
+										<span className="text-sm text-text-primary">{tr.to}</span>
+									</div>
 								))}
 							</div>
 							<h3 className="mb-1.5 text-sm font-semibold">{t(item.title)}</h3>
