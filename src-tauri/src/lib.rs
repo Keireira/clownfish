@@ -47,16 +47,6 @@ fn open_settings(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("settings") {
         let _ = win.show();
         let _ = win.set_focus();
-    } else {
-        // Settings is a plain decorated window — no transparency, no vibrancy.
-        // On Windows, Mica/Acrylic effects + WebView2 without transparent(true)
-        // cause a blank white screen, so we skip effects entirely.
-        let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
-            .title("Hot Symbols Settings")
-            .inner_size(660.0, 520.0)
-            .min_inner_size(550.0, 400.0)
-            .center()
-            .build();
     }
 }
 
@@ -155,6 +145,26 @@ pub fn run() {
                 .resizable(false)
                 .effects(effects)
                 .build()?;
+
+            // Pre-create the settings window (hidden) so WebView2 is fully
+            // initialised before the user ever clicks "Settings".
+            // We intercept CloseRequested to hide instead of destroy.
+            let settings_win = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+                .title("Hot Symbols Settings")
+                .initialization_script("window.__IS_SETTINGS_WINDOW__=true;")
+                .inner_size(660.0, 520.0)
+                .min_inner_size(550.0, 400.0)
+                .center()
+                .visible(false)
+                .build()?;
+
+            let sw = settings_win.clone();
+            settings_win.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = sw.hide();
+                }
+            });
 
             // Build right-click context menu
             let settings_item =

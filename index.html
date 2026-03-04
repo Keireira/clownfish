@@ -10,7 +10,7 @@
       if(window.__TAURI_INTERNALS__){
         var p=navigator.platform;
         var label=window.__TAURI_INTERNALS__.metadata&&window.__TAURI_INTERNALS__.metadata.currentWindow&&window.__TAURI_INTERNALS__.metadata.currentWindow.label;
-        var isSettings=label==="settings";
+        var isSettings=window.__IS_SETTINGS_WINDOW__||label==="settings";
         if(!isSettings&&(p.indexOf("Mac")===0||p.indexOf("Win")===0)){
           document.documentElement.classList.add("glass");
           document.documentElement.classList.add("popup");

@@ -58,8 +58,14 @@ function detectGlass(): void {
 	if (!tauri) return;
 	const p = navigator.platform;
 	const label = tauri.metadata?.currentWindow?.label as string | undefined;
-	// Settings is a normal decorated window — no transparent background
-	if (label === 'settings') return;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const isSettings = (window as any).__IS_SETTINGS_WINDOW__ || label === 'settings';
+	// Settings is a normal decorated window — no transparent background.
+	// Remove glass/popup in case the inline script added them prematurely.
+	if (isSettings) {
+		document.documentElement.classList.remove('glass', 'popup');
+		return;
+	}
 	if (p.startsWith('Mac') || p.startsWith('Win')) {
 		document.documentElement.classList.add('glass');
 	}
