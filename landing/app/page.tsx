@@ -45,69 +45,6 @@ function Reveal({
 	);
 }
 
-/* ── Actual symbols from the app ── */
-const SHOWCASE = [
-	{
-		key: 'typo_cat',
-		symbols: [
-			'\u2014',
-			'\u2013',
-			'\u2018',
-			'\u2019',
-			'\u201C',
-			'\u201D',
-			'\u2026',
-			'\u2022',
-			'\u00A9',
-			'\u00AE',
-			'\u2122',
-			'\u00B6'
-		]
-	},
-	{
-		key: 'arrows_cat',
-		symbols: ['\u2190', '\u2192', '\u2191', '\u2193', '\u21D0', '\u21D2', '\u21D1', '\u21D3', '\u21A9', '\u21AA']
-	},
-	{
-		key: 'math_cat',
-		symbols: [
-			'\u00B1',
-			'\u00D7',
-			'\u00F7',
-			'\u221A',
-			'\u221E',
-			'\u2248',
-			'\u2260',
-			'\u2211',
-			'\u220F',
-			'\u222B',
-			'\u03C0'
-		]
-	},
-	{
-		key: 'currency_cat',
-		symbols: ['$', '\u20AC', '\u00A3', '\u00A5', '\u20BD', '\u20BF', '\u20B9', '\u20A9', '\u20B4', '\u20B1']
-	},
-	{
-		key: 'greek_cat',
-		symbols: [
-			'\u03B1',
-			'\u03B2',
-			'\u03B3',
-			'\u03B4',
-			'\u03B5',
-			'\u03B6',
-			'\u03B7',
-			'\u03B8',
-			'\u03BB',
-			'\u03BC',
-			'\u03C3',
-			'\u03C9'
-		]
-	},
-	{ key: 'misc_cat', symbols: ['\u2318', '\u2325', '\u21E7', '\u238B', '\u21A9', '\u232B', '\u2326', '\u21E5'] }
-];
-
 /* ── Mockup: first 3 categories for the hero app preview ── */
 const MOCKUP_CATS = [
 	{
@@ -206,9 +143,6 @@ export default function Home() {
 					<div className="hidden items-center gap-6 sm:flex">
 						<a href="#features" className="text-xs text-text-secondary transition hover:text-text-primary">
 							{_('nav_features')}
-						</a>
-						<a href="#showcase" className="text-xs text-text-secondary transition hover:text-text-primary">
-							{_('nav_symbols')}
 						</a>
 						<a href="#download" className="text-xs text-text-secondary transition hover:text-text-primary">
 							{_('nav_download')}
@@ -465,34 +399,6 @@ export default function Home() {
 								) : (
 									<p className="text-sm leading-relaxed text-text-secondary">{_(f.desc)}</p>
 								)}
-							</div>
-						</Reveal>
-					))}
-				</div>
-			</section>
-
-			{/* ── Showcase ── */}
-			<section id="showcase" className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-				<Reveal>
-					<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">{_('showcase_heading')}</h2>
-				</Reveal>
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{SHOWCASE.map((cat, i) => (
-						<Reveal key={cat.key} delay={`delay-${Math.min(i + 1, 6)}`}>
-							<div className="card-hover rounded-xl border border-border bg-bg-card p-5">
-								<span className="mb-3 block text-xs font-semibold uppercase tracking-wider text-accent">
-									{_(cat.key)}
-								</span>
-								<div className="flex flex-wrap gap-1.5">
-									{cat.symbols.map((s) => (
-										<span
-											key={s}
-											className="symbol-hover flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white/[0.03] text-base"
-										>
-											{s}
-										</span>
-									))}
-								</div>
 							</div>
 						</Reveal>
 					))}
