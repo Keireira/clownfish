@@ -19,6 +19,7 @@ import Root, {
 	Copyright
 } from './settings.styles';
 import { loadCategories, saveCategories, resetCategories, DEFAULT_CATEGORIES } from '../store';
+import { emitEvent } from '../events';
 import CategoryList from '../components/category-list';
 import CategoryEditor from '../components/category-editor';
 import PresetPicker from '../components/preset-picker';
@@ -53,12 +54,7 @@ const Settings = () => {
 	const handleSave = async () => {
 		await saveCategories(categories);
 		setDirty(false);
-		try {
-			const { emit } = await import('@tauri-apps/api/event');
-			await emit('categories-changed');
-		} catch (err) {
-			console.error(err);
-		}
+		await emitEvent('categories-changed');
 	};
 
 	const handleReset = async () => {
@@ -66,12 +62,7 @@ const Settings = () => {
 		setCategories(DEFAULT_CATEGORIES);
 		setSelectedIdx(0);
 		setDirty(false);
-		try {
-			const { emit } = await import('@tauri-apps/api/event');
-			await emit('categories-changed');
-		} catch (err) {
-			console.error(err);
-		}
+		await emitEvent('categories-changed');
 	};
 
 	const handleAddCategory = () => {
