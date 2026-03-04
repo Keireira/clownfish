@@ -21,6 +21,11 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_appearance: 'Appearance',
 		tab_system: 'System',
 
+		// Shortcuts sidebar sections
+		section_settings: 'Settings',
+		section_shortcuts: 'Shortcuts',
+		section_apps: 'Apps',
+
 		// Settings empty
 		no_category_selected: 'No category selected. Add one to get started.',
 
@@ -59,6 +64,31 @@ export const translations: Record<string, TranslationRecord> = {
 		// AutostartToggle
 		autostart_label: 'Launch at Login',
 
+		// Text Expansion
+		tab_shortcuts: 'Shortcuts',
+		expansion_enabled_label: 'Text Expansion',
+		shortcut_trigger_placeholder: ':trigger:',
+		shortcut_expansion_placeholder: 'Expansion text',
+		shortcuts_count: (n: unknown) => `Shortcuts (${n})`,
+		no_shortcuts: 'No shortcuts yet. Add one to get started.',
+		duplicate_trigger: 'This trigger already exists',
+		hints_position_label: 'Hints Position',
+		hints_caret: 'Near cursor',
+		hints_corner: 'Bottom-right corner',
+		hints_off: 'Disabled',
+		stoplist_label: 'Per-App Settings',
+		stoplist_expansion: 'Expansion',
+		stoplist_hints: 'Hints',
+		stoplist_hints_position: 'Hints position',
+		stoplist_empty: 'No per-app settings',
+		stoplist_add_app: 'Add app',
+		stoplist_no_apps: 'No running apps found',
+		stoplist_search_placeholder: 'Search apps...',
+		stoplist_drop_hint: 'Drop .exe or shortcut here',
+		stoplist_direction: 'Direction',
+		stoplist_offset: 'Offset (px)',
+		stoplist_select_app: 'Select an app',
+
 		// Category names (defaults)
 		cat_arrows: 'Arrows',
 		cat_math: 'Math',
@@ -88,6 +118,10 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_categories: 'Категории',
 		tab_appearance: 'Оформление',
 		tab_system: 'Система',
+
+		section_settings: 'Настройки',
+		section_shortcuts: 'Автозамена',
+		section_apps: 'Приложения',
 
 		no_category_selected: 'Категория не выбрана. Добавьте новую.',
 
@@ -120,6 +154,30 @@ export const translations: Record<string, TranslationRecord> = {
 
 		autostart_label: 'Запускать при входе',
 
+		tab_shortcuts: 'Автозамена',
+		expansion_enabled_label: 'Автозамена текста',
+		shortcut_trigger_placeholder: ':триггер:',
+		shortcut_expansion_placeholder: 'Текст замены',
+		shortcuts_count: (n: unknown) => `Замены (${n})`,
+		no_shortcuts: 'Нет замен. Добавьте первую.',
+		duplicate_trigger: 'Такой триггер уже существует',
+		hints_position_label: 'Подсказки',
+		hints_caret: 'У курсора',
+		hints_corner: 'В углу экрана',
+		hints_off: 'Выключены',
+		stoplist_label: 'Настройки приложений',
+		stoplist_expansion: 'Замена',
+		stoplist_hints: 'Подсказки',
+		stoplist_hints_position: 'Позиция подсказок',
+		stoplist_empty: 'Нет настроек приложений',
+		stoplist_add_app: 'Добавить',
+		stoplist_no_apps: 'Нет запущенных приложений',
+		stoplist_search_placeholder: 'Поиск приложений...',
+		stoplist_drop_hint: 'Перетащите .exe или ярлык сюда',
+		stoplist_direction: 'Направление',
+		stoplist_offset: 'Смещение (пикс.)',
+		stoplist_select_app: 'Выберите приложение',
+
 		cat_arrows: 'Стрелки',
 		cat_math: 'Математика',
 		cat_currency: 'Валюты',
@@ -148,6 +206,10 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_categories: 'Categorías',
 		tab_appearance: 'Apariencia',
 		tab_system: 'Sistema',
+
+		section_settings: 'Ajustes',
+		section_shortcuts: 'Atajos',
+		section_apps: 'Apps',
 
 		no_category_selected: 'Ninguna categoría seleccionada. Añade una para empezar.',
 
@@ -180,6 +242,30 @@ export const translations: Record<string, TranslationRecord> = {
 
 		autostart_label: 'Iniciar con el sistema',
 
+		tab_shortcuts: 'Atajos',
+		expansion_enabled_label: 'Expansión de texto',
+		shortcut_trigger_placeholder: ':atajo:',
+		shortcut_expansion_placeholder: 'Texto de expansión',
+		shortcuts_count: (n: unknown) => `Atajos (${n})`,
+		no_shortcuts: 'No hay atajos. Añade uno para empezar.',
+		duplicate_trigger: 'Este atajo ya existe',
+		hints_position_label: 'Posición de sugerencias',
+		hints_caret: 'Cerca del cursor',
+		hints_corner: 'Esquina inferior derecha',
+		hints_off: 'Desactivado',
+		stoplist_label: 'Ajustes por app',
+		stoplist_expansion: 'Expansión',
+		stoplist_hints: 'Sugerencias',
+		stoplist_hints_position: 'Posición de sugerencias',
+		stoplist_empty: 'Sin ajustes por app',
+		stoplist_add_app: 'Añadir app',
+		stoplist_no_apps: 'No se encontraron apps',
+		stoplist_search_placeholder: 'Buscar apps...',
+		stoplist_drop_hint: 'Suelta .exe o acceso directo aquí',
+		stoplist_direction: 'Dirección',
+		stoplist_offset: 'Desplazamiento (px)',
+		stoplist_select_app: 'Selecciona una app',
+
 		cat_arrows: 'Flechas',
 		cat_math: 'Matemáticas',
 		cat_currency: 'Monedas',
@@ -208,6 +294,10 @@ export const translations: Record<string, TranslationRecord> = {
 		tab_categories: 'カテゴリー',
 		tab_appearance: '外観',
 		tab_system: 'システム',
+
+		section_settings: '設定',
+		section_shortcuts: 'ショートカット',
+		section_apps: 'アプリ',
 
 		no_category_selected: 'カテゴリーが未選択です。追加してください。',
 
@@ -239,6 +329,30 @@ export const translations: Record<string, TranslationRecord> = {
 		language_label: '言語',
 
 		autostart_label: 'ログイン時に起動',
+
+		tab_shortcuts: 'ショートカット',
+		expansion_enabled_label: 'テキスト展開',
+		shortcut_trigger_placeholder: ':トリガー:',
+		shortcut_expansion_placeholder: '展開テキスト',
+		shortcuts_count: (n: unknown) => `ショートカット (${n})`,
+		no_shortcuts: 'ショートカットがありません。追加してください。',
+		duplicate_trigger: 'このトリガーは既に存在します',
+		hints_position_label: 'ヒント位置',
+		hints_caret: 'カーソル付近',
+		hints_corner: '右下コーナー',
+		hints_off: '無効',
+		stoplist_label: 'アプリ別設定',
+		stoplist_expansion: '展開',
+		stoplist_hints: 'ヒント',
+		stoplist_hints_position: 'ヒント位置',
+		stoplist_empty: 'アプリ別設定なし',
+		stoplist_add_app: 'アプリ追加',
+		stoplist_no_apps: '実行中のアプリなし',
+		stoplist_search_placeholder: 'アプリを検索...',
+		stoplist_drop_hint: '.exe またはショートカットをドロップ',
+		stoplist_direction: '方向',
+		stoplist_offset: 'オフセット (px)',
+		stoplist_select_app: 'アプリを選択',
 
 		cat_arrows: '矢印',
 		cat_math: '数学',

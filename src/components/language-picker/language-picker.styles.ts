@@ -13,7 +13,7 @@ export default styled.select`
 		url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
 		no-repeat right 12px center;
 	border: 1px solid var(--border-medium);
-	border-radius: 8px;
+	border-radius: 10px;
 	cursor: pointer;
 	transition:
 		border-color 0.15s,

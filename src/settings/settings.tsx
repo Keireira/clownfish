@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Root, {
 	SettingsGlobalStyle,
 	GlassOverrides,
@@ -7,9 +7,6 @@ import Root, {
 	Body,
 	Main,
 	Empty,
-	SegmentedWrapper,
-	SegmentedControl,
-	Segment,
 	BtnPrimary,
 	BtnSecondary,
 	SettingsGroup,
@@ -18,65 +15,150 @@ import Root, {
 	Footer,
 	Copyright
 } from './settings.styles';
-import { loadCategories, saveCategories, resetCategories, DEFAULT_CATEGORIES } from '../store';
+import {
+	loadCategories,
+	saveCategories,
+	resetCategories,
+	DEFAULT_CATEGORIES,
+	loadShortcuts,
+	saveShortcuts,
+	resetShortcuts,
+	DEFAULT_SHORTCUTS,
+	loadStopList,
+	saveStopList
+} from '../store';
 import { emitEvent } from '../events';
-import CategoryList from '../components/category-list';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import SettingsSidebar, { isCategorySection, categoryIdx, categorySection } from '../components/settings-sidebar';
+import type { ActiveSection } from '../components/settings-sidebar';
 import CategoryEditor from '../components/category-editor';
 import PresetPicker from '../components/preset-picker';
 import ThemePicker from '../components/theme-picker';
 import LanguagePicker from '../components/language-picker';
 import AutostartToggle from '../components/autostart-toggle';
+import ExpansionToggle from '../components/expansion-toggle';
+import HintsPositionPicker from '../components/hints-position';
+import ShortcutEditor from '../components/shortcut-editor';
+import AppSettingsPanel from '../components/stoplist-editor';
 import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
-import type { Category, CharEntry } from '../types';
+import { DropOverlay } from '../components/stoplist-editor/stoplist-editor.styles';
+import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
 
 const Settings = () => {
 	const t = useLanguage();
-	const [tab, setTab] = useState<'categories' | 'appearance' | 'system'>('categories');
+	const [active, setActive] = useState<ActiveSection>('settings');
 	const [categories, setCategories] = useState<Category[]>([]);
-	const [selectedIdx, setSelectedIdx] = useState(0);
 	const [showPresets, setShowPresets] = useState(false);
 	const [dirty, setDirty] = useState(false);
+	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
+	const [shortcutsDirty, setShortcutsDirty] = useState(false);
+	const [stopList, setStopList] = useState<StopListEntry[]>([]);
+	const [stopListDirty, setStopListDirty] = useState(false);
+	const [dragging, setDragging] = useState(false);
+
+	const stopListRef = useRef(stopList);
+	useEffect(() => {
+		stopListRef.current = stopList;
+	}, [stopList]);
 
 	useEffect(() => {
-		loadCategories().then((cats) => {
-			setCategories(cats);
-		});
+		loadCategories().then(setCategories);
+		loadShortcuts().then(setShortcuts);
+		loadStopList().then(setStopList);
+
+		let unlisten: (() => void) | undefined;
+		import('@tauri-apps/api/event')
+			.then(({ listen }) => listen('open-shortcuts-tab', () => setActive('shortcuts')))
+			.then((fn) => {
+				unlisten = fn;
+			})
+			.catch(() => {});
+		return () => {
+			unlisten?.();
+		};
 	}, []);
 
-	const selected = categories[selectedIdx] || null;
+	// Drag-drop for adding apps
+	const addExe = useCallback((exe: string) => {
+		const lower = exe.toLowerCase();
+		const cur = stopListRef.current;
+		if (cur.some((e) => e.exe.toLowerCase() === lower)) return;
+		const newList = [
+			...cur,
+			{
+				exe: lower,
+				expansion: true,
+				hints: true,
+				direction: 'auto' as const,
+				offset: { top: 0, bottom: 0, left: 0, right: 0 }
+			}
+		];
+		setStopList(newList);
+		setStopListDirty(true);
+		setActive(lower);
+	}, []);
 
-	const update = (newCats: Category[]) => {
+	useEffect(() => {
+		let unlisten: (() => void) | undefined;
+		getCurrentWebviewWindow()
+			.onDragDropEvent((event) => {
+				if (event.payload.type === 'over') {
+					setDragging(true);
+				} else if (event.payload.type === 'drop') {
+					setDragging(false);
+					for (const path of event.payload.paths) {
+						invoke<string | null>('expansion_resolve_exe', { path })
+							.then((exe) => {
+								if (exe) addExe(exe);
+							})
+							.catch(() => {});
+					}
+				} else {
+					setDragging(false);
+				}
+			})
+			.then((fn) => {
+				unlisten = fn;
+			});
+		return () => {
+			unlisten?.();
+		};
+	}, [addExe]);
+
+	/* ---- Derived state ---- */
+	const selectedCatIdx = isCategorySection(active) ? categoryIdx(active) : -1;
+	const selectedCat = categories[selectedCatIdx] ?? null;
+	const selectedStopEntry = stopList.find((e) => e.exe === active) ?? null;
+
+	const anyDirty = dirty || shortcutsDirty || stopListDirty;
+
+	/* ---- Category handlers ---- */
+	const updateCategories = (newCats: Category[]) => {
 		setCategories(newCats);
 		setDirty(true);
-	};
-
-	const handleSave = async () => {
-		await saveCategories(categories);
-		setDirty(false);
-		await emitEvent('categories-changed');
-	};
-
-	const handleReset = async () => {
-		await resetCategories();
-		setCategories(DEFAULT_CATEGORIES);
-		setSelectedIdx(0);
-		setDirty(false);
-		await emitEvent('categories-changed');
 	};
 
 	const handleAddCategory = () => {
 		const newCat: Category = { name: 'New Category', chars: [] };
 		const newCats = [...categories, newCat];
-		update(newCats);
-		setSelectedIdx(newCats.length - 1);
+		updateCategories(newCats);
+		setActive(categorySection(newCats.length - 1));
 	};
 
 	const handleDeleteCategory = (idx: number) => {
 		const newCats = categories.filter((_, i) => i !== idx);
-		update(newCats);
-		if (selectedIdx >= newCats.length) {
-			setSelectedIdx(Math.max(0, newCats.length - 1));
+		updateCategories(newCats);
+		// If deleted category was active, select adjacent
+		if (selectedCatIdx === idx) {
+			if (newCats.length === 0) {
+				setActive('shortcuts');
+			} else {
+				setActive(categorySection(Math.min(idx, newCats.length - 1)));
+			}
+		} else if (selectedCatIdx > idx) {
+			setActive(categorySection(selectedCatIdx - 1));
 		}
 	};
 
@@ -84,30 +166,66 @@ const Settings = () => {
 		const newCats = [...categories];
 		const [moved] = newCats.splice(fromIdx, 1);
 		newCats.splice(toIdx, 0, moved);
-		update(newCats);
-		// Follow the moved category if it was selected
-		if (selectedIdx === fromIdx) {
-			setSelectedIdx(toIdx);
-		} else if (selectedIdx > fromIdx && selectedIdx <= toIdx) {
-			setSelectedIdx(selectedIdx - 1);
-		} else if (selectedIdx < fromIdx && selectedIdx >= toIdx) {
-			setSelectedIdx(selectedIdx + 1);
+		updateCategories(newCats);
+		// Follow selection
+		if (selectedCatIdx === fromIdx) {
+			setActive(categorySection(toIdx));
+		} else if (selectedCatIdx > fromIdx && selectedCatIdx <= toIdx) {
+			setActive(categorySection(selectedCatIdx - 1));
+		} else if (selectedCatIdx < fromIdx && selectedCatIdx >= toIdx) {
+			setActive(categorySection(selectedCatIdx + 1));
 		}
 	};
 
 	const handleUpdateCategory = (idx: number, updatedCat: Category) => {
-		const newCats = categories.map((c, i) => (i === idx ? updatedCat : c));
-		update(newCats);
+		updateCategories(categories.map((c, i) => (i === idx ? updatedCat : c)));
+	};
+
+	/* ---- Save / Reset ---- */
+	const handleSave = async () => {
+		if (dirty) {
+			await saveCategories(categories);
+			setDirty(false);
+			await emitEvent('categories-changed');
+		}
+		if (shortcutsDirty || stopListDirty) {
+			await saveShortcuts(shortcuts);
+			await saveStopList(stopList);
+			setShortcutsDirty(false);
+			setStopListDirty(false);
+			await invoke('expansion_update_shortcuts', { shortcuts });
+			await invoke('expansion_update_stoplist', { entries: stopList });
+			await emitEvent('shortcuts-changed');
+		}
+	};
+
+	const handleReset = async () => {
+		await resetCategories();
+		setCategories(DEFAULT_CATEGORIES);
+		setDirty(false);
+		await emitEvent('categories-changed');
+
+		await resetShortcuts();
+		setShortcuts(DEFAULT_SHORTCUTS);
+		setShortcutsDirty(false);
+		setStopList([]);
+		setStopListDirty(false);
+		await saveStopList([]);
+		await invoke('expansion_update_shortcuts', { shortcuts: DEFAULT_SHORTCUTS });
+		await invoke('expansion_update_stoplist', { entries: [] as StopListEntry[] });
+		await emitEvent('shortcuts-changed');
+
+		setActive('shortcuts');
 	};
 
 	const handleAddFromPresets = (chars: CharEntry[]) => {
-		if (!selected) return;
-		const existing = new Set(selected.chars.map(([ch]) => ch));
+		if (!selectedCat) return;
+		const existing = new Set(selectedCat.chars.map(([ch]) => ch));
 		const newChars = chars.filter(([ch]) => !existing.has(ch));
 		if (newChars.length === 0) return;
-		handleUpdateCategory(selectedIdx, {
-			...selected,
-			chars: [...selected.chars, ...newChars]
+		handleUpdateCategory(selectedCatIdx, {
+			...selectedCat,
+			chars: [...selectedCat.chars, ...newChars]
 		});
 		setShowPresets(false);
 	};
@@ -119,79 +237,91 @@ const Settings = () => {
 			<Root>
 				<Header data-tauri-drag-region>
 					<h1>{t('settings_title')}</h1>
-					<HeaderRight style={tab !== 'categories' ? { visibility: 'hidden' } : undefined}>
+					<HeaderRight>
 						<BtnSecondary onClick={handleReset}>{t('reset_to_default')}</BtnSecondary>
-						<BtnPrimary onClick={handleSave} disabled={!dirty}>
-							{dirty ? t('save_changes') : t('saved')}
+						<BtnPrimary onClick={handleSave} disabled={!anyDirty}>
+							{anyDirty ? t('save_changes') : t('saved')}
 						</BtnPrimary>
 					</HeaderRight>
 				</Header>
 
-				<SegmentedWrapper>
-					<SegmentedControl>
-						<Segment $active={tab === 'categories'} onClick={() => setTab('categories')}>
-							{t('tab_categories')}
-						</Segment>
-						<Segment $active={tab === 'appearance'} onClick={() => setTab('appearance')}>
-							{t('tab_appearance')}
-						</Segment>
-						<Segment $active={tab === 'system'} onClick={() => setTab('system')}>
-							{t('tab_system')}
-						</Segment>
-					</SegmentedControl>
-				</SegmentedWrapper>
+				<Body style={{ position: 'relative' }}>
+					<SettingsSidebar
+						active={active}
+						onSelect={setActive}
+						categories={categories}
+						onAddCategory={handleAddCategory}
+						onDeleteCategory={handleDeleteCategory}
+						onReorderCategory={handleReorderCategory}
+						stopList={stopList}
+						onStopListChange={(e) => {
+							setStopList(e);
+							setStopListDirty(true);
+						}}
+					/>
+					<Main>
+						{active === 'shortcuts' && (
+							<ShortcutEditor
+								shortcuts={shortcuts}
+								onChange={(s) => {
+									setShortcuts(s);
+									setShortcutsDirty(true);
+								}}
+							/>
+						)}
 
-				{tab === 'categories' && (
-					<Body>
-						<CategoryList
-							categories={categories}
-							selectedIdx={selectedIdx}
-							onSelect={setSelectedIdx}
-							onDelete={handleDeleteCategory}
-							onAdd={handleAddCategory}
-							onReorder={handleReorderCategory}
-						/>
+						{active === 'settings' && (
+							<>
+								<SettingsGroup>
+									<SettingsRow>
+										<SettingsRowLabel>{t('expansion_enabled_label')}</SettingsRowLabel>
+										<ExpansionToggle />
+									</SettingsRow>
+									<SettingsRow>
+										<SettingsRowLabel>{t('hints_position_label')}</SettingsRowLabel>
+										<HintsPositionPicker />
+									</SettingsRow>
+								</SettingsGroup>
+								<SettingsGroup>
+									<ThemePicker />
+								</SettingsGroup>
+								<SettingsGroup>
+									<SettingsRow>
+										<SettingsRowLabel>{t('language_label')}</SettingsRowLabel>
+										<LanguagePicker />
+									</SettingsRow>
+									<SettingsRow>
+										<SettingsRowLabel>{t('autostart_label')}</SettingsRowLabel>
+										<AutostartToggle />
+									</SettingsRow>
+								</SettingsGroup>
+							</>
+						)}
 
-						<Main>
-							{selected ? (
-								<CategoryEditor
-									category={selected}
-									onChange={(cat) => handleUpdateCategory(selectedIdx, cat)}
-									onOpenPresets={() => setShowPresets(true)}
-								/>
-							) : (
-								<Empty>{t('no_category_selected')}</Empty>
-							)}
-						</Main>
-					</Body>
-				)}
+						{selectedCat && (
+							<CategoryEditor
+								category={selectedCat}
+								onChange={(cat) => handleUpdateCategory(selectedCatIdx, cat)}
+								onOpenPresets={() => setShowPresets(true)}
+							/>
+						)}
 
-				{tab === 'appearance' && (
-					<Body>
-						<Main>
-							<SettingsGroup>
-								<ThemePicker />
-							</SettingsGroup>
-						</Main>
-					</Body>
-				)}
+						{selectedStopEntry && (
+							<AppSettingsPanel
+								entry={selectedStopEntry}
+								onChange={(updated) => {
+									setStopList(stopList.map((e) => (e.exe === updated.exe ? updated : e)));
+									setStopListDirty(true);
+								}}
+							/>
+						)}
 
-				{tab === 'system' && (
-					<Body>
-						<Main>
-							<SettingsGroup>
-								<SettingsRow>
-									<SettingsRowLabel>{t('language_label')}</SettingsRowLabel>
-									<LanguagePicker />
-								</SettingsRow>
-								<SettingsRow>
-									<SettingsRowLabel>{t('autostart_label')}</SettingsRowLabel>
-									<AutostartToggle />
-								</SettingsRow>
-							</SettingsGroup>
-						</Main>
-					</Body>
-				)}
+						{!selectedCat && !selectedStopEntry && active !== 'shortcuts' && active !== 'settings' && (
+							<Empty>{t('no_category_selected')}</Empty>
+						)}
+					</Main>
+					{dragging && <DropOverlay>{t('stoplist_drop_hint')}</DropOverlay>}
+				</Body>
 
 				<Footer>
 					<BottomBar
@@ -206,11 +336,11 @@ const Settings = () => {
 					/>
 				</Footer>
 
-				{showPresets && selected && (
+				{showPresets && selectedCat && (
 					<PresetPicker
 						onAdd={handleAddFromPresets}
 						onClose={() => setShowPresets(false)}
-						existingChars={selected.chars.map(([ch]) => ch)}
+						existingChars={selectedCat.chars.map(([ch]) => ch)}
 					/>
 				)}
 			</Root>

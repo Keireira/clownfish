@@ -37,13 +37,11 @@ export const SettingsGlobalStyle = createGlobalStyle`
 
 export const GlassOverrides = createGlobalStyle`
 	html.glass .settings-header,
-	html.glass .settings-tabs,
 	html.glass .settings-main {
 		background: transparent;
 	}
 
 	html.glass[data-theme="light"] .settings-header,
-	html.glass[data-theme="light"] .settings-tabs,
 	html.glass[data-theme="light"] .settings-main {
 		background: transparent;
 	}
@@ -53,7 +51,7 @@ export const Header = styled.div.attrs({ className: 'settings-header' })`
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 12px 20px 12px 20px;
+	padding: 14px 20px 14px 20px;
 	border-bottom: 1px solid var(--border);
 	-webkit-user-select: none;
 	user-select: none;
@@ -61,6 +59,11 @@ export const Header = styled.div.attrs({ className: 'settings-header' })`
 	h1 {
 		font-size: 14px;
 		font-weight: 600;
+	}
+
+	html.macos & {
+		padding-left: 78px;
+		padding-top: 38px;
 	}
 `;
 
@@ -80,6 +83,9 @@ export const Main = styled.div.attrs({ className: 'settings-main' })`
 	overflow-y: auto;
 	padding: 16px 20px;
 	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
 `;
 
 export const Empty = styled.div`
@@ -89,46 +95,10 @@ export const Empty = styled.div`
 	font-size: 13px;
 `;
 
-export const SegmentedWrapper = styled.div.attrs({ className: 'settings-tabs' })`
-	display: flex;
-	justify-content: center;
-	padding: 10px 20px;
-	border-bottom: 1px solid var(--border);
-	-webkit-user-select: none;
-	user-select: none;
-`;
-
-export const SegmentedControl = styled.div`
-	display: flex;
-	background: var(--segmented-bg);
-	border-radius: var(--radius-s);
-	padding: 2px;
-`;
-
-export const Segment = styled.button<{ $active: boolean }>`
-	padding: 5px 20px;
-	border: none;
-	border-radius: 6px;
-	background: ${(p) => (p.$active ? 'var(--segmented-active)' : 'transparent')};
-	box-shadow: ${(p) => (p.$active ? '0 1px 3px rgba(0, 0, 0, 0.12)' : 'none')};
-	color: ${(p) => (p.$active ? 'var(--text-primary)' : 'var(--text-muted)')};
-	font-size: 12px;
-	font-weight: 500;
-	cursor: pointer;
-	transition:
-		background 0.2s,
-		color 0.2s,
-		box-shadow 0.2s;
-
-	&:hover {
-		color: ${(p) => (p.$active ? 'var(--text-primary)' : 'var(--text-secondary)')};
-	}
-`;
-
 const Btn = styled.button`
-	padding: 6px 14px;
+	padding: 7px 16px;
 	border: none;
-	border-radius: 6px;
+	border-radius: 8px;
 	font-size: 12px;
 	font-weight: 500;
 	cursor: pointer;
@@ -165,14 +135,14 @@ export const SettingsGroup = styled.div`
 	border: 1px solid var(--border);
 	border-radius: var(--radius-l);
 	padding: 4px 0;
-	margin-bottom: 16px;
+	margin-bottom: 18px;
 `;
 
 export const SettingsRow = styled.div`
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 12px 16px;
+	padding: 14px 18px;
 
 	& + & {
 		border-top: 1px solid var(--border);

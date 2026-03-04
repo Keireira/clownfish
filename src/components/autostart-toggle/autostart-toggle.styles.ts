@@ -4,8 +4,8 @@ export const Knob = styled.span<{ $active: boolean }>`
 	position: absolute;
 	top: 3px;
 	left: 3px;
-	width: 16px;
-	height: 16px;
+	width: 18px;
+	height: 18px;
 	border-radius: 50%;
 	background: #fff;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -16,10 +16,10 @@ export const Knob = styled.span<{ $active: boolean }>`
 
 export default styled.button<{ $active: boolean }>`
 	position: relative;
-	width: 40px;
-	height: 22px;
+	width: 42px;
+	height: 24px;
 	border: none;
-	border-radius: 11px;
+	border-radius: 12px;
 	background: ${(p) => (p.$active ? 'var(--accent)' : 'var(--fill-hover)')};
 	cursor: pointer;
 	padding: 0;

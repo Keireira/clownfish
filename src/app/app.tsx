@@ -60,6 +60,12 @@ export default function App() {
 						getThemeChoice().then(applyTheme);
 					});
 					getLanguageChoice().then(applyLanguage);
+					// Focus the search input when the window appears from tray
+					const input = document.querySelector<HTMLInputElement>('[data-search-input]');
+					if (input) {
+						input.focus();
+						input.select();
+					}
 				});
 			})
 			.catch((e) => console.error('Focus listener setup failed:', e));
@@ -139,7 +145,7 @@ export default function App() {
 				</GridArea>
 				<BottomBar
 					right={
-						<SettingsBtn onClick={openSettings} title="Settings">
+						<SettingsBtn onClick={openSettings}>
 							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
 								<path
 									fillRule="evenodd"

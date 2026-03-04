@@ -12,21 +12,21 @@ export const Label = styled.span`
 	z-index: 2;
 	background: var(--card-bg);
 	backdrop-filter: blur(12px);
-	margin: -14px -14px 12px;
-	padding: 12px 14px 8px;
-	border-radius: 12px 12px 0 0;
+	margin: -16px -16px 12px;
+	padding: 14px 16px 8px;
+	border-radius: 14px 14px 0 0;
 `;
 
 export const Grid = styled.div`
 	display: grid;
-	grid-template-columns: repeat(auto-fill, 38px);
-	gap: 6px;
+	grid-template-columns: repeat(auto-fill, 40px);
+	gap: 7px;
 `;
 
 export default styled.div`
 	margin-bottom: 10px;
 	background: var(--card-bg);
 	border: 1px solid var(--border);
-	border-radius: 12px;
-	padding: 14px;
+	border-radius: 14px;
+	padding: 16px;
 `;

@@ -51,6 +51,11 @@ function detectGlass(): void {
 	const tauri = (window as any).__TAURI_INTERNALS__;
 	if (!tauri) return;
 	const p = navigator.platform;
+
+	if (p.startsWith('Mac')) {
+		document.documentElement.classList.add('macos');
+	}
+
 	const label = tauri.metadata?.currentWindow?.label as string | undefined;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const isSettings = (window as any).__IS_SETTINGS_WINDOW__ || label === 'settings';

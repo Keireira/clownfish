@@ -7,7 +7,15 @@ const DETAIL_CARDS = [
 	{ icon: '🌍', title: 'extra_lang_title', desc: 'extra_lang_desc', delay: 'delay-3' },
 	{ icon: '⚡', title: 'extra_light_title', desc: 'extra_light_desc', delay: 'delay-4' },
 	{ icon: '🔒', title: 'extra_private_title', desc: 'extra_private_desc', delay: 'delay-5' },
-	{ icon: '🚀', title: 'extra_login_title', desc: 'extra_login_desc', delay: 'delay-6' }
+	{ icon: '🚀', title: 'extra_login_title', desc: 'extra_login_desc', delay: 'delay-6' },
+	{ icon: '🎛️', title: 'extra_perapp_title', desc: 'extra_perapp_desc', delay: 'delay-1' }
+] as const;
+
+const EXPANSION_PREVIEW = [
+	{ trigger: ':shrug:', expansion: '¯\\_(ツ)_/¯' },
+	{ trigger: ':arrow:', expansion: '→' },
+	{ trigger: ':inf:', expansion: '∞' },
+	{ trigger: ':check:', expansion: '✓' }
 ] as const;
 
 const SYMBOL_PREVIEW = [
@@ -31,7 +39,7 @@ const Features = () => {
 				<h2 className="mb-14 text-center text-3xl font-bold tracking-tight md:text-4xl">{t('also_heading')}</h2>
 			</Reveal>
 
-			<div className="grid gap-4 md:grid-cols-3">
+			<div className="grid gap-4 md:grid-cols-2">
 				{/* Menu bar card */}
 				<Reveal delay="delay-1">
 					<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
@@ -45,8 +53,27 @@ const Features = () => {
 					</div>
 				</Reveal>
 
-				{/* Symbols preview card */}
+				{/* Text expansion card */}
 				<Reveal delay="delay-2">
+					<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
+						<div className="mb-5 space-y-1.5">
+							{EXPANSION_PREVIEW.map((row) => (
+								<div key={row.trigger} className="flex items-center gap-2 text-[11px]">
+									<span className="rounded-md border border-border bg-white/[0.03] px-2 py-1 font-mono text-text-muted">
+										{row.trigger}
+									</span>
+									<span className="text-text-muted">→</span>
+									<span className="text-text-primary">{row.expansion}</span>
+								</div>
+							))}
+						</div>
+						<h3 className="mb-1.5 text-base font-semibold">{t('feat_expand_title')}</h3>
+						<p className="text-sm leading-relaxed text-text-secondary">{t('feat_expand_desc')}</p>
+					</div>
+				</Reveal>
+
+				{/* Symbols preview card */}
+				<Reveal delay="delay-3">
 					<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
 						<div className="mb-5 space-y-2">
 							{SYMBOL_PREVIEW.map((cat) => (
@@ -75,7 +102,7 @@ const Features = () => {
 				</Reveal>
 
 				{/* Custom layout card */}
-				<Reveal delay="delay-3">
+				<Reveal delay="delay-4">
 					<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
 						<div className="mb-5 space-y-1">
 							{CATEGORY_LIST.map((cat) => (

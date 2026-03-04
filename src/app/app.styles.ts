@@ -27,7 +27,7 @@ export const GridArea = styled.div`
 	padding: 0 8px;
 
 	&::-webkit-scrollbar {
-		width: 6px;
+		width: 7px;
 	}
 
 	&::-webkit-scrollbar-track {
@@ -57,7 +57,7 @@ export const SettingsBtn = styled.button`
 	font-size: 11px;
 	cursor: pointer;
 	padding: 4px 8px;
-	border-radius: 6px;
+	border-radius: 8px;
 	transition:
 		color 0.15s,
 		background 0.15s;
@@ -72,12 +72,18 @@ export const SettingsBtn = styled.button`
 	}
 `;
 
+export const BtnGroup = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 2px;
+`;
+
 export default styled.div`
 	background: var(--glass-bg);
 	border: 1px solid var(--border-strong);
 	border-radius: var(--radius-l);
 	box-shadow: var(--glass-shadow);
-	padding: 12px;
+	padding: 14px;
 	width: 100%;
 	height: 100%;
 	overflow: hidden;

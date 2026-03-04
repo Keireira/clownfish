@@ -4,6 +4,7 @@
 //! window management, clipboard access, and platform-specific autostart.
 
 mod autostart;
+mod text_expand;
 mod tray;
 mod window;
 
@@ -22,6 +23,14 @@ pub fn run() {
             autostart::autostart_is_enabled,
             autostart::autostart_enable,
             autostart::autostart_disable,
+            text_expand::expansion_set_enabled,
+            text_expand::expansion_is_enabled,
+            text_expand::expansion_update_shortcuts,
+            text_expand::expansion_apply_hint,
+            text_expand::expansion_set_hints_mode,
+            text_expand::expansion_update_stoplist,
+            text_expand::expansion_list_running_apps,
+            text_expand::expansion_resolve_exe,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -29,7 +38,20 @@ pub fn run() {
 
             window::build_main(app)?;
             window::build_settings(app)?;
+            window::build_hints(app)?;
             tray::build(app)?;
+            text_expand::start_listener(app.handle());
+
+            // Sync tray check-mark when the frontend toggles expansion
+            {
+                use tauri::Listener;
+                let handle = app.handle().clone();
+                app.listen("expansion-toggled", move |event: tauri::Event| {
+                    if let Ok(enabled) = serde_json::from_str::<bool>(event.payload()) {
+                        tray::set_expansion_checked(&handle, enabled);
+                    }
+                });
+            }
 
             Ok(())
         })

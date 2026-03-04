@@ -19,8 +19,8 @@ export default styled.div<{ $x: number; $y: number }>`
 	transform: translateX(-50%) translateY(-100%);
 	background: var(--tooltip-bg);
 	border: 1px solid var(--border-strong);
-	border-radius: 8px;
-	padding: 6px 10px;
+	border-radius: 10px;
+	padding: 7px 12px;
 	display: flex;
 	align-items: center;
 	gap: 8px;

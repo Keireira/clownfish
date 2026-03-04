@@ -12,9 +12,9 @@ export const SectionLabel = styled.label`
 
 export const NameInput = styled.input`
 	width: 100%;
-	padding: 8px 12px;
+	padding: 9px 14px;
 	border: 1px solid var(--border-medium);
-	border-radius: 6px;
+	border-radius: 8px;
 	background: var(--fill-light);
 	color: var(--text-secondary);
 	font-size: 14px;
@@ -44,12 +44,12 @@ export const CharGrid = styled.div`
 
 export const CharItem = styled.div`
 	position: relative;
-	width: 40px;
-	height: 40px;
+	width: 42px;
+	height: 42px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 6px;
+	border-radius: 8px;
 	background: var(--fill);
 	font-size: 18px;
 
@@ -83,9 +83,9 @@ export const AddRow = styled.div`
 `;
 
 const AddInput = styled.input`
-	padding: 6px 10px;
+	padding: 7px 12px;
 	border: 1px solid var(--border-medium);
-	border-radius: 6px;
+	border-radius: 8px;
 	background: var(--fill-light);
 	color: var(--text-secondary);
 	font-size: 13px;
@@ -111,7 +111,7 @@ export const SmallBtn = styled.button`
 	background: var(--fill);
 	color: var(--text-tertiary);
 	border: 1px solid var(--border-medium);
-	border-radius: 6px;
+	border-radius: 8px;
 	cursor: pointer;
 	font-weight: 500;
 
@@ -123,5 +123,5 @@ export const SmallBtn = styled.button`
 export default styled.div`
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 18px;
 `;

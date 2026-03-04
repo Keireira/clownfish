@@ -15,7 +15,7 @@ export const Link = styled.button`
 	background: none;
 	border: none;
 	padding: 4px 6px;
-	border-radius: 6px;
+	border-radius: 8px;
 	transition:
 		color 0.15s,
 		background 0.15s;

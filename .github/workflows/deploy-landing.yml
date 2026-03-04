@@ -3,6 +3,11 @@ name: Deploy Landing to GitHub Pages
 on:
   workflow_call:
   workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "landing/**"
 
 permissions:
   contents: read
