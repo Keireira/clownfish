@@ -48,7 +48,7 @@ import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
 
 const Settings = () => {
 	const t = useLanguage();
-	const [active, setActive] = useState<ActiveSection>('shortcuts');
+	const [active, setActive] = useState<ActiveSection>('settings');
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [showPresets, setShowPresets] = useState(false);
 	const [dirty, setDirty] = useState(false);

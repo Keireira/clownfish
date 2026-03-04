@@ -60,6 +60,11 @@ export const Header = styled.div.attrs({ className: 'settings-header' })`
 		font-size: 14px;
 		font-weight: 600;
 	}
+
+	html.macos & {
+		padding-left: 78px;
+		padding-top: 38px;
+	}
 `;
 
 export const HeaderRight = styled.div`

@@ -10,6 +10,8 @@ export default styled.div`
 	display: flex;
 	flex-direction: column;
 	padding: 6px 0;
+	overflow-y: auto;
+	overflow-x: hidden;
 `;
 
 /* ---- Section items (top nav) ---- */

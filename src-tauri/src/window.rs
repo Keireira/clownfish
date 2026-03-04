@@ -69,14 +69,20 @@ pub fn build_main(app: &App) -> tauri::Result<()> {
 /// The close button is intercepted so the window hides instead of
 /// being destroyed, keeping the WebView2 runtime warm for instant re-show.
 pub fn build_settings(app: &App) -> tauri::Result<()> {
-    let win = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+    let builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
         .title("Hot Symbols Settings")
         .initialization_script("window.__IS_SETTINGS_WINDOW__=true;")
         .inner_size(SETTINGS_WIDTH, SETTINGS_HEIGHT)
         .min_inner_size(SETTINGS_MIN_WIDTH, SETTINGS_MIN_HEIGHT)
         .center()
-        .visible(false)
-        .build()?;
+        .visible(false);
+
+    // On macOS, overlay the traffic-light buttons on the content area
+    // so the sidebar can extend to the top of the window.
+    #[cfg(target_os = "macos")]
+    let builder = builder.title_bar_style(tauri::utils::TitleBarStyle::Overlay);
+
+    let win = builder.build()?;
 
     let handle = win.clone();
     win.on_window_event(move |event| {

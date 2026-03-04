@@ -122,10 +122,16 @@ pub fn build(app: &App) -> tauri::Result<()> {
         .and_then(|w| w.theme().ok())
         .unwrap_or(Theme::Dark);
 
-    TrayIconBuilder::with_id("main-tray")
+    let tray_builder = TrayIconBuilder::with_id("main-tray")
         .icon(icon_for_theme(app.handle(), initial_theme))
         .menu(&menu)
-        .show_menu_on_left_click(false)
+        .show_menu_on_left_click(false);
+
+    // On macOS, mark as template so the OS handles light/dark tinting automatically.
+    #[cfg(target_os = "macos")]
+    let tray_builder = tray_builder.icon_as_template(true);
+
+    tray_builder
         .on_menu_event(|app, event| match event.id.as_ref() {
             "expansion_toggle" => {
                 let new_state = !crate::text_expand::is_enabled();
