@@ -47,12 +47,15 @@ fn open_settings(app: &AppHandle) {
         let _ = win.show();
         let _ = win.set_focus();
     } else {
-        let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+        let mut builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
             .title("Hot Symbols Settings")
             .inner_size(660.0, 520.0)
             .min_inner_size(550.0, 400.0)
-            .center()
-            .build();
+            .center();
+        if let Some(icon) = app.default_window_icon().cloned() {
+            builder = builder.icon(icon).unwrap();
+        }
+        let _ = builder.build();
     }
 }
 
