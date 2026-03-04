@@ -23,7 +23,7 @@ const DONATION_LINKS: DonationLink[] = [
 		className: 'border border-border bg-bg text-text-primary hover:bg-bg-card-hover'
 	},
 	{
-		href: 'https://boosty.to',
+		href: 'https://boosty.to/keireira/donate',
 		label: null,
 		text: 'Boosty',
 		className: 'bg-[#F15F2C] text-white hover:bg-[#E04E1B] hover:shadow-[0_0_20px_rgba(241,95,44,0.3)]',
@@ -35,14 +35,14 @@ const DONATION_LINKS: DonationLink[] = [
 		text: 'Patreon',
 		className: 'bg-[#FF424D] text-white hover:bg-[#E63940] hover:shadow-[0_0_20px_rgba(255,66,77,0.3)]',
 		external: true
-	},
-	{
-		href: 'https://opencollective.com/',
-		label: null,
-		text: 'Open Collective',
-		className: 'bg-[#7FADF2] text-white hover:bg-[#6B9AE0] hover:shadow-[0_0_20px_rgba(127,173,242,0.3)]',
-		external: true
 	}
+	// {
+	// 	href: 'https://opencollective.com/',
+	// 	label: null,
+	// 	text: 'Open Collective',
+	// 	className: 'bg-[#7FADF2] text-white hover:bg-[#6B9AE0] hover:shadow-[0_0_20px_rgba(127,173,242,0.3)]',
+	// 	external: true
+	// }
 ];
 
 const Support = () => {

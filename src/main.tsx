@@ -8,6 +8,23 @@ import { initLanguage } from './i18n';
 initTheme();
 initLanguage();
 
+// Sync text expansion shortcuts and enabled state to Rust backend on startup
+(async () => {
+	try {
+		const { invoke } = await import('@tauri-apps/api/core');
+		const { loadShortcuts, loadExpansionEnabled, loadHintsPosition, loadStopList } = await import('./store');
+		const [shortcuts, enabled, hintsPos, stopList] = await Promise.all([
+			loadShortcuts(), loadExpansionEnabled(), loadHintsPosition(), loadStopList(),
+		]);
+		await invoke('expansion_update_shortcuts', { shortcuts });
+		await invoke('expansion_set_enabled', { enabled });
+		await invoke('expansion_set_hints_mode', { mode: hintsPos });
+		await invoke('expansion_update_stoplist', { entries: stopList });
+	} catch (err) {
+		console.error('Failed to init text expansion:', err);
+	}
+})();
+
 interface ErrorBoundaryProps {
 	children: ReactNode;
 }
@@ -57,8 +74,16 @@ const root = createRoot(document.getElementById('root')!);
 const label = (window as any).__TAURI_INTERNALS__?.metadata?.currentWindow?.label as string | undefined;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isSettings = (window as any).__IS_SETTINGS_WINDOW__ || label === 'settings';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isHints = (window as any).__IS_HINTS_WINDOW__ || label === 'hints';
 
-if (isSettings) {
+if (isHints) {
+	import('./hints')
+		.then(({ default: Hints }) => {
+			root.render(<Hints />);
+		})
+		.catch(() => {});
+} else if (isSettings) {
 	import('./settings')
 		.then(({ default: Settings }) => {
 			root.render(

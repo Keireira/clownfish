@@ -7,9 +7,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use tauri::image::Image;
-use tauri::menu::{Menu, MenuItem};
+use tauri::menu::{CheckMenuItem, Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{App, AppHandle, LogicalPosition, Manager, Theme};
+use tauri::{App, AppHandle, Emitter, LogicalPosition, Manager, Theme};
 
 use crate::window;
 
@@ -61,6 +61,16 @@ pub fn icon_for_theme(app: &AppHandle, theme: Theme) -> Image<'static> {
         .unwrap_or(fallback)
 }
 
+/// Wrapper to store the expansion CheckMenuItem handle in Tauri managed state.
+pub struct ExpansionCheckHandle(pub CheckMenuItem<tauri::Wry>);
+
+/// Updates the tray "Text Expansion" check-mark to match the given state.
+pub fn set_expansion_checked(app: &AppHandle, checked: bool) {
+    if let Some(handle) = app.try_state::<ExpansionCheckHandle>() {
+        let _ = handle.0.set_checked(checked);
+    }
+}
+
 /// Computes the popup position relative to the tray icon rectangle.
 ///
 /// - **macOS**: window opens *below* the menu bar.
@@ -92,9 +102,20 @@ fn compute_popup_position(
 
 /// Builds and registers the system tray with a context menu and click handler.
 pub fn build(app: &App) -> tauri::Result<()> {
+    let expansion_item = CheckMenuItem::with_id(
+        app,
+        "expansion_toggle",
+        "Text Expansion",
+        true,
+        crate::text_expand::is_enabled(),
+        None::<&str>,
+    )?;
     let settings_item = MenuItem::with_id(app, "settings", "Settings...", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&settings_item, &quit_item])?;
+    // Store handle so we can update the check-mark from settings sync
+    app.manage(ExpansionCheckHandle(expansion_item.clone()));
+
+    let menu = Menu::with_items(app, &[&expansion_item, &settings_item, &quit_item])?;
 
     let initial_theme = app
         .get_webview_window("main")
@@ -106,6 +127,12 @@ pub fn build(app: &App) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
+            "expansion_toggle" => {
+                let new_state = !crate::text_expand::is_enabled();
+                crate::text_expand::set_enabled(new_state);
+                // Notify frontend so the settings toggle stays in sync
+                let _ = app.emit("expansion-toggled", new_state);
+            }
             "settings" => window::open_settings(app),
             "quit" => app.exit(0),
             _ => {}

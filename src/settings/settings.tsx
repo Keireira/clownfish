@@ -18,30 +18,51 @@ import Root, {
 	Footer,
 	Copyright
 } from './settings.styles';
-import { loadCategories, saveCategories, resetCategories, DEFAULT_CATEGORIES } from '../store';
+import {
+	loadCategories, saveCategories, resetCategories, DEFAULT_CATEGORIES,
+	loadShortcuts, saveShortcuts, resetShortcuts, DEFAULT_SHORTCUTS,
+	loadStopList, saveStopList
+} from '../store';
 import { emitEvent } from '../events';
+import { invoke } from '@tauri-apps/api/core';
 import CategoryList from '../components/category-list';
 import CategoryEditor from '../components/category-editor';
 import PresetPicker from '../components/preset-picker';
 import ThemePicker from '../components/theme-picker';
 import LanguagePicker from '../components/language-picker';
 import AutostartToggle from '../components/autostart-toggle';
+import ExpansionToggle from '../components/expansion-toggle';
+import HintsPositionPicker from '../components/hints-position';
+import ShortcutEditor from '../components/shortcut-editor';
+import StopListEditor from '../components/stoplist-editor';
 import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
-import type { Category, CharEntry } from '../types';
+import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
 
 const Settings = () => {
 	const t = useLanguage();
-	const [tab, setTab] = useState<'categories' | 'appearance' | 'system'>('categories');
+	const [tab, setTab] = useState<'categories' | 'shortcuts' | 'appearance' | 'system'>('categories');
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [selectedIdx, setSelectedIdx] = useState(0);
 	const [showPresets, setShowPresets] = useState(false);
 	const [dirty, setDirty] = useState(false);
+	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
+	const [shortcutsDirty, setShortcutsDirty] = useState(false);
+	const [stopList, setStopList] = useState<StopListEntry[]>([]);
+	const [stopListDirty, setStopListDirty] = useState(false);
 
 	useEffect(() => {
-		loadCategories().then((cats) => {
-			setCategories(cats);
-		});
+		loadCategories().then(setCategories);
+		loadShortcuts().then(setShortcuts);
+		loadStopList().then(setStopList);
+
+		// Listen for request to switch to shortcuts tab (from main window)
+		let unlisten: (() => void) | undefined;
+		import('@tauri-apps/api/event')
+			.then(({ listen }) => listen('open-shortcuts-tab', () => setTab('shortcuts')))
+			.then((fn) => { unlisten = fn; })
+			.catch(() => {});
+		return () => { unlisten?.(); };
 	}, []);
 
 	const selected = categories[selectedIdx] || null;
@@ -100,6 +121,28 @@ const Settings = () => {
 		update(newCats);
 	};
 
+	const handleSaveShortcuts = async () => {
+		await saveShortcuts(shortcuts);
+		await saveStopList(stopList);
+		setShortcutsDirty(false);
+		setStopListDirty(false);
+		await invoke('expansion_update_shortcuts', { shortcuts });
+		await invoke('expansion_update_stoplist', { entries: stopList });
+		await emitEvent('shortcuts-changed');
+	};
+
+	const handleResetShortcuts = async () => {
+		await resetShortcuts();
+		setShortcuts(DEFAULT_SHORTCUTS);
+		setShortcutsDirty(false);
+		setStopList([]);
+		setStopListDirty(false);
+		await saveStopList([]);
+		await invoke('expansion_update_shortcuts', { shortcuts: DEFAULT_SHORTCUTS });
+		await invoke('expansion_update_stoplist', { entries: [] as StopListEntry[] });
+		await emitEvent('shortcuts-changed');
+	};
+
 	const handleAddFromPresets = (chars: CharEntry[]) => {
 		if (!selected) return;
 		const existing = new Set(selected.chars.map(([ch]) => ch));
@@ -119,10 +162,15 @@ const Settings = () => {
 			<Root>
 				<Header data-tauri-drag-region>
 					<h1>{t('settings_title')}</h1>
-					<HeaderRight style={tab !== 'categories' ? { visibility: 'hidden' } : undefined}>
-						<BtnSecondary onClick={handleReset}>{t('reset_to_default')}</BtnSecondary>
-						<BtnPrimary onClick={handleSave} disabled={!dirty}>
-							{dirty ? t('save_changes') : t('saved')}
+					<HeaderRight style={tab !== 'categories' && tab !== 'shortcuts' ? { visibility: 'hidden' } : undefined}>
+						<BtnSecondary onClick={tab === 'shortcuts' ? handleResetShortcuts : handleReset}>
+							{t('reset_to_default')}
+						</BtnSecondary>
+						<BtnPrimary
+							onClick={tab === 'shortcuts' ? handleSaveShortcuts : handleSave}
+							disabled={tab === 'shortcuts' ? !(shortcutsDirty || stopListDirty) : !dirty}
+						>
+							{(tab === 'shortcuts' ? (shortcutsDirty || stopListDirty) : dirty) ? t('save_changes') : t('saved')}
 						</BtnPrimary>
 					</HeaderRight>
 				</Header>
@@ -131,6 +179,9 @@ const Settings = () => {
 					<SegmentedControl>
 						<Segment $active={tab === 'categories'} onClick={() => setTab('categories')}>
 							{t('tab_categories')}
+						</Segment>
+						<Segment $active={tab === 'shortcuts'} onClick={() => setTab('shortcuts')}>
+							{t('tab_shortcuts')}
 						</Segment>
 						<Segment $active={tab === 'appearance'} onClick={() => setTab('appearance')}>
 							{t('tab_appearance')}
@@ -162,6 +213,37 @@ const Settings = () => {
 							) : (
 								<Empty>{t('no_category_selected')}</Empty>
 							)}
+						</Main>
+					</Body>
+				)}
+
+				{tab === 'shortcuts' && (
+					<Body>
+						<Main>
+							<SettingsGroup>
+								<SettingsRow>
+									<SettingsRowLabel>{t('expansion_enabled_label')}</SettingsRowLabel>
+									<ExpansionToggle />
+								</SettingsRow>
+								<SettingsRow>
+									<SettingsRowLabel>{t('hints_position_label')}</SettingsRowLabel>
+									<HintsPositionPicker />
+								</SettingsRow>
+							</SettingsGroup>
+							<ShortcutEditor
+								shortcuts={shortcuts}
+								onChange={(s) => {
+									setShortcuts(s);
+									setShortcutsDirty(true);
+								}}
+							/>
+							<StopListEditor
+								entries={stopList}
+								onChange={(e) => {
+									setStopList(e);
+									setStopListDirty(true);
+								}}
+							/>
 						</Main>
 					</Body>
 				)}

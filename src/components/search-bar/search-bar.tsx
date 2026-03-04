@@ -19,6 +19,7 @@ const SearchBar = ({ value, onChange }: Props) => {
 				type="text"
 				placeholder={t('search_placeholder')}
 				autoFocus
+				data-search-input
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 			/>

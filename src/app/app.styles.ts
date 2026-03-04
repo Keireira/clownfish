@@ -72,6 +72,12 @@ export const SettingsBtn = styled.button`
 	}
 `;
 
+export const BtnGroup = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 2px;
+`;
+
 export default styled.div`
 	background: var(--glass-bg);
 	border: 1px solid var(--border-strong);

@@ -10,12 +10,12 @@ pub const MAIN_WIDTH: f64 = 420.0;
 pub const MAIN_HEIGHT: f64 = 520.0;
 
 /// Settings window default dimensions.
-const SETTINGS_WIDTH: f64 = 660.0;
-const SETTINGS_HEIGHT: f64 = 520.0;
+const SETTINGS_WIDTH: f64 = 780.0;
+const SETTINGS_HEIGHT: f64 = 600.0;
 
 /// Settings window minimum dimensions.
-const SETTINGS_MIN_WIDTH: f64 = 550.0;
-const SETTINGS_MIN_HEIGHT: f64 = 400.0;
+const SETTINGS_MIN_WIDTH: f64 = 650.0;
+const SETTINGS_MIN_HEIGHT: f64 = 480.0;
 
 /// Creates the main popup window (hidden, always-on-top, no decorations).
 ///
@@ -85,6 +85,40 @@ pub fn build_settings(app: &App) -> tauri::Result<()> {
             let _ = handle.hide();
         }
     });
+
+    Ok(())
+}
+
+/// Creates a small hints popup for text expansion autocomplete.
+pub fn build_hints(app: &App) -> tauri::Result<()> {
+    let effects = EffectsBuilder::new()
+        .effects(vec![Effect::HudWindow, Effect::Mica, Effect::Acrylic])
+        .state(EffectState::Active)
+        .radius(10.0)
+        .build();
+
+    let win = WebviewWindowBuilder::new(app, "hints", WebviewUrl::default())
+        .title("Hints")
+        .initialization_script("window.__IS_HINTS_WINDOW__=true;")
+        .inner_size(260.0, 54.0)
+        .decorations(false)
+        .transparent(true)
+        .visible(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .resizable(false)
+        .effects(effects)
+        .build()?;
+
+    // Position near bottom-right of screen.
+    if let Ok(Some(monitor)) = win.current_monitor() {
+        let scale = win.scale_factor().unwrap_or(1.0);
+        let screen = monitor.size().to_logical::<f64>(scale);
+        let x = screen.width - 240.0;
+        let y = screen.height - 240.0;
+        let _ = win.set_position(tauri::LogicalPosition::new(x, y));
+    }
 
     Ok(())
 }

@@ -80,6 +80,9 @@ export const Main = styled.div.attrs({ className: 'settings-main' })`
 	overflow-y: auto;
 	padding: 16px 20px;
 	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
 `;
 
 export const Empty = styled.div`
