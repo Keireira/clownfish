@@ -1,185 +1,185 @@
 /* ========== Theme: Dark (default) ========== */
 :root {
-  /* Backgrounds */
-  --bg-solid: #1e1e22;
-  --bg-elevated: #2a2a2e;
-  --glass-bg: rgba(10, 10, 14, 0.72);
+	/* Backgrounds */
+	--bg-solid: #1e1e22;
+	--bg-elevated: #2a2a2e;
+	--glass-bg: rgba(10, 10, 14, 0.72);
 
-  /* Text */
-  --text-primary: #f0f0f0;
-  --text-secondary: #e8e8e8;
-  --text-tertiary: #cccccc;
-  --text-bright: rgba(255, 255, 255, 0.8);
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --text-label: rgba(255, 255, 255, 0.45);
-  --text-faint: rgba(255, 255, 255, 0.4);
-  --text-placeholder: rgba(255, 255, 255, 0.35);
-  --text-disabled: rgba(255, 255, 255, 0.3);
-  --text-hint: rgba(255, 255, 255, 0.25);
+	/* Text */
+	--text-primary: #f0f0f0;
+	--text-secondary: #e8e8e8;
+	--text-tertiary: #cccccc;
+	--text-bright: rgba(255, 255, 255, 0.8);
+	--text-muted: rgba(255, 255, 255, 0.55);
+	--text-label: rgba(255, 255, 255, 0.45);
+	--text-faint: rgba(255, 255, 255, 0.4);
+	--text-placeholder: rgba(255, 255, 255, 0.35);
+	--text-disabled: rgba(255, 255, 255, 0.3);
+	--text-hint: rgba(255, 255, 255, 0.25);
 
-  /* Borders */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.12);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --border-hover: rgba(255, 255, 255, 0.2);
+	/* Borders */
+	--border: rgba(255, 255, 255, 0.08);
+	--border-medium: rgba(255, 255, 255, 0.12);
+	--border-strong: rgba(255, 255, 255, 0.15);
+	--border-hover: rgba(255, 255, 255, 0.2);
 
-  /* Fills */
-  --fill-subtle: rgba(255, 255, 255, 0.04);
-  --fill-light: rgba(255, 255, 255, 0.06);
-  --fill: rgba(255, 255, 255, 0.08);
-  --fill-medium: rgba(255, 255, 255, 0.1);
-  --fill-hover: rgba(255, 255, 255, 0.14);
-  --fill-active: rgba(255, 255, 255, 0.22);
-  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+	/* Fills */
+	--fill-subtle: rgba(255, 255, 255, 0.04);
+	--fill-light: rgba(255, 255, 255, 0.06);
+	--fill: rgba(255, 255, 255, 0.08);
+	--fill-medium: rgba(255, 255, 255, 0.1);
+	--fill-hover: rgba(255, 255, 255, 0.14);
+	--fill-active: rgba(255, 255, 255, 0.22);
+	--scrollbar-thumb: rgba(255, 255, 255, 0.15);
 
-  /* Accent (blue) */
-  --accent: #3478f6;
-  --accent-hover: #2968e0;
-  --accent-bg: rgba(52, 120, 246, 0.2);
-  --accent-bg-strong: rgba(52, 120, 246, 0.3);
-  --accent-border: rgba(52, 120, 246, 0.5);
-  --accent-border-strong: rgba(52, 120, 246, 0.6);
+	/* Accent (blue) */
+	--accent: #3478f6;
+	--accent-hover: #2968e0;
+	--accent-bg: rgba(52, 120, 246, 0.2);
+	--accent-bg-strong: rgba(52, 120, 246, 0.3);
+	--accent-border: rgba(52, 120, 246, 0.5);
+	--accent-border-strong: rgba(52, 120, 246, 0.6);
 
-  /* Status */
-  --green: #34c759;
-  --green-bg: rgba(52, 199, 89, 0.3);
-  --green-toast: rgba(52, 199, 89, 0.9);
-  --red: #ff453a;
+	/* Status */
+	--green: #34c759;
+	--green-bg: rgba(52, 199, 89, 0.3);
+	--green-toast: rgba(52, 199, 89, 0.9);
+	--red: #ff453a;
 
-  /* Overlay */
-  --overlay: rgba(0, 0, 0, 0.5);
+	/* Overlay */
+	--overlay: rgba(0, 0, 0, 0.5);
 
-  /* Radii */
-  --radius-s: 8px;
-  --radius-m: 10px;
-  --radius-l: 14px;
+	/* Radii */
+	--radius-s: 8px;
+	--radius-m: 10px;
+	--radius-l: 14px;
 
-  /* Glass shadow */
-  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06);
+	/* Glass shadow */
+	--glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-  /* Sidebar */
-  --sidebar-bg: rgba(255, 255, 255, 0.03);
+	/* Sidebar */
+	--sidebar-bg: rgba(255, 255, 255, 0.03);
 
-  /* Grouped settings cards */
-  --card-bg: rgba(255, 255, 255, 0.07);
+	/* Grouped settings cards */
+	--card-bg: rgba(255, 255, 255, 0.07);
 
-  /* Tooltip */
-  --tooltip-bg: #2a2a2e;
+	/* Tooltip */
+	--tooltip-bg: #2a2a2e;
 
-  /* Segmented control */
-  --segmented-bg: var(--fill);
-  --segmented-active: var(--fill-medium);
+	/* Segmented control */
+	--segmented-bg: var(--fill);
+	--segmented-active: var(--fill-medium);
 }
 
 /* ========== Theme: Light ========== */
 :root[data-theme="light"] {
-  /* Backgrounds */
-  --bg-solid: #f0f0f2;
-  --bg-elevated: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.78);
+	/* Backgrounds */
+	--bg-solid: #f0f0f2;
+	--bg-elevated: #ffffff;
+	--glass-bg: rgba(255, 255, 255, 0.78);
 
-  /* Text */
-  --text-primary: #1c1c1e;
-  --text-secondary: #3a3a3c;
-  --text-tertiary: #6e6e73;
-  --text-bright: rgba(0, 0, 0, 0.7);
-  --text-muted: rgba(0, 0, 0, 0.5);
-  --text-label: rgba(0, 0, 0, 0.4);
-  --text-faint: rgba(0, 0, 0, 0.35);
-  --text-placeholder: rgba(0, 0, 0, 0.3);
-  --text-disabled: rgba(0, 0, 0, 0.25);
-  --text-hint: rgba(0, 0, 0, 0.2);
+	/* Text */
+	--text-primary: #1c1c1e;
+	--text-secondary: #3a3a3c;
+	--text-tertiary: #6e6e73;
+	--text-bright: rgba(0, 0, 0, 0.7);
+	--text-muted: rgba(0, 0, 0, 0.5);
+	--text-label: rgba(0, 0, 0, 0.4);
+	--text-faint: rgba(0, 0, 0, 0.35);
+	--text-placeholder: rgba(0, 0, 0, 0.3);
+	--text-disabled: rgba(0, 0, 0, 0.25);
+	--text-hint: rgba(0, 0, 0, 0.2);
 
-  /* Borders */
-  --border: rgba(0, 0, 0, 0.1);
-  --border-medium: rgba(0, 0, 0, 0.12);
-  --border-strong: rgba(0, 0, 0, 0.15);
-  --border-hover: rgba(0, 0, 0, 0.18);
+	/* Borders */
+	--border: rgba(0, 0, 0, 0.1);
+	--border-medium: rgba(0, 0, 0, 0.12);
+	--border-strong: rgba(0, 0, 0, 0.15);
+	--border-hover: rgba(0, 0, 0, 0.18);
 
-  /* Fills */
-  --fill-subtle: rgba(0, 0, 0, 0.03);
-  --fill-light: rgba(0, 0, 0, 0.04);
-  --fill: rgba(0, 0, 0, 0.06);
-  --fill-medium: rgba(0, 0, 0, 0.08);
-  --fill-hover: rgba(0, 0, 0, 0.1);
-  --fill-active: rgba(0, 0, 0, 0.14);
-  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+	/* Fills */
+	--fill-subtle: rgba(0, 0, 0, 0.03);
+	--fill-light: rgba(0, 0, 0, 0.04);
+	--fill: rgba(0, 0, 0, 0.06);
+	--fill-medium: rgba(0, 0, 0, 0.08);
+	--fill-hover: rgba(0, 0, 0, 0.1);
+	--fill-active: rgba(0, 0, 0, 0.14);
+	--scrollbar-thumb: rgba(0, 0, 0, 0.2);
 
-  /* Accent (blue) */
-  --accent: #007aff;
-  --accent-hover: #0069d9;
-  --accent-bg: rgba(0, 122, 255, 0.12);
-  --accent-bg-strong: rgba(0, 122, 255, 0.18);
-  --accent-border: rgba(0, 122, 255, 0.4);
-  --accent-border-strong: rgba(0, 122, 255, 0.5);
+	/* Accent (blue) */
+	--accent: #007aff;
+	--accent-hover: #0069d9;
+	--accent-bg: rgba(0, 122, 255, 0.12);
+	--accent-bg-strong: rgba(0, 122, 255, 0.18);
+	--accent-border: rgba(0, 122, 255, 0.4);
+	--accent-border-strong: rgba(0, 122, 255, 0.5);
 
-  /* Status */
-  --green: #28a745;
-  --green-bg: rgba(40, 167, 69, 0.15);
-  --green-toast: rgba(40, 167, 69, 0.9);
-  --red: #ff3b30;
+	/* Status */
+	--green: #28a745;
+	--green-bg: rgba(40, 167, 69, 0.15);
+	--green-toast: rgba(40, 167, 69, 0.9);
+	--red: #ff3b30;
 
-  /* Overlay */
-  --overlay: rgba(0, 0, 0, 0.3);
+	/* Overlay */
+	--overlay: rgba(0, 0, 0, 0.3);
 
-  /* Radii */
-  --radius-s: 8px;
-  --radius-m: 10px;
-  --radius-l: 14px;
+	/* Radii */
+	--radius-s: 8px;
+	--radius-m: 10px;
+	--radius-l: 14px;
 
-  /* Glass shadow */
-  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
+	/* Glass shadow */
+	--glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
 
-  /* Sidebar */
-  --sidebar-bg: rgba(0, 0, 0, 0.03);
+	/* Sidebar */
+	--sidebar-bg: rgba(0, 0, 0, 0.03);
 
-  /* Grouped settings cards */
-  --card-bg: rgba(0, 0, 0, 0.05);
+	/* Grouped settings cards */
+	--card-bg: rgba(0, 0, 0, 0.05);
 
-  /* Tooltip */
-  --tooltip-bg: #ffffff;
+	/* Tooltip */
+	--tooltip-bg: #ffffff;
 
-  /* Segmented control */
-  --segmented-bg: var(--fill);
-  --segmented-active: var(--fill-medium);
+	/* Segmented control */
+	--segmented-bg: var(--fill);
+	--segmented-active: var(--fill-medium);
 }
 
 /* ========== Glass mode (native vibrancy) ========== */
 :root.glass {
-  --bg-solid: transparent;
-  --bg-elevated: rgba(40, 40, 46, 0.65);
-  --sidebar-bg: rgba(255, 255, 255, 0.04);
-  --card-bg: rgba(255, 255, 255, 0.08);
-  --segmented-bg: rgba(255, 255, 255, 0.06);
-  --segmented-active: rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+	--bg-solid: transparent;
+	--bg-elevated: rgba(40, 40, 46, 0.65);
+	--sidebar-bg: rgba(255, 255, 255, 0.04);
+	--card-bg: rgba(255, 255, 255, 0.08);
+	--segmented-bg: rgba(255, 255, 255, 0.06);
+	--segmented-active: rgba(255, 255, 255, 0.12);
+	--glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 :root.glass[data-theme="light"] {
-  --bg-solid: transparent;
-  --bg-elevated: rgba(255, 255, 255, 0.78);
-  --sidebar-bg: rgba(255, 255, 255, 0.25);
-  --card-bg: rgba(255, 255, 255, 0.5);
-  --segmented-bg: rgba(0, 0, 0, 0.06);
-  --segmented-active: rgba(255, 255, 255, 0.7);
-  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
+	--bg-solid: transparent;
+	--bg-elevated: rgba(255, 255, 255, 0.78);
+	--sidebar-bg: rgba(255, 255, 255, 0.25);
+	--card-bg: rgba(255, 255, 255, 0.5);
+	--segmented-bg: rgba(0, 0, 0, 0.06);
+	--segmented-active: rgba(255, 255, 255, 0.7);
+	--glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
 
-  /* White-alpha fills create frosted glass layers */
-  --fill-subtle: rgba(255, 255, 255, 0.3);
-  --fill-light: rgba(255, 255, 255, 0.4);
-  --fill: rgba(255, 255, 255, 0.5);
-  --fill-medium: rgba(255, 255, 255, 0.55);
-  --fill-hover: rgba(255, 255, 255, 0.65);
-  --fill-active: rgba(255, 255, 255, 0.75);
-  --scrollbar-thumb: rgba(0, 0, 0, 0.25);
+	/* White-alpha fills create frosted glass layers */
+	--fill-subtle: rgba(255, 255, 255, 0.3);
+	--fill-light: rgba(255, 255, 255, 0.4);
+	--fill: rgba(255, 255, 255, 0.5);
+	--fill-medium: rgba(255, 255, 255, 0.55);
+	--fill-hover: rgba(255, 255, 255, 0.65);
+	--fill-active: rgba(255, 255, 255, 0.75);
+	--scrollbar-thumb: rgba(0, 0, 0, 0.25);
 
-  /* Stronger borders for definition on glass */
-  --border: rgba(0, 0, 0, 0.12);
-  --border-medium: rgba(0, 0, 0, 0.15);
-  --border-strong: rgba(0, 0, 0, 0.2);
-  --border-hover: rgba(0, 0, 0, 0.22);
+	/* Stronger borders for definition on glass */
+	--border: rgba(0, 0, 0, 0.12);
+	--border-medium: rgba(0, 0, 0, 0.15);
+	--border-strong: rgba(0, 0, 0, 0.2);
+	--border-hover: rgba(0, 0, 0, 0.22);
 
-  /* Boosted accent for glass readability */
-  --accent-bg: rgba(0, 122, 255, 0.15);
-  --accent-bg-strong: rgba(0, 122, 255, 0.22);
+	/* Boosted accent for glass readability */
+	--accent-bg: rgba(0, 122, 255, 0.15);
+	--accent-bg-strong: rgba(0, 122, 255, 0.22);
 }

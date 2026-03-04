@@ -40,15 +40,12 @@ export default function PrivacyPage() {
 
 			<div className="space-y-6 text-text-secondary leading-relaxed">
 				<p>
-					<strong className="text-text-primary">{_('privacy_short_label')}</strong>{' '}
-					{_('privacy_short')}
+					<strong className="text-text-primary">{_('privacy_short_label')}</strong> {_('privacy_short')}
 				</p>
 
 				{SECTIONS.map((key) => (
 					<div key={key}>
-						<h2 className="text-xl font-semibold text-text-primary pt-4">
-							{_(`${key}_title`)}
-						</h2>
+						<h2 className="text-xl font-semibold text-text-primary pt-4">{_(`${key}_title`)}</h2>
 						<p>{_(`${key}_desc`)}</p>
 					</div>
 				))}

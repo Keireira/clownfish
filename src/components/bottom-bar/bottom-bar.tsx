@@ -1,8 +1,9 @@
 declare const APP_VERSION: string;
 
-import type { ReactNode } from 'react';
-import { Root, Info, Link } from './bottom-bar.styles';
 import { invoke } from '@tauri-apps/api/core';
+import Root, { Info, Link } from './bottom-bar.styles';
+
+import type { Props } from './bottom-bar.d';
 
 const GitHubIcon = () => (
 	<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -14,11 +15,7 @@ export const openUrl = (url: string) => {
 	invoke('open_url_cmd', { url }).catch(() => window.open(url, '_blank'));
 };
 
-interface BottomBarProps {
-	right?: ReactNode;
-}
-
-const BottomBar = ({ right }: BottomBarProps) => (
+const BottomBar = ({ right }: Props) => (
 	<Root>
 		<Info>
 			<Link onClick={() => openUrl('https://github.com/Keireira/clownfish/releases')} title="GitHub Releases">

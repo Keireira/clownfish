@@ -14,6 +14,10 @@
     "windows": []
   },
   "bundle": {
+    "resources": [
+      "icons/tray-dark.png",
+      "icons/tray-light.png"
+    ],
     "active": true,
     "targets": "all",
     "icon": [

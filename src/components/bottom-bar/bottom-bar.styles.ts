@@ -1,15 +1,5 @@
 import styled from 'styled-components';
 
-export const Root = styled.div`
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-shrink: 0;
-	padding: 8px 0 0;
-	margin-top: 8px;
-	border-top: 1px solid var(--border);
-`;
-
 export const Info = styled.div`
 	display: flex;
 	align-items: center;
@@ -35,4 +25,14 @@ export const Link = styled.button`
 		color: var(--text-bright);
 		background: var(--fill);
 	}
+`;
+
+export default styled.div`
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+	padding: 8px 0 0;
+	margin-top: 8px;
+	border-top: 1px solid var(--border);
 `;

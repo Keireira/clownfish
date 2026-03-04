@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e" />
+      <stop offset="100%" stop-color="#16213e" />
+    </linearGradient>
+
+    <radialGradient id="hotMetal" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fff8e1" />
+      <stop offset="25%" stop-color="#ffcc02" />
+      <stop offset="50%" stop-color="#ff9800" />
+      <stop offset="80%" stop-color="#ff5722" />
+      <stop offset="100%" stop-color="#d84315" />
+    </radialGradient>
+
+    <radialGradient id="innerGlow" cx="0.5" cy="0.5" r="0.3">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="heatGlow" cx="0.5" cy="0.5" r="0.45">
+      <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.25" />
+      <stop offset="60%" stop-color="#ff4500" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#ff4500" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="moltenGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
+      <feFlood flood-color="#ff6b35" flood-opacity="0.6" result="color" />
+      <feComposite in="color" in2="blur" operator="in" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)" />
+
+  <ellipse cx="256" cy="256" rx="160" ry="160" fill="url(#heatGlow)" />
+
+  <text x="266" y="226" text-anchor="middle" dominant-baseline="central"
+    font-family="Noto Sans Cuneiform, Segoe UI Historic, serif" font-size="280" fill="url(#hotMetal)"
+    filter="url(#moltenGlow)">𒀭</text>
+
+  <ellipse cx="256" cy="256" rx="45" ry="45" fill="url(#innerGlow)" />
+</svg>

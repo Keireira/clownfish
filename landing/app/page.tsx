@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { t, LOCALES, useLocale } from './i18n';
 
 /* ── Intersection Observer hook ── */
@@ -150,8 +150,13 @@ function detectPlatform(): 'macos' | 'windows' {
 
 export default function Home() {
 	const [locale, setLocale] = useLocale();
-	const [userOS] = useState<'macos' | 'windows'>(detectPlatform);
-	const [dlPlatform, setDlPlatform] = useState<'macos' | 'windows'>(detectPlatform);
+	const userOS = useSyncExternalStore(
+		() => () => {},
+		detectPlatform,
+		() => 'macos' as const
+	);
+	const [dlOverride, setDlOverride] = useState<'macos' | 'windows' | null>(null);
+	const dlPlatform = dlOverride ?? userOS;
 	const [mockupQuery, setMockupQuery] = useState('');
 	const _ = (key: string) => t(locale, key);
 
@@ -229,7 +234,7 @@ export default function Home() {
 							<>
 								<a
 									href="#download"
-									onClick={() => setDlPlatform('macos')}
+									onClick={() => setDlOverride('macos')}
 									className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover hover:shadow-[0_0_30px_rgba(52,120,246,0.3)]"
 								>
 									<AppleIcon />
@@ -237,7 +242,7 @@ export default function Home() {
 								</a>
 								<a
 									href="#download"
-									onClick={() => setDlPlatform('windows')}
+									onClick={() => setDlOverride('windows')}
 									className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-7 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover hover:border-border-strong"
 								>
 									<WindowsIcon />
@@ -248,7 +253,7 @@ export default function Home() {
 							<>
 								<a
 									href="#download"
-									onClick={() => setDlPlatform('windows')}
+									onClick={() => setDlOverride('windows')}
 									className="inline-flex items-center gap-2 rounded-xl bg-accent px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-accent-hover hover:shadow-[0_0_30px_rgba(52,120,246,0.3)]"
 								>
 									<WindowsIcon />
@@ -256,7 +261,7 @@ export default function Home() {
 								</a>
 								<a
 									href="#download"
-									onClick={() => setDlPlatform('macos')}
+									onClick={() => setDlOverride('macos')}
 									className="inline-flex items-center gap-2 rounded-xl border border-border bg-bg-card px-7 py-3.5 text-sm font-semibold text-text-primary transition hover:bg-bg-card-hover hover:border-border-strong"
 								>
 									<AppleIcon />
@@ -599,7 +604,7 @@ export default function Home() {
 				<Reveal delay="delay-2">
 					<div className="mx-auto mb-8 flex w-fit rounded-lg border border-border bg-bg-card p-1">
 						<button
-							onClick={() => setDlPlatform('macos')}
+							onClick={() => setDlOverride('macos')}
 							className={`inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-medium transition ${
 								dlPlatform === 'macos' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
 							}`}
@@ -608,7 +613,7 @@ export default function Home() {
 							macOS
 						</button>
 						<button
-							onClick={() => setDlPlatform('windows')}
+							onClick={() => setDlOverride('windows')}
 							className={`inline-flex items-center gap-2 rounded-md px-5 py-2 text-sm font-medium transition ${
 								dlPlatform === 'windows' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
 							}`}

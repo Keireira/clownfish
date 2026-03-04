@@ -1,5 +1,17 @@
 import styled from 'styled-components';
 
+export const Char = styled.span`
+	font-size: 24px;
+	line-height: 1;
+`;
+
+export const Name = styled.span`
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--text-secondary);
+	white-space: nowrap;
+`;
+
 export default styled.div<{ $x: number; $y: number }>`
 	position: fixed;
 	left: ${(p) => p.$x}px;
@@ -25,16 +37,4 @@ export default styled.div<{ $x: number; $y: number }>`
 			opacity: 1;
 		}
 	}
-`;
-
-export const Char = styled.span`
-	font-size: 24px;
-	line-height: 1;
-`;
-
-export const Name = styled.span`
-	font-size: 11px;
-	font-weight: 500;
-	color: var(--text-secondary);
-	white-space: nowrap;
 `;

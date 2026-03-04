@@ -20,11 +20,28 @@ mod login_item {
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{
+    image::Image,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     window::{Effect, EffectState, EffectsBuilder},
-    AppHandle, LogicalPosition, Manager, WebviewUrl, WebviewWindowBuilder,
+    AppHandle, LogicalPosition, Manager, Theme, WebviewUrl, WebviewWindowBuilder,
 };
+
+fn tray_icon_for_theme(app: &AppHandle, theme: Theme) -> Image<'static> {
+    let path = app
+        .path()
+        .resource_dir()
+        .expect("failed to resolve resource dir");
+    let file = match theme {
+        Theme::Dark => path.join("icons/tray-dark.png"),
+        Theme::Light | _ => path.join("icons/tray-light.png"),
+    };
+    let fallback = app.default_window_icon().unwrap().clone().to_owned();
+    std::fs::read(&file)
+        .ok()
+        .and_then(|bytes| Image::from_bytes(&bytes).ok())
+        .unwrap_or(fallback)
+}
 
 /// Timestamp (millis) of the last tray-click that opened the window.
 /// The blur handler ignores focus-loss within a short grace period after opening,
@@ -172,9 +189,13 @@ pub fn run() {
             let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&settings_item, &quit_item])?;
 
-            // Build tray icon
-            let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+            // Build tray icon with theme-aware icon
+            let initial_theme = app
+                .get_webview_window("main")
+                .and_then(|w| w.theme().ok())
+                .unwrap_or(Theme::Dark);
+            let _tray = TrayIconBuilder::with_id("main-tray")
+                .icon(tray_icon_for_theme(app.handle(), initial_theme))
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
@@ -249,16 +270,23 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Hide window when it loses focus, but not right after opening
+            // Hide window when it loses focus; update tray icon on theme change
             let win = app.get_webview_window("main").unwrap();
             let win_clone = win.clone();
-            win.on_window_event(move |event| {
-                if let tauri::WindowEvent::Focused(false) = event {
+            let app_handle = app.handle().clone();
+            win.on_window_event(move |event| match event {
+                tauri::WindowEvent::Focused(false) => {
                     let elapsed = now_ms() - LAST_OPEN.load(Ordering::Relaxed);
                     if elapsed > 500 {
                         let _ = win_clone.hide();
                     }
                 }
+                tauri::WindowEvent::ThemeChanged(theme) => {
+                    if let Some(tray) = app_handle.tray_by_id("main-tray") {
+                        let _ = tray.set_icon(Some(tray_icon_for_theme(&app_handle, *theme)));
+                    }
+                }
+                _ => {}
             });
 
             Ok(())

@@ -44,34 +44,70 @@ body {
 /* ── Animations ── */
 
 @keyframes fadeInUp {
-	from { opacity: 0; transform: translateY(24px); }
-	to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(24px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @keyframes fadeInScale {
-	from { opacity: 0; transform: scale(0.96); }
-	to { opacity: 1; transform: scale(1); }
+	from {
+		opacity: 0;
+		transform: scale(0.96);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
 }
 
 @keyframes slideInLeft {
-	from { opacity: 0; transform: translateX(-16px); }
-	to { opacity: 1; transform: translateX(0); }
+	from {
+		opacity: 0;
+		transform: translateX(-16px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
 }
 
 @keyframes heroFloat {
-	0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.07; }
-	50% { transform: translate(-50%, -20px) scale(1.05); opacity: 0.12; }
+
+	0%,
+	100% {
+		transform: translate(-50%, 0) scale(1);
+		opacity: 0.07;
+	}
+
+	50% {
+		transform: translate(-50%, -20px) scale(1.05);
+		opacity: 0.12;
+	}
 }
 
 @keyframes shimmer {
-	0% { background-position: -200% center; }
-	100% { background-position: 200% center; }
+	0% {
+		background-position: -200% center;
+	}
+
+	100% {
+		background-position: 200% center;
+	}
 }
 
 .anim-fade-up {
 	opacity: 0;
 	transform: translateY(24px);
 }
+
 .anim-fade-up.visible {
 	animation: fadeInUp 0.6s ease-out forwards;
 }
@@ -80,6 +116,7 @@ body {
 	opacity: 0;
 	transform: scale(0.96);
 }
+
 .anim-fade-scale.visible {
 	animation: fadeInScale 0.5s ease-out forwards;
 }
@@ -88,17 +125,35 @@ body {
 	opacity: 0;
 	transform: translateX(-16px);
 }
+
 .anim-slide-in.visible {
 	animation: slideInLeft 0.5s ease-out forwards;
 }
 
 /* Stagger delays for child elements */
-.delay-1 { animation-delay: 0.1s !important; }
-.delay-2 { animation-delay: 0.2s !important; }
-.delay-3 { animation-delay: 0.3s !important; }
-.delay-4 { animation-delay: 0.35s !important; }
-.delay-5 { animation-delay: 0.4s !important; }
-.delay-6 { animation-delay: 0.5s !important; }
+.delay-1 {
+	animation-delay: 0.1s !important;
+}
+
+.delay-2 {
+	animation-delay: 0.2s !important;
+}
+
+.delay-3 {
+	animation-delay: 0.3s !important;
+}
+
+.delay-4 {
+	animation-delay: 0.35s !important;
+}
+
+.delay-5 {
+	animation-delay: 0.4s !important;
+}
+
+.delay-6 {
+	animation-delay: 0.5s !important;
+}
 
 .hero-blob {
 	animation: heroFloat 6s ease-in-out infinite;
@@ -118,6 +173,7 @@ body {
 .card-hover {
 	transition: all 0.3s ease;
 }
+
 .card-hover:hover {
 	border-color: rgba(52, 120, 246, 0.3);
 	box-shadow: 0 0 30px rgba(52, 120, 246, 0.08);
@@ -128,6 +184,7 @@ body {
 .symbol-hover {
 	transition: all 0.2s ease;
 }
+
 .symbol-hover:hover {
 	background: rgba(52, 120, 246, 0.15);
 	border-color: rgba(52, 120, 246, 0.4);
