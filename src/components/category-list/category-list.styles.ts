@@ -3,7 +3,7 @@ import styled from 'styled-components';
 export const Items = styled.div`
 	flex: 1;
 	overflow-y: auto;
-	padding: 8px;
+	padding: 10px;
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -12,7 +12,7 @@ export const Items = styled.div`
 export const Item = styled.div<{ $active: boolean; $dragging: boolean }>`
 	display: flex;
 	align-items: center;
-	padding: 8px 12px;
+	padding: 9px 14px;
 	border-radius: var(--radius-s);
 	cursor: pointer;
 	gap: 6px;
@@ -116,7 +116,7 @@ export const AddBtn = styled.button`
 	padding: 8px;
 	background: var(--fill-subtle);
 	border: 1px dashed var(--border-medium);
-	border-radius: 6px;
+	border-radius: 8px;
 	color: var(--text-faint);
 	font-size: 12px;
 	cursor: pointer;
@@ -131,8 +131,8 @@ export const AddBtn = styled.button`
 `;
 
 export default styled.div`
-	width: 200px;
-	min-width: 200px;
+	width: 210px;
+	min-width: 210px;
 	border-right: 1px solid var(--border);
 	background: var(--sidebar-bg);
 	display: flex;

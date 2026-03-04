@@ -1,9 +1,9 @@
 /* ========== Theme: Dark (default) ========== */
 :root {
 	/* Backgrounds */
-	--bg-solid: #1e1e22;
-	--bg-elevated: #2a2a2e;
-	--glass-bg: rgba(10, 10, 14, 0.72);
+	--bg-solid: #12141a;
+	--bg-elevated: #1a1d27;
+	--glass-bg: rgba(10, 12, 20, 0.80);
 
 	/* Text */
 	--text-primary: #f0f0f0;
@@ -18,26 +18,26 @@
 	--text-hint: rgba(255, 255, 255, 0.25);
 
 	/* Borders */
-	--border: rgba(255, 255, 255, 0.08);
-	--border-medium: rgba(255, 255, 255, 0.12);
-	--border-strong: rgba(255, 255, 255, 0.15);
-	--border-hover: rgba(255, 255, 255, 0.2);
+	--border: rgba(255, 255, 255, 0.06);
+	--border-medium: rgba(255, 255, 255, 0.09);
+	--border-strong: rgba(255, 255, 255, 0.12);
+	--border-hover: rgba(255, 255, 255, 0.16);
 
 	/* Fills */
-	--fill-subtle: rgba(255, 255, 255, 0.04);
-	--fill-light: rgba(255, 255, 255, 0.06);
-	--fill: rgba(255, 255, 255, 0.08);
-	--fill-medium: rgba(255, 255, 255, 0.1);
-	--fill-hover: rgba(255, 255, 255, 0.14);
-	--fill-active: rgba(255, 255, 255, 0.22);
+	--fill-subtle: rgba(255, 255, 255, 0.035);
+	--fill-light: rgba(255, 255, 255, 0.05);
+	--fill: rgba(255, 255, 255, 0.07);
+	--fill-medium: rgba(255, 255, 255, 0.09);
+	--fill-hover: rgba(255, 255, 255, 0.12);
+	--fill-active: rgba(255, 255, 255, 0.18);
 	--scrollbar-thumb: rgba(255, 255, 255, 0.15);
 
 	/* Accent (blue) */
-	--accent: #3478f6;
-	--accent-hover: #2968e0;
-	--accent-bg: rgba(52, 120, 246, 0.2);
-	--accent-bg-strong: rgba(52, 120, 246, 0.3);
-	--accent-border: rgba(52, 120, 246, 0.5);
+	--accent: #4a8af8;
+	--accent-hover: #3d7ae8;
+	--accent-bg: rgba(74, 138, 248, 0.16);
+	--accent-bg-strong: rgba(74, 138, 248, 0.24);
+	--accent-border: rgba(74, 138, 248, 0.45);
 	--accent-border-strong: rgba(52, 120, 246, 0.6);
 
 	/* Status */
@@ -50,25 +50,25 @@
 	--overlay: rgba(0, 0, 0, 0.5);
 
 	/* Radii */
-	--radius-s: 8px;
-	--radius-m: 10px;
-	--radius-l: 14px;
+	--radius-s: 10px;
+	--radius-m: 12px;
+	--radius-l: 16px;
 
 	/* Glass shadow */
-	--glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06);
+	--glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
 
 	/* Sidebar */
-	--sidebar-bg: rgba(255, 255, 255, 0.03);
+	--sidebar-bg: rgba(255, 255, 255, 0.025);
 
 	/* Grouped settings cards */
-	--card-bg: rgba(255, 255, 255, 0.07);
+	--card-bg: rgba(255, 255, 255, 0.055);
 
 	/* Tooltip */
-	--tooltip-bg: #2a2a2e;
+	--tooltip-bg: #1e2130;
 
 	/* Segmented control */
-	--segmented-bg: var(--fill);
-	--segmented-active: var(--fill-medium);
+	--segmented-bg: rgba(255, 255, 255, 0.05);
+	--segmented-active: rgba(255, 255, 255, 0.10);
 }
 
 /* ========== Theme: Light ========== */
@@ -123,9 +123,9 @@
 	--overlay: rgba(0, 0, 0, 0.3);
 
 	/* Radii */
-	--radius-s: 8px;
-	--radius-m: 10px;
-	--radius-l: 14px;
+	--radius-s: 10px;
+	--radius-m: 12px;
+	--radius-l: 16px;
 
 	/* Glass shadow */
 	--glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
@@ -147,12 +147,12 @@
 /* ========== Glass mode (native vibrancy) ========== */
 :root.glass {
 	--bg-solid: transparent;
-	--bg-elevated: rgba(40, 40, 46, 0.65);
+	--bg-elevated: rgba(16, 18, 28, 0.70);
 	--sidebar-bg: rgba(255, 255, 255, 0.04);
 	--card-bg: rgba(255, 255, 255, 0.08);
 	--segmented-bg: rgba(255, 255, 255, 0.06);
 	--segmented-active: rgba(255, 255, 255, 0.12);
-	--glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+	--glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 :root.glass[data-theme="light"] {

@@ -14,7 +14,10 @@ initLanguage();
 		const { invoke } = await import('@tauri-apps/api/core');
 		const { loadShortcuts, loadExpansionEnabled, loadHintsPosition, loadStopList } = await import('./store');
 		const [shortcuts, enabled, hintsPos, stopList] = await Promise.all([
-			loadShortcuts(), loadExpansionEnabled(), loadHintsPosition(), loadStopList(),
+			loadShortcuts(),
+			loadExpansionEnabled(),
+			loadHintsPosition(),
+			loadStopList()
 		]);
 		await invoke('expansion_update_shortcuts', { shortcuts });
 		await invoke('expansion_set_enabled', { enabled });

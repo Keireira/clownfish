@@ -11,7 +11,7 @@ export const SearchIcon = styled.svg`
 
 export const Input = styled.input`
 	width: 100%;
-	padding: 8px 12px 8px 32px;
+	padding: 9px 12px 9px 34px;
 	border: 1px solid var(--border-strong);
 	border-radius: var(--radius-m);
 	background: var(--fill);

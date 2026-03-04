@@ -19,9 +19,16 @@ import Root, {
 	Copyright
 } from './settings.styles';
 import {
-	loadCategories, saveCategories, resetCategories, DEFAULT_CATEGORIES,
-	loadShortcuts, saveShortcuts, resetShortcuts, DEFAULT_SHORTCUTS,
-	loadStopList, saveStopList
+	loadCategories,
+	saveCategories,
+	resetCategories,
+	DEFAULT_CATEGORIES,
+	loadShortcuts,
+	saveShortcuts,
+	resetShortcuts,
+	DEFAULT_SHORTCUTS,
+	loadStopList,
+	saveStopList
 } from '../store';
 import { emitEvent } from '../events';
 import { invoke } from '@tauri-apps/api/core';
@@ -41,7 +48,7 @@ import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
 
 const Settings = () => {
 	const t = useLanguage();
-	const [tab, setTab] = useState<'categories' | 'shortcuts' | 'appearance' | 'system'>('categories');
+	const [tab, setTab] = useState<'categories' | 'shortcuts' | 'system'>('categories');
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [selectedIdx, setSelectedIdx] = useState(0);
 	const [showPresets, setShowPresets] = useState(false);
@@ -60,9 +67,13 @@ const Settings = () => {
 		let unlisten: (() => void) | undefined;
 		import('@tauri-apps/api/event')
 			.then(({ listen }) => listen('open-shortcuts-tab', () => setTab('shortcuts')))
-			.then((fn) => { unlisten = fn; })
+			.then((fn) => {
+				unlisten = fn;
+			})
 			.catch(() => {});
-		return () => { unlisten?.(); };
+		return () => {
+			unlisten?.();
+		};
 	}, []);
 
 	const selected = categories[selectedIdx] || null;
@@ -162,7 +173,7 @@ const Settings = () => {
 			<Root>
 				<Header data-tauri-drag-region>
 					<h1>{t('settings_title')}</h1>
-					<HeaderRight style={tab !== 'categories' && tab !== 'shortcuts' ? { visibility: 'hidden' } : undefined}>
+					<HeaderRight style={tab === 'system' ? { visibility: 'hidden' } : undefined}>
 						<BtnSecondary onClick={tab === 'shortcuts' ? handleResetShortcuts : handleReset}>
 							{t('reset_to_default')}
 						</BtnSecondary>
@@ -170,7 +181,7 @@ const Settings = () => {
 							onClick={tab === 'shortcuts' ? handleSaveShortcuts : handleSave}
 							disabled={tab === 'shortcuts' ? !(shortcutsDirty || stopListDirty) : !dirty}
 						>
-							{(tab === 'shortcuts' ? (shortcutsDirty || stopListDirty) : dirty) ? t('save_changes') : t('saved')}
+							{(tab === 'shortcuts' ? shortcutsDirty || stopListDirty : dirty) ? t('save_changes') : t('saved')}
 						</BtnPrimary>
 					</HeaderRight>
 				</Header>
@@ -182,9 +193,6 @@ const Settings = () => {
 						</Segment>
 						<Segment $active={tab === 'shortcuts'} onClick={() => setTab('shortcuts')}>
 							{t('tab_shortcuts')}
-						</Segment>
-						<Segment $active={tab === 'appearance'} onClick={() => setTab('appearance')}>
-							{t('tab_appearance')}
 						</Segment>
 						<Segment $active={tab === 'system'} onClick={() => setTab('system')}>
 							{t('tab_system')}
@@ -248,19 +256,12 @@ const Settings = () => {
 					</Body>
 				)}
 
-				{tab === 'appearance' && (
+				{tab === 'system' && (
 					<Body>
 						<Main>
 							<SettingsGroup>
 								<ThemePicker />
 							</SettingsGroup>
-						</Main>
-					</Body>
-				)}
-
-				{tab === 'system' && (
-					<Body>
-						<Main>
 							<SettingsGroup>
 								<SettingsRow>
 									<SettingsRowLabel>{t('language_label')}</SettingsRowLabel>

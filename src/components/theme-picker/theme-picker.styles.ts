@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const Options = styled.div`
 	display: flex;
-	gap: 8px;
+	gap: 10px;
 `;
 
 export const Option = styled.button<{ $active: boolean }>`
@@ -11,9 +11,9 @@ export const Option = styled.button<{ $active: boolean }>`
 	flex-direction: column;
 	align-items: center;
 	gap: 4px;
-	padding: 12px 8px;
+	padding: 14px 10px;
 	border: 1px solid ${(p) => (p.$active ? 'var(--accent-border)' : 'var(--border-medium)')};
-	border-radius: 8px;
+	border-radius: 10px;
 	background: ${(p) => (p.$active ? 'var(--accent-bg)' : 'var(--fill-light)')};
 	cursor: pointer;
 	transition:
@@ -41,5 +41,5 @@ export default styled.div`
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	padding: 12px 16px;
+	padding: 14px 18px;
 `;

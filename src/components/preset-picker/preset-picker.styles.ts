@@ -3,14 +3,14 @@ import styled from 'styled-components';
 export const Picker = styled.div`
 	background: var(--bg-elevated);
 	border: 1px solid var(--border-medium);
-	border-radius: 10px;
-	width: 500px;
+	border-radius: 14px;
+	width: 520px;
 	max-height: 440px;
 	display: flex;
 	flex-direction: column;
 
 	html.glass & {
-		background: rgba(40, 40, 46, 0.97);
+		background: rgba(18, 20, 30, 0.97);
 		-webkit-backdrop-filter: saturate(180%) blur(20px);
 		backdrop-filter: saturate(180%) blur(20px);
 	}
@@ -73,13 +73,13 @@ export const PresetGrid = styled.div`
 `;
 
 export const PresetCharBtn = styled.button<{ $selected?: boolean; $exists?: boolean }>`
-	width: 34px;
-	height: 34px;
+	width: 36px;
+	height: 36px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border: 1px solid ${(p) => (p.$selected ? 'var(--accent-border-strong)' : 'var(--border)')};
-	border-radius: 5px;
+	border-radius: 8px;
 	background: ${(p) => (p.$selected ? 'var(--accent-bg-strong)' : 'var(--fill-light)')};
 	color: ${(p) => (p.$selected ? '#fff' : 'var(--text-secondary)')};
 	font-size: 16px;
@@ -111,7 +111,7 @@ export const PresetCount = styled.span`
 const Btn = styled.button`
 	padding: 6px 14px;
 	border: none;
-	border-radius: 6px;
+	border-radius: 8px;
 	font-size: 12px;
 	font-weight: 500;
 	cursor: pointer;

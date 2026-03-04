@@ -9,14 +9,18 @@ const ExpansionToggle = () => {
 	const [enabled, setEnabled] = useState(false);
 
 	useEffect(() => {
-		invoke<boolean>('expansion_is_enabled').then(setEnabled).catch(() => {});
+		invoke<boolean>('expansion_is_enabled')
+			.then(setEnabled)
+			.catch(() => {});
 
 		// Sync when toggled from tray
 		const unlisten = listen<boolean>('expansion-toggled', ({ payload }) => {
 			setEnabled(payload);
 			saveExpansionEnabled(payload);
 		});
-		return () => { unlisten.then((fn) => fn()); };
+		return () => {
+			unlisten.then((fn) => fn());
+		};
 	}, []);
 
 	const handleToggle = async () => {

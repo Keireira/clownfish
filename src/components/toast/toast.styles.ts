@@ -7,7 +7,7 @@ export default styled.div<{ $show: boolean }>`
 	transform: translateX(-50%) ${(p) => (p.$show ? 'translateY(0)' : 'translateY(40px)')};
 	background: var(--green-toast);
 	color: #fff;
-	padding: 6px 16px;
+	padding: 8px 18px;
 	border-radius: var(--radius-m);
 	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 	font-size: 12px;

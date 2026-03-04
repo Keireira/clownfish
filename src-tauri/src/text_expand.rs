@@ -25,14 +25,53 @@ pub struct Shortcut {
     pub expansion: String,
 }
 
-/// Per-application override: which features are disabled.
+/// Per-app pixel offsets for hints positioning.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct HintsOffset {
+    #[serde(default)]
+    pub top: i32,
+    #[serde(default)]
+    pub bottom: i32,
+    #[serde(default)]
+    pub left: i32,
+    #[serde(default)]
+    pub right: i32,
+}
+
+fn default_direction() -> String {
+    "auto".to_string()
+}
+
+/// Per-application override: which features are disabled + hints placement.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StopListEntry {
     pub exe: String,
-    /// If `false`, expansion is disabled for this app.
     pub expansion: bool,
-    /// If `false`, hints are disabled for this app.
     pub hints: bool,
+    /// Compass direction: "auto","NW","N","NE","W","E","SW","S","SE".
+    #[serde(default = "default_direction")]
+    pub direction: String,
+    /// Custom pixel offsets from the computed position.
+    #[serde(default)]
+    pub offset: HintsOffset,
+}
+
+/// Screen-space caret rectangle in physical pixels.
+#[derive(Clone, Copy, Debug)]
+pub struct CaretRect {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+}
+
+/// Resolved per-app configuration (from STOP_LIST).
+#[derive(Clone, Debug)]
+struct AppConfig {
+    expansion: bool,
+    hints: bool,
+    direction: String,
+    offset: HintsOffset,
 }
 
 /// Internal state shared between the listener thread and Tauri commands.
@@ -64,8 +103,8 @@ static ACTIVE_HINTS: LazyLock<Mutex<Vec<Shortcut>>> = LazyLock::new(|| Mutex::ne
 /// Selected hint index (-1 = none).
 static HINT_SELECTED: std::sync::atomic::AtomicI8 = std::sync::atomic::AtomicI8::new(-1);
 
-/// Per-app stop-list: exe name (lowercase) → (expansion_enabled, hints_enabled).
-static STOP_LIST: LazyLock<Mutex<HashMap<String, (bool, bool)>>> =
+/// Per-app stop-list: exe name (lowercase) → full app config.
+static STOP_LIST: LazyLock<Mutex<HashMap<String, AppConfig>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 static STATE: LazyLock<Mutex<ExpanderState>> = LazyLock::new(|| {
@@ -159,7 +198,15 @@ pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
     let mut map = STOP_LIST.lock().unwrap();
     map.clear();
     for e in entries {
-        map.insert(e.exe.to_lowercase(), (e.expansion, e.hints));
+        map.insert(
+            e.exe.to_lowercase(),
+            AppConfig {
+                expansion: e.expansion,
+                hints: e.hints,
+                direction: e.direction,
+                offset: e.offset,
+            },
+        );
     }
 }
 
@@ -218,7 +265,8 @@ fn on_rdev_event(event: Event) -> Option<Event> {
     }
 
     // Check per-app stop-list.
-    let (app_expansion, app_hints) = get_app_permissions();
+    let app_cfg = get_app_config();
+    let (app_expansion, app_hints) = (app_cfg.expansion, app_cfg.hints);
     if !app_expansion && !app_hints {
         return Some(event);
     }
@@ -235,7 +283,11 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                 Key::RightArrow | Key::DownArrow => {
                     let count = ACTIVE_HINTS.lock().unwrap().len() as i8;
                     let sel = HINT_SELECTED.load(Ordering::Relaxed);
-                    let next = if sel < 0 || sel >= count - 1 { 0 } else { sel + 1 };
+                    let next = if sel < 0 || sel >= count - 1 {
+                        0
+                    } else {
+                        sel + 1
+                    };
                     HINT_SELECTED.store(next, Ordering::Relaxed);
                     reemit_hints();
                     return None; // consume
@@ -256,12 +308,11 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                             let expansion = hint.expansion.clone();
                             drop(hints);
                             let mut state = STATE.lock().unwrap();
-                            let prefix_len =
-                                if let Some(colon_pos) = state.buffer.rfind(':') {
-                                    state.buffer[colon_pos..].chars().count()
-                                } else {
-                                    0
-                                };
+                            let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
+                                state.buffer[colon_pos..].chars().count()
+                            } else {
+                                0
+                            };
                             state.buffer.clear();
                             drop(state);
                             clear_hints();
@@ -396,12 +447,7 @@ unsafe fn run_win_hook() {
     }
 
     let hmod = GetModuleHandleW(std::ptr::null());
-    let hook = SetWindowsHookExW(
-        WH_KEYBOARD_LL,
-        Some(ll_keyboard_proc),
-        hmod,
-        0,
-    );
+    let hook = SetWindowsHookExW(WH_KEYBOARD_LL, Some(ll_keyboard_proc), hmod, 0);
     if hook.is_null() {
         eprintln!("[text_expand] failed to install keyboard hook");
         return;
@@ -413,16 +459,11 @@ unsafe fn run_win_hook() {
 }
 
 #[cfg(target_os = "windows")]
-unsafe extern "system" fn ll_keyboard_proc(
-    code: i32,
-    wparam: usize,
-    lparam: isize,
-) -> isize {
+unsafe extern "system" fn ll_keyboard_proc(code: i32, wparam: usize, lparam: isize) -> isize {
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
     if code >= 0 {
-        let is_keydown =
-            wparam == WM_KEYDOWN as usize || wparam == WM_SYSKEYDOWN as usize;
+        let is_keydown = wparam == WM_KEYDOWN as usize || wparam == WM_SYSKEYDOWN as usize;
         if is_keydown {
             let kb = &*(lparam as *const KBDLLHOOKSTRUCT);
             if on_win_key_down(kb.vkCode as u16, kb.scanCode) {
@@ -445,7 +486,8 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         return false;
     }
 
-    let (app_expansion, app_hints) = get_app_permissions();
+    let app_cfg = get_app_config();
+    let (app_expansion, app_hints) = (app_cfg.expansion, app_cfg.hints);
     if !app_expansion && !app_hints {
         return false;
     }
@@ -458,7 +500,11 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
             VK_RIGHT | VK_DOWN => {
                 let count = ACTIVE_HINTS.lock().unwrap().len() as i8;
                 let sel = HINT_SELECTED.load(Ordering::Relaxed);
-                let next = if sel < 0 || sel >= count - 1 { 0 } else { sel + 1 };
+                let next = if sel < 0 || sel >= count - 1 {
+                    0
+                } else {
+                    sel + 1
+                };
                 HINT_SELECTED.store(next, Ordering::Relaxed);
                 reemit_hints();
                 return true;
@@ -479,12 +525,11 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                         let expansion = hint.expansion.clone();
                         drop(hints);
                         let mut state = STATE.lock().unwrap();
-                        let prefix_len =
-                            if let Some(colon_pos) = state.buffer.rfind(':') {
-                                state.buffer[colon_pos..].chars().count()
-                            } else {
-                                0
-                            };
+                        let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
+                            state.buffer[colon_pos..].chars().count()
+                        } else {
+                            0
+                        };
                         state.buffer.clear();
                         drop(state);
                         clear_hints();
@@ -603,9 +648,15 @@ fn win_vk_to_char(vk: u16, scan: u32) -> Option<char> {
 
         // Modifier keys — GetAsyncKeyState returns the physical state.
         let mods: &[u16] = &[
-            VK_SHIFT, VK_LSHIFT, VK_RSHIFT,
-            VK_CONTROL, VK_LCONTROL, VK_RCONTROL,
-            VK_MENU, VK_LMENU, VK_RMENU,
+            VK_SHIFT,
+            VK_LSHIFT,
+            VK_RSHIFT,
+            VK_CONTROL,
+            VK_LCONTROL,
+            VK_RCONTROL,
+            VK_MENU,
+            VK_LMENU,
+            VK_RMENU,
         ];
         for &m in mods {
             if GetAsyncKeyState(m as i32) < 0 {
@@ -683,8 +734,8 @@ fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
 #[derive(Clone, Serialize)]
 struct HintsPayload {
     hints: Vec<Shortcut>,
-    /// Screen-space caret position (if available).
-    caret: Option<(i32, i32)>,
+    /// Screen-space caret rect [left, top, right, bottom] (if available).
+    caret: Option<[i32; 4]>,
     /// Currently selected hint index (-1 = none).
     selected: i8,
 }
@@ -712,15 +763,18 @@ fn reemit_hints() {
     let hints = ACTIVE_HINTS.lock().unwrap().clone();
     let Some(app) = APP_HANDLE.get() else { return };
     let selected = HINT_SELECTED.load(Ordering::Relaxed);
-    let _ = app.emit("expansion-hints", HintsPayload {
-        hints,
-        caret: None,
-        selected,
-    });
+    let _ = app.emit(
+        "expansion-hints",
+        HintsPayload {
+            hints,
+            caret: None,
+            selected,
+        },
+    );
 }
 
 /// Emits hints to the frontend and shows/hides the hints window.
-/// Dynamically resizes and positions the window near the caret.
+/// Dynamically resizes and positions the window using compass direction.
 fn emit_hints(hints: &[Shortcut]) {
     let hints_mode = HINTS_MODE.load(Ordering::Relaxed);
 
@@ -729,9 +783,20 @@ fn emit_hints(hints: &[Shortcut]) {
     };
 
     // If hints are disabled, always hide.
-    let effective_hints = if hints_mode == 2 { &[] as &[Shortcut] } else { hints };
+    let effective_hints = if hints_mode == 2 {
+        &[] as &[Shortcut]
+    } else {
+        hints
+    };
 
-    let caret = if effective_hints.is_empty() || hints_mode == 1 {
+    // Per-app config: direction + offsets.
+    let app_cfg = get_app_config();
+    let has_app_direction = app_cfg.direction != "auto" && !app_cfg.direction.is_empty();
+
+    // Effective mode: per-app direction forces caret mode (0), otherwise use global.
+    let effective_mode = if has_app_direction { 0 } else { hints_mode };
+
+    let caret_rect = if effective_hints.is_empty() || effective_mode == 1 {
         None
     } else {
         get_caret_position()
@@ -739,43 +804,77 @@ fn emit_hints(hints: &[Shortcut]) {
 
     let selected = HINT_SELECTED.load(Ordering::Relaxed);
 
-    let _ = app.emit("expansion-hints", HintsPayload {
-        hints: effective_hints.to_vec(),
-        caret,
-        selected,
-    });
+    let caret_arr = caret_rect.map(|r| [r.left, r.top, r.right, r.bottom]);
+    let _ = app.emit(
+        "expansion-hints",
+        HintsPayload {
+            hints: effective_hints.to_vec(),
+            caret: caret_arr,
+            selected,
+        },
+    );
 
     if let Some(win) = app.get_webview_window("hints") {
         if effective_hints.is_empty() {
             let _ = win.hide();
         } else {
-            // 32px cell + 6px gap; pad 8+18 / 8+12; border 1×2
-            // W = N×38 − 6 + 28 = N×38 + 22; H = 32 + 22 = 54
             let n = effective_hints.len() as f64;
             let width = n * 38.0 + 22.0;
             let height = 54.0_f64;
 
             let _ = win.set_size(tauri::LogicalSize::new(width, height));
 
-            if hints_mode == 0 {
-                // "caret" mode: position near the text cursor.
-                if let Some((cx, cy)) = caret {
+            if effective_mode == 0 {
+                if let Some(cr) = caret_rect {
                     let scale = win.scale_factor().unwrap_or(1.0);
-                    let lx = cx as f64 / scale;
-                    let ly = cy as f64 / scale + 4.0;
+                    let dir = if has_app_direction {
+                        &app_cfg.direction
+                    } else {
+                        "SE"
+                    };
+                    let (lx, ly) =
+                        compute_hints_pos(&cr, dir, &app_cfg.offset, width, height, scale);
                     let _ = win.set_position(tauri::LogicalPosition::new(lx, ly));
                 } else {
-                    // Caret not available — fall back to corner.
                     position_corner(&win, width, height);
                 }
             } else {
-                // "corner" mode.
                 position_corner(&win, width, height);
             }
 
             let _ = win.show();
         }
     }
+}
+
+/// Computes hints window position for a given compass direction and offsets.
+fn compute_hints_pos(
+    caret: &CaretRect,
+    dir: &str,
+    offset: &HintsOffset,
+    w: f64,
+    h: f64,
+    scale: f64,
+) -> (f64, f64) {
+    let cl = caret.left as f64 / scale;
+    let ct = caret.top as f64 / scale;
+    let cb = caret.bottom as f64 / scale;
+    let gap = 4.0;
+
+    let (bx, by) = match dir {
+        "NW" => (cl - w, ct - h - gap),
+        "N" => (cl - w / 2.0, ct - h - gap),
+        "NE" => (cl, ct - h - gap),
+        "W" => (cl - w - gap, cb + gap),
+        "E" => (cl + gap, cb + gap),
+        "SW" => (cl - w, cb + gap),
+        "S" => (cl - w / 2.0, cb + gap),
+        _ => (cl, cb + gap), // "SE" = default
+    };
+
+    let dx = (offset.right - offset.left) as f64;
+    let dy = (offset.bottom - offset.top) as f64;
+    (bx + dx, by + dy)
 }
 
 /// Positions the hints window in the bottom-right corner.
@@ -864,16 +963,9 @@ fn win_replace(trigger_char_count: usize, expansion: &str) {
 
     // 2. Send Backspace presses to delete the trigger text.
     for _ in 0..trigger_char_count {
-        let bs = [
-            kb(VK_BACK, 0),
-            kb(VK_BACK, KEYEVENTF_KEYUP),
-        ];
+        let bs = [kb(VK_BACK, 0), kb(VK_BACK, KEYEVENTF_KEYUP)];
         unsafe {
-            SendInput(
-                bs.len() as u32,
-                bs.as_ptr(),
-                mem::size_of::<INPUT>() as i32,
-            );
+            SendInput(bs.len() as u32, bs.as_ptr(), mem::size_of::<INPUT>() as i32);
         }
         std::thread::sleep(Duration::from_millis(20));
     }
@@ -1093,16 +1185,21 @@ fn list_running_apps() -> Vec<RunningApp> {
 // Per-app stop-list helpers
 // ---------------------------------------------------------------------------
 
-/// Returns (expansion_enabled, hints_enabled) for the current foreground app.
-fn get_app_permissions() -> (bool, bool) {
+/// Returns the full config for the current foreground app.
+fn get_app_config() -> AppConfig {
     let exe = get_foreground_exe();
     if let Some(name) = exe {
         let map = STOP_LIST.lock().unwrap();
-        if let Some(&(exp, hints)) = map.get(&name) {
-            return (exp, hints);
+        if let Some(cfg) = map.get(&name) {
+            return cfg.clone();
         }
     }
-    (true, true) // default: everything enabled
+    AppConfig {
+        expansion: true,
+        hints: true,
+        direction: "auto".to_string(),
+        offset: HintsOffset::default(),
+    }
 }
 
 /// Returns the lowercased exe filename of the foreground window (e.g. `"notepad.exe"`).
@@ -1152,23 +1249,22 @@ fn get_foreground_exe() -> Option<String> {
 // Windows: caret position for hints placement
 // ---------------------------------------------------------------------------
 
-/// Returns the screen-space caret (x, y) position of the foreground window.
+/// Returns the screen-space caret rectangle of the foreground window.
 ///
 /// Tries two strategies in order:
-/// 1. **Win32 `GetGUIThreadInfo`** — fast, works for classic Win32 text controls
-///    (Notepad, WordPad, WPF, etc.).
+/// 1. **Win32 `GetGUIThreadInfo`** — fast, works for classic Win32 text controls.
 /// 2. **UI Automation `ITextPattern2::GetCaretRange`** — slower (COM cross-process),
 ///    but works for Chrome, Firefox, Electron, UWP, and other accessibility-aware apps.
 ///
 /// Returns `None` if neither method succeeds (hints fall back to corner mode).
 #[cfg(target_os = "windows")]
-pub fn get_caret_position() -> Option<(i32, i32)> {
+pub fn get_caret_position() -> Option<CaretRect> {
     get_caret_position_win32().or_else(get_caret_position_uia)
 }
 
 /// Fast path: Win32 `GetGUIThreadInfo` for classic text controls.
 #[cfg(target_os = "windows")]
-fn get_caret_position_win32() -> Option<(i32, i32)> {
+fn get_caret_position_win32() -> Option<CaretRect> {
     use windows_sys::Win32::Foundation::POINT;
     use windows_sys::Win32::Graphics::Gdi::ClientToScreen;
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
@@ -1190,8 +1286,6 @@ fn get_caret_position_win32() -> Option<(i32, i32)> {
             return None;
         }
 
-        // If rcCaret is all zeros the app doesn't expose caret info
-        // (browsers, Electron apps, etc.) — fall through to UIA.
         let rc = &gui_info.rcCaret;
         if rc.left == 0 && rc.top == 0 && rc.right == 0 && rc.bottom == 0 {
             return None;
@@ -1203,26 +1297,34 @@ fn get_caret_position_win32() -> Option<(i32, i32)> {
             hwnd
         };
 
-        let mut pt = POINT {
+        let mut pt_tl = POINT {
             x: rc.left,
+            y: rc.top,
+        };
+        let mut pt_br = POINT {
+            x: rc.right,
             y: rc.bottom,
         };
 
-        if ClientToScreen(focus_hwnd, &mut pt) == 0 {
+        if ClientToScreen(focus_hwnd, &mut pt_tl) == 0 {
+            return None;
+        }
+        if ClientToScreen(focus_hwnd, &mut pt_br) == 0 {
             return None;
         }
 
-        Some((pt.x, pt.y))
+        Some(CaretRect {
+            left: pt_tl.x,
+            top: pt_tl.y,
+            right: pt_br.x,
+            bottom: pt_br.y,
+        })
     }
 }
 
 /// Slow path: UI Automation for browsers, Electron, UWP, and similar apps.
-///
-/// Uses a thread-local cached `IUIAutomation` instance to avoid repeated
-/// `CoCreateInstance` overhead.  The COM apartment is initialized as MTA
-/// in `run_win_hook`.
 #[cfg(target_os = "windows")]
-fn get_caret_position_uia() -> Option<(i32, i32)> {
+fn get_caret_position_uia() -> Option<CaretRect> {
     use windows::Win32::System::Com::*;
     use windows::Win32::UI::Accessibility::*;
 
@@ -1239,8 +1341,8 @@ fn get_caret_position_uia() -> Option<(i32, i32)> {
             let element = uia.GetFocusedElement().ok()?;
 
             // --- Strategy A: TextPattern2 → exact caret rectangle -----------
-            if let Ok(pattern) = element
-                .GetCurrentPatternAs::<IUIAutomationTextPattern2>(UIA_TextPattern2Id)
+            if let Ok(pattern) =
+                element.GetCurrentPatternAs::<IUIAutomationTextPattern2>(UIA_TextPattern2Id)
             {
                 let mut is_active = windows::core::BOOL(0);
                 if let Ok(range) = pattern.GetCaretRange(&mut is_active) {
@@ -1259,7 +1361,12 @@ fn get_caret_position_uia() -> Option<(i32, i32)> {
             // --- Strategy B: focused element bounding rect (coarse) ---------
             let rect = element.CurrentBoundingRectangle().ok()?;
             if rect.right > rect.left && rect.bottom > rect.top {
-                Some((rect.left, rect.bottom))
+                Some(CaretRect {
+                    left: rect.left,
+                    top: rect.top,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                })
             } else {
                 None
             }
@@ -1268,14 +1375,10 @@ fn get_caret_position_uia() -> Option<(i32, i32)> {
 }
 
 /// Parses the first bounding rectangle from a SAFEARRAY of f64.
-///
-/// `GetBoundingRectangles` returns a 1-D SAFEARRAY of `VT_R8` (f64) with
-/// groups of 4: `[x, y, width, height, …]`.  We only need the first group
-/// to position the hints window below the caret.
 #[cfg(target_os = "windows")]
 unsafe fn parse_safearray_rect(
     sa_ptr: *mut windows::Win32::System::Com::SAFEARRAY,
-) -> Option<(i32, i32)> {
+) -> Option<CaretRect> {
     if sa_ptr.is_null() {
         return None;
     }
@@ -1285,13 +1388,19 @@ unsafe fn parse_safearray_rect(
         return None;
     }
     let data = sa.pvData as *const f64;
-    let x = *data;
-    let y = *data.add(1);
-    let h = *data.add(3);
-    Some((x as i32, (y + h) as i32))
+    let x = *data as i32;
+    let y = *data.add(1) as i32;
+    let w = *data.add(2) as i32;
+    let h = *data.add(3) as i32;
+    Some(CaretRect {
+        left: x,
+        top: y,
+        right: x + w,
+        bottom: y + h,
+    })
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn get_caret_position() -> Option<(i32, i32)> {
+pub fn get_caret_position() -> Option<CaretRect> {
     None
 }

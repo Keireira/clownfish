@@ -8,12 +8,12 @@ export const Grid = styled.div`
 
 export const Card = styled.div`
 	position: relative;
-	width: 72px;
+	width: 76px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	padding: 8px 4px 6px;
-	border-radius: 8px;
+	border-radius: 10px;
 	background: var(--fill);
 	cursor: default;
 
@@ -65,7 +65,7 @@ export const AddRow = styled.div`
 const AddInput = styled.input`
 	padding: 7px 10px;
 	border: 1px solid var(--border-medium);
-	border-radius: 6px;
+	border-radius: 8px;
 	background: var(--fill-light);
 	color: var(--text-secondary);
 	font-size: 13px;
@@ -92,7 +92,7 @@ export const SmallBtn = styled.button`
 	background: var(--fill);
 	color: var(--text-tertiary);
 	border: 1px solid var(--border-medium);
-	border-radius: 6px;
+	border-radius: 8px;
 	cursor: pointer;
 	font-weight: 500;
 

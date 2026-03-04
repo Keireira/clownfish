@@ -4,6 +4,7 @@ import type { Shortcut } from '../types';
 export const DEFAULT_SHORTCUTS: Shortcut[] = [
 	// Typography
 	{ trigger: ':...:', expansion: '…' },
+	{ trigger: ':--:', expansion: '—' },
 	{ trigger: ':c:', expansion: '©' },
 	{ trigger: ':r:', expansion: '®' },
 	{ trigger: ':tm:', expansion: '™' },

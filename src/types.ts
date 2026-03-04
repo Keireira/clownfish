@@ -14,10 +14,21 @@ export interface Shortcut {
 	expansion: string;
 }
 
+export type CompassDirection = 'auto' | 'NW' | 'N' | 'NE' | 'W' | 'E' | 'SW' | 'S' | 'SE';
+
+export interface HintsOffset {
+	top: number;
+	bottom: number;
+	left: number;
+	right: number;
+}
+
 export interface StopListEntry {
 	exe: string;
 	expansion: boolean;
 	hints: boolean;
+	direction: CompassDirection;
+	offset: HintsOffset;
 }
 
 const DISPLAY_MAP: Record<string, string> = {

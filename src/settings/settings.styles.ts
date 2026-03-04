@@ -53,7 +53,7 @@ export const Header = styled.div.attrs({ className: 'settings-header' })`
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 12px 20px 12px 20px;
+	padding: 14px 20px 14px 20px;
 	border-bottom: 1px solid var(--border);
 	-webkit-user-select: none;
 	user-select: none;
@@ -82,7 +82,7 @@ export const Main = styled.div.attrs({ className: 'settings-main' })`
 	position: relative;
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	gap: 24px;
 `;
 
 export const Empty = styled.div`
@@ -105,13 +105,13 @@ export const SegmentedControl = styled.div`
 	display: flex;
 	background: var(--segmented-bg);
 	border-radius: var(--radius-s);
-	padding: 2px;
+	padding: 3px;
 `;
 
 export const Segment = styled.button<{ $active: boolean }>`
-	padding: 5px 20px;
+	padding: 6px 22px;
 	border: none;
-	border-radius: 6px;
+	border-radius: 8px;
 	background: ${(p) => (p.$active ? 'var(--segmented-active)' : 'transparent')};
 	box-shadow: ${(p) => (p.$active ? '0 1px 3px rgba(0, 0, 0, 0.12)' : 'none')};
 	color: ${(p) => (p.$active ? 'var(--text-primary)' : 'var(--text-muted)')};
@@ -129,9 +129,9 @@ export const Segment = styled.button<{ $active: boolean }>`
 `;
 
 const Btn = styled.button`
-	padding: 6px 14px;
+	padding: 7px 16px;
 	border: none;
-	border-radius: 6px;
+	border-radius: 8px;
 	font-size: 12px;
 	font-weight: 500;
 	cursor: pointer;
@@ -168,14 +168,14 @@ export const SettingsGroup = styled.div`
 	border: 1px solid var(--border);
 	border-radius: var(--radius-l);
 	padding: 4px 0;
-	margin-bottom: 16px;
+	margin-bottom: 18px;
 `;
 
 export const SettingsRow = styled.div`
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 12px 16px;
+	padding: 14px 18px;
 
 	& + & {
 		border-top: 1px solid var(--border);

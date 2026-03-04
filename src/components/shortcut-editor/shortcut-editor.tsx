@@ -76,7 +76,6 @@ const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
 					onChange={(e) => setNewExpansion(e.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder={t('shortcut_expansion_placeholder') as string}
-
 				/>
 				<SmallBtn onClick={handleAdd}>{t('add')}</SmallBtn>
 			</AddRow>
