@@ -8,6 +8,9 @@ import CharPreview, { CharPreviewProvider } from '../components/char-preview';
 import Toast from '../components/toast';
 import TriggerPrompt from '../components/trigger-prompt';
 import BottomBar from '../components/bottom-bar';
+import TabBar from '../components/tab-bar';
+import type { TabId } from '../components/tab-bar';
+import ComposePanel from '../components/compose-panel';
 import { useLanguage, getLanguageChoice, applyLanguage } from '../i18n';
 import { charMatchesQuery } from '../utils/char-match';
 import { displayChar } from '../types';
@@ -25,6 +28,7 @@ export default function App() {
 	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
 	const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
+	const [activeTab, setActiveTab] = useState<TabId>('chars');
 	const [multiSelected, setMultiSelected] = useState<string[]>([]);
 	const lastSelectIdx = useRef<number>(-1);
 	const multiSelectedSet = useMemo(() => new Set(multiSelected), [multiSelected]);
@@ -80,11 +84,14 @@ export default function App() {
 						getThemeChoice().then(applyTheme);
 					});
 					getLanguageChoice().then(applyLanguage);
-					// Focus the search input when the window appears from tray
-					const input = document.querySelector<HTMLInputElement>('[data-search-input]');
-					if (input) {
-						input.focus();
-						input.select();
+					// Focus the appropriate input when the window appears from tray
+					const composeInput = document.querySelector<HTMLInputElement>('[data-compose-input]');
+					const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]');
+					if (composeInput) {
+						composeInput.focus();
+					} else if (searchInput) {
+						searchInput.focus();
+						searchInput.select();
 					}
 				});
 			})
@@ -271,6 +278,15 @@ export default function App() {
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent | KeyboardEvent) => {
+			// In compose tab, only handle Escape (to switch back)
+			if (activeTab !== 'chars') {
+				if (e.key === 'Escape') {
+					e.preventDefault();
+					setActiveTab('chars');
+				}
+				return;
+			}
+
 			const max = flatChars.length;
 			if (max === 0 && e.key !== 'Escape' && e.key !== 'Tab') return;
 
@@ -411,7 +427,7 @@ export default function App() {
 				}
 			}
 		},
-		[focusedIndex, flatChars, categoryOffsets, measureCols, showToast, t, query, openSettings, multiSelected, copyMultiBuffer, clearMultiBuffer, handleCharModifiedClick]
+		[activeTab, focusedIndex, flatChars, categoryOffsets, measureCols, showToast, t, query, openSettings, multiSelected, copyMultiBuffer, clearMultiBuffer, handleCharModifiedClick]
 	);
 
 	const settingsFocused = focusedIndex === flatChars.length;
@@ -420,34 +436,41 @@ export default function App() {
 		<CharPreviewProvider>
 			<AppGlobalStyle />
 			<Root ref={appRef} onKeyDown={handleKeyDown}>
-				<SearchBar value={query} onChange={setQuery} onKeyDown={handleKeyDown} />
-				{multiSelected.length > 0 && (
-					<MultiSelectBar>
-						<MultiSelectPreview>{multiSelected.map(displayChar).join('')}</MultiSelectPreview>
-						<MultiSelectCount>{t('n_selected', multiSelected.length)}</MultiSelectCount>
-						<MultiSelectBtn onClick={clearMultiBuffer}>{t('multi_clear')}</MultiSelectBtn>
-						<MultiSelectBtn $primary onClick={copyMultiBuffer}>{t('multi_copy')}</MultiSelectBtn>
-					</MultiSelectBar>
+				<TabBar active={activeTab} onChange={setActiveTab} />
+				{activeTab === 'chars' ? (
+					<>
+						<SearchBar value={query} onChange={setQuery} onKeyDown={handleKeyDown} />
+						{multiSelected.length > 0 && (
+							<MultiSelectBar>
+								<MultiSelectPreview>{multiSelected.map(displayChar).join('')}</MultiSelectPreview>
+								<MultiSelectCount>{t('n_selected', multiSelected.length)}</MultiSelectCount>
+								<MultiSelectBtn onClick={clearMultiBuffer}>{t('multi_clear')}</MultiSelectBtn>
+								<MultiSelectBtn $primary onClick={copyMultiBuffer}>{t('multi_copy')}</MultiSelectBtn>
+							</MultiSelectBar>
+						)}
+						<GridArea>
+							{filtered.length > 0 ? (
+								filtered.map((cat, ci) => (
+									<Category
+										key={cat.name}
+										category={cat}
+										focusedStart={categoryOffsets[ci]}
+										focusedIndex={focusedIndex}
+										onCopy={showToast}
+										onAddShortcut={handleAddShortcut}
+										existingExpansions={shortcuts.map((s) => s.expansion)}
+										selectedChars={multiSelectedSet}
+										onCharModifiedClick={handleCharModifiedClick}
+									/>
+								))
+							) : (
+								<NoResults>{t('nothing_found')}</NoResults>
+							)}
+						</GridArea>
+					</>
+				) : (
+					<ComposePanel onCopy={showToast} />
 				)}
-				<GridArea>
-					{filtered.length > 0 ? (
-						filtered.map((cat, ci) => (
-							<Category
-								key={cat.name}
-								category={cat}
-								focusedStart={categoryOffsets[ci]}
-								focusedIndex={focusedIndex}
-								onCopy={showToast}
-								onAddShortcut={handleAddShortcut}
-								existingExpansions={shortcuts.map((s) => s.expansion)}
-								selectedChars={multiSelectedSet}
-								onCharModifiedClick={handleCharModifiedClick}
-							/>
-						))
-					) : (
-						<NoResults>{t('nothing_found')}</NoResults>
-					)}
-				</GridArea>
 				<BottomBar
 					right={
 						<SettingsBtn $focused={settingsFocused} onClick={openSettings}>

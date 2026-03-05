@@ -4,6 +4,20 @@ type TranslationRecord = Record<string, TranslationValue>;
 
 export const translations: Record<string, TranslationRecord> = {
 	en: {
+		// Tabs
+		tab_characters: 'Characters',
+		tab_compose: 'Compose',
+
+		// Compose
+		compose_base: 'Base Character',
+		compose_base_placeholder: 'Type a character',
+		compose_modifiers: 'Modifiers',
+		compose_selected_marks: 'Applied',
+		compose_preview: 'Preview',
+		compose_preview_empty: 'Type a base character and select modifiers',
+		compose_copy: (char: unknown) => `Copy ${char}`,
+		compose_nfc: 'NFC normalize',
+
 		// App
 		search_placeholder: 'Search characters...',
 		nothing_found: 'Nothing found',
@@ -188,6 +202,18 @@ export const translations: Record<string, TranslationRecord> = {
 	},
 
 	ru: {
+		tab_characters: 'Символы',
+		tab_compose: 'Составить',
+
+		compose_base: 'Базовый символ',
+		compose_base_placeholder: 'Введите символ',
+		compose_modifiers: 'Модификаторы',
+		compose_selected_marks: 'Применены',
+		compose_preview: 'Предпросмотр',
+		compose_preview_empty: 'Введите символ и выберите модификаторы',
+		compose_copy: (char: unknown) => `Копировать ${char}`,
+		compose_nfc: 'NFC нормализация',
+
 		search_placeholder: 'Поиск символов…',
 		nothing_found: 'Ничего не найдено',
 		settings: 'Настройки',
@@ -352,6 +378,18 @@ export const translations: Record<string, TranslationRecord> = {
 	},
 
 	es: {
+		tab_characters: 'Caracteres',
+		tab_compose: 'Componer',
+
+		compose_base: 'Carácter base',
+		compose_base_placeholder: 'Escribe un carácter',
+		compose_modifiers: 'Modificadores',
+		compose_selected_marks: 'Aplicados',
+		compose_preview: 'Vista previa',
+		compose_preview_empty: 'Escribe un carácter y selecciona modificadores',
+		compose_copy: (char: unknown) => `Copiar ${char}`,
+		compose_nfc: 'Normalizar NFC',
+
 		search_placeholder: 'Buscar caracteres…',
 		nothing_found: 'No se encontró nada',
 		settings: 'Ajustes',
@@ -515,6 +553,18 @@ export const translations: Record<string, TranslationRecord> = {
 	},
 
 	ja: {
+		tab_characters: '文字',
+		tab_compose: '合成',
+
+		compose_base: 'ベース文字',
+		compose_base_placeholder: '文字を入力',
+		compose_modifiers: '修飾子',
+		compose_selected_marks: '適用済み',
+		compose_preview: 'プレビュー',
+		compose_preview_empty: 'ベース文字を入力し修飾子を選択',
+		compose_copy: (char: unknown) => `${char} をコピー`,
+		compose_nfc: 'NFC正規化',
+
 		search_placeholder: '文字を検索…',
 		nothing_found: '見つかりません',
 		settings: '設定',
