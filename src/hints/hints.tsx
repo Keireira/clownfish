@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -9,9 +9,17 @@ import type { HintsPayload } from './hints.d';
 
 const HintCell = ({ hint, selected, onApply }: { hint: Shortcut; selected: boolean; onApply: () => void }) => {
 	const [hovered, setHovered] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (selected && ref.current) {
+			ref.current.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+		}
+	}, [selected]);
 
 	return (
 		<Cell
+			ref={ref}
 			$is_hovered={hovered}
 			$is_selected={selected}
 			title={hint.trigger}
@@ -38,8 +46,11 @@ const Hints = () => {
 		};
 	}, []);
 
-	const handleApply = (expansion: string) => {
-		invoke('expansion_apply_hint', { expansion }).catch(() => {});
+	const handleApply = (hint: Shortcut) => {
+		invoke('expansion_apply_hint', {
+			expansion: hint.expansion,
+			variables: hint.variables ?? null
+		}).catch(() => {});
 	};
 
 	if (!hints.length) {
@@ -52,7 +63,7 @@ const Hints = () => {
 
 			<Root>
 				{hints.map((h, i) => (
-					<HintCell key={h.trigger} hint={h} selected={i === selected} onApply={() => handleApply(h.expansion)} />
+					<HintCell key={h.trigger} hint={h} selected={i === selected} onApply={() => handleApply(h)} />
 				))}
 			</Root>
 		</>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useLanguage, translateCategoryName } from '../../i18n';
-import type { Category, StopListEntry } from '../../types';
+import type { Plugin, PluginId, PluginRegistryEntry, StopListEntry } from '../../types';
 import SidebarRoot, {
 	SectionItems,
 	SectionItem,
@@ -30,7 +30,14 @@ import SidebarRoot, {
 	DropAppExe,
 	DropAppTitle,
 	NoApps,
-	BottomSpacer
+	BottomSpacer,
+	ShortcutsItem,
+	ShortcutsIcon,
+	CatSubLabel,
+	PluginToggle,
+	PluginGroupHeader,
+	PluginGroupName,
+	PluginGroupRight
 } from './settings-sidebar.styles';
 
 type RunningApp = { exe: string; title: string };
@@ -38,63 +45,118 @@ type RunningApp = { exe: string; title: string };
 const DEFAULT_ENTRY: Omit<StopListEntry, 'exe'> = {
 	expansion: true,
 	hints: true,
+	autocorrect: true,
+	autocorrect_rules: [],
 	direction: 'auto',
 	offset: { top: 0, bottom: 0, left: 0, right: 0 }
 };
 
 export type ActiveSection = string;
-// Values: 'shortcuts' | 'settings' | `cat:${number}` | app exe name
+// Values:
+//   'plugins' | 'settings'
+//   `shortcuts:${pluginId}`
+//   `cat:${pluginId}:${catIdx}`
+//   app exe name
 
-export const isCategorySection = (s: string) => s.startsWith('cat:');
-export const categoryIdx = (s: string) => parseInt(s.slice(4), 10);
-export const categorySection = (idx: number) => `cat:${idx}`;
+export function parseCategorySection(s: string): { pluginId: PluginId; catIdx: number } | null {
+	if (!s.startsWith('cat:')) return null;
+	const rest = s.slice(4);
+	const colonIdx = rest.lastIndexOf(':');
+	if (colonIdx < 0) return null;
+	return { pluginId: rest.slice(0, colonIdx), catIdx: parseInt(rest.slice(colonIdx + 1), 10) };
+}
+
+export function parseShortcutsSection(s: string): { pluginId: PluginId } | null {
+	if (!s.startsWith('shortcuts:')) return null;
+	return { pluginId: s.slice(10) };
+}
+
+export function parseAutocorrectSection(s: string): { pluginId: PluginId } | null {
+	if (!s.startsWith('autocorrect:')) return null;
+	return { pluginId: s.slice(12) };
+}
+
+export function categorySection(pluginId: PluginId, idx: number): string {
+	return `cat:${pluginId}:${idx}`;
+}
+
+export function shortcutsSection(pluginId: PluginId): string {
+	return `shortcuts:${pluginId}`;
+}
+
+export function autocorrectSection(pluginId: PluginId): string {
+	return `autocorrect:${pluginId}`;
+}
 
 type Props = {
 	active: ActiveSection;
 	onSelect: (section: ActiveSection) => void;
-	// Categories
-	categories: Category[];
-	onAddCategory: () => void;
-	onDeleteCategory: (idx: number) => void;
-	onReorderCategory: (from: number, to: number) => void;
+	// Plugins
+	plugins: Plugin[];
+	registry: PluginRegistryEntry[];
+	onTogglePlugin: (id: PluginId, enabled: boolean) => void;
+	// Categories (within a plugin)
+	onAddCategory: (pluginId: PluginId) => void;
+	onDeleteCategory: (pluginId: PluginId, idx: number) => void;
+	onReorderCategory: (pluginId: PluginId, from: number, to: number) => void;
 	// Apps
 	stopList: StopListEntry[];
 	onStopListChange: (entries: StopListEntry[]) => void;
+	// Zone
+	zoneState?: 'focused' | 'drilled';
+};
+
+const enterKey = (action: () => void) => (e: React.KeyboardEvent) => {
+	if (e.key === 'Enter' || e.key === ' ') {
+		e.preventDefault();
+		action();
+	}
 };
 
 const SettingsSidebar = ({
 	active,
 	onSelect,
-	categories,
+	plugins,
+	registry,
+	onTogglePlugin,
 	onAddCategory,
 	onDeleteCategory,
 	onReorderCategory,
 	stopList,
-	onStopListChange
+	onStopListChange,
+	zoneState
 }: Props) => {
 	const t = useLanguage();
 
 	/* ---- Collapsible groups ---- */
-	const [catsOpen, setCatsOpen] = useState(true);
+	const [pluginOpen, setPluginOpen] = useState<Record<PluginId, boolean>>({});
 	const [appsOpen, setAppsOpen] = useState(true);
 
+	const isPluginOpen = (id: PluginId) => pluginOpen[id] !== false; // default open
+
+	const togglePluginOpen = (id: PluginId) => {
+		setPluginOpen((prev) => ({ ...prev, [id]: !isPluginOpen(id) }));
+	};
+
 	/* ---- Category drag-drop ---- */
+	const [dragPluginId, setDragPluginId] = useState<PluginId | null>(null);
 	const [dragIdx, setDragIdx] = useState<number | null>(null);
 	const [dropSlot, setDropSlot] = useState<number | null>(null);
 	const [ghostPos, setGhostPos] = useState<{ x: number; y: number } | null>(null);
-	const catRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+	const catRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 	const dragging = useRef(false);
 
-	const setCatRef = useCallback((idx: number, el: HTMLDivElement | null) => {
-		if (el) catRefs.current.set(idx, el);
-		else catRefs.current.delete(idx);
+	const setCatRef = useCallback((pluginId: PluginId, idx: number, el: HTMLDivElement | null) => {
+		const key = `${pluginId}:${idx}`;
+		if (el) catRefs.current.set(key, el);
+		else catRefs.current.delete(key);
 	}, []);
 
 	const computeSlot = useCallback(
-		(clientY: number, currentDragIdx: number): number | null => {
-			let slot = categories.length;
-			for (let i = 0; i < categories.length; i++) {
-				const el = catRefs.current.get(i);
+		(clientY: number, pluginId: PluginId, currentDragIdx: number, catLen: number): number | null => {
+			let slot = catLen;
+			for (let i = 0; i < catLen; i++) {
+				const el = catRefs.current.get(`${pluginId}:${i}`);
 				if (!el) continue;
 				const rect = el.getBoundingClientRect();
 				if (clientY < rect.top + rect.height / 2) {
@@ -105,11 +167,11 @@ const SettingsSidebar = ({
 			if (slot === currentDragIdx || slot === currentDragIdx + 1) return null;
 			return slot;
 		},
-		[categories.length]
+		[]
 	);
 
 	const handleCatMouseDown = useCallback(
-		(e: React.MouseEvent, idx: number) => {
+		(e: React.MouseEvent, pluginId: PluginId, idx: number, catLen: number) => {
 			if ((e.target as HTMLElement).closest('button')) return;
 			e.preventDefault();
 			const startY = e.clientY;
@@ -120,9 +182,10 @@ const SettingsSidebar = ({
 					if (Math.abs(ev.clientY - startY) < 4) return;
 					started = true;
 					dragging.current = true;
+					setDragPluginId(pluginId);
 					setDragIdx(idx);
 				}
-				setDropSlot(computeSlot(ev.clientY, idx));
+				setDropSlot(computeSlot(ev.clientY, pluginId, idx, catLen));
 				setGhostPos({ x: ev.clientX, y: ev.clientY });
 			};
 
@@ -131,7 +194,7 @@ const SettingsSidebar = ({
 				document.removeEventListener('mouseup', onMouseUp);
 
 				if (!started) {
-					onSelect(categorySection(idx));
+					onSelect(categorySection(pluginId, idx));
 					return;
 				}
 				dragging.current = false;
@@ -141,11 +204,12 @@ const SettingsSidebar = ({
 						let toIdx = currentSlot;
 						if (idx < toIdx) toIdx--;
 						if (toIdx !== idx) {
-							setTimeout(() => onReorderCategory(idx, toIdx), 0);
+							setTimeout(() => onReorderCategory(pluginId, idx, toIdx), 0);
 						}
 					}
 					return null;
 				});
+				setDragPluginId(null);
 				setDragIdx(null);
 				setGhostPos(null);
 			};
@@ -202,7 +266,6 @@ const SettingsSidebar = ({
 		return a.exe.includes(q) || a.title.toLowerCase().includes(q);
 	});
 
-	// selectable (non-disabled) indices
 	const selectableIdxs = filtered.reduce<number[]>((acc, a, i) => {
 		if (!alreadyAdded.has(a.exe.toLowerCase())) acc.push(i);
 		return acc;
@@ -249,7 +312,7 @@ const SettingsSidebar = ({
 		next.splice(idx, 1);
 		if (deleted.exe === active) {
 			if (next.length === 0) {
-				onSelect('shortcuts');
+				onSelect('settings');
 			} else {
 				const newIdx = Math.min(idx, next.length - 1);
 				onSelect(next[newIdx].exe);
@@ -258,69 +321,147 @@ const SettingsSidebar = ({
 		onStopListChange(next);
 	};
 
-	/* ---- Build category nodes with drag placeholders ---- */
-	const catNodes: React.ReactNode[] = [];
-	categories.forEach((cat, idx) => {
-		if (dropSlot === idx) {
-			catNodes.push(
-				<CatPlaceholder key="placeholder">
-					{dragIdx !== null ? translateCategoryName(categories[dragIdx].name) : null}
-				</CatPlaceholder>
-			);
-		}
-		catNodes.push(
-			<CatItem
-				key={`cat-${idx}`}
-				ref={(el) => setCatRef(idx, el)}
-				$active={active === categorySection(idx)}
-				$dragging={idx === dragIdx}
-				onMouseDown={(e) => handleCatMouseDown(e, idx)}
-			>
-				<CatGrip>&#x2807;</CatGrip>
-				<CatName>{translateCategoryName(cat.name)}</CatName>
-				<CatCount>{cat.chars.length}</CatCount>
-				<CatDeleteBtn
-					onClick={(e) => {
-						e.stopPropagation();
-						onDeleteCategory(idx);
-					}}
-					title={t('delete_category') as string}
-				>
-					&times;
-				</CatDeleteBtn>
-			</CatItem>
-		);
+	/* ---- Sorted plugins by registry order ---- */
+	const sortedPlugins = [...plugins].sort((a, b) => {
+		const aOrder = registry.find((r) => r.id === a.id)?.order ?? 999;
+		const bOrder = registry.find((r) => r.id === b.id)?.order ?? 999;
+		return aOrder - bOrder;
 	});
-	if (dropSlot === categories.length) {
-		catNodes.push(
-			<CatPlaceholder key="placeholder">
-				{dragIdx !== null ? translateCategoryName(categories[dragIdx].name) : null}
-			</CatPlaceholder>
-		);
-	}
 
 	return (
-		<SidebarRoot>
+		<SidebarRoot data-zone="sidebar" data-zone-state={zoneState}>
 			<SectionItems>
-				<SectionItem $active={active === 'shortcuts'} onClick={() => onSelect('shortcuts')}>
-					<SectionLabel>{t('section_shortcuts')}</SectionLabel>
+				<SectionItem
+					$active={active === 'plugins'}
+					onClick={() => onSelect('plugins')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('plugins'))}
+				>
+					<SectionLabel>{t('section_plugins')}</SectionLabel>
 				</SectionItem>
-				<SectionItem $active={active === 'settings'} onClick={() => onSelect('settings')}>
+				<SectionItem
+					$active={active === 'settings'}
+					onClick={() => onSelect('settings')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('settings'))}
+				>
 					<SectionLabel>{t('section_settings')}</SectionLabel>
+				</SectionItem>
+				<SectionItem
+					$active={active === 'stats'}
+					onClick={() => onSelect('stats')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('stats'))}
+				>
+					<SectionLabel>{t('section_stats')}</SectionLabel>
+				</SectionItem>
+				<SectionItem
+					$active={active === 'packs'}
+					onClick={() => onSelect('packs')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('packs'))}
+				>
+					<SectionLabel>{t('section_packs')}</SectionLabel>
 				</SectionItem>
 			</SectionItems>
 
-			<Divider />
-			<GroupHeader onClick={() => setCatsOpen(!catsOpen)}>
-				<GroupChevron $open={catsOpen}>&#x25B6;</GroupChevron>
-				{t('tab_categories')}
-			</GroupHeader>
-			<Collapsible $open={catsOpen}>
-				<div>
-					<GroupItems>{catNodes}</GroupItems>
-					<AddBtn onClick={onAddCategory}>{t('add_category')}</AddBtn>
-				</div>
-			</Collapsible>
+			{sortedPlugins.map((plugin) => {
+				const regEntry = registry.find((r) => r.id === plugin.id);
+				const enabled = regEntry?.enabled ?? true;
+				const pluginIsOpen = isPluginOpen(plugin.id);
+				const isDragPlugin = dragPluginId === plugin.id;
+
+				const catNodes: React.ReactNode[] = [];
+				plugin.categories.forEach((cat, idx) => {
+					if (isDragPlugin && dropSlot === idx) {
+						catNodes.push(
+							<CatPlaceholder key="placeholder">
+								{dragIdx !== null ? translateCategoryName(plugin.categories[dragIdx].name) : null}
+							</CatPlaceholder>
+						);
+					}
+					catNodes.push(
+						<CatItem
+							key={`cat-${idx}`}
+							ref={(el) => setCatRef(plugin.id, idx, el)}
+							$active={active === categorySection(plugin.id, idx)}
+							$dragging={isDragPlugin && idx === dragIdx}
+							onMouseDown={(e) => handleCatMouseDown(e, plugin.id, idx, plugin.categories.length)}
+							tabIndex={0}
+							onKeyDown={enterKey(() => onSelect(categorySection(plugin.id, idx)))}
+						>
+							<CatGrip>&#x2807;</CatGrip>
+							<CatName>{translateCategoryName(cat.name)}</CatName>
+							<CatCount>{cat.chars.length}</CatCount>
+							<CatDeleteBtn
+								onClick={(e) => {
+									e.stopPropagation();
+									onDeleteCategory(plugin.id, idx);
+								}}
+								title={t('delete_category') as string}
+							>
+								&times;
+							</CatDeleteBtn>
+						</CatItem>
+					);
+				});
+				if (isDragPlugin && dropSlot === plugin.categories.length) {
+					catNodes.push(
+						<CatPlaceholder key="placeholder">
+							{dragIdx !== null ? translateCategoryName(plugin.categories[dragIdx].name) : null}
+						</CatPlaceholder>
+					);
+				}
+
+				return (
+					<div key={plugin.id}>
+						<Divider />
+						<PluginGroupHeader>
+							<GroupChevron $open={pluginIsOpen} onClick={() => togglePluginOpen(plugin.id)}>
+								&#x25B6;
+							</GroupChevron>
+							<PluginGroupName onClick={() => togglePluginOpen(plugin.id)}>{plugin.name}</PluginGroupName>
+							<PluginGroupRight>
+								<PluginToggle
+									type="checkbox"
+									checked={enabled}
+									onChange={(e) => onTogglePlugin(plugin.id, e.target.checked)}
+									title={enabled ? (t('plugin_enabled') as string) : (t('plugin_disabled') as string)}
+								/>
+							</PluginGroupRight>
+						</PluginGroupHeader>
+						<Collapsible $open={pluginIsOpen}>
+							<div>
+								<GroupItems>
+									<ShortcutsItem
+										$active={active === shortcutsSection(plugin.id)}
+										onClick={() => onSelect(shortcutsSection(plugin.id))}
+										tabIndex={0}
+										onKeyDown={enterKey(() => onSelect(shortcutsSection(plugin.id)))}
+									>
+										<ShortcutsIcon>&#x26A1;</ShortcutsIcon>
+										<CatName>{t('section_shortcuts')}</CatName>
+										<CatCount>{plugin.shortcuts.length}</CatCount>
+									</ShortcutsItem>
+									<ShortcutsItem
+										$active={active === autocorrectSection(plugin.id)}
+										onClick={() => onSelect(autocorrectSection(plugin.id))}
+										tabIndex={0}
+										onKeyDown={enterKey(() => onSelect(autocorrectSection(plugin.id)))}
+									>
+										<ShortcutsIcon>&#x2713;</ShortcutsIcon>
+										<CatName>{t('section_autocorrect')}</CatName>
+										<CatCount>{(plugin.autocorrect ?? []).length}</CatCount>
+									</ShortcutsItem>
+								</GroupItems>
+								{plugin.categories.length > 0 && <CatSubLabel>{t('tab_categories')}</CatSubLabel>}
+								<GroupItems>{catNodes}</GroupItems>
+								<AddBtn onClick={() => onAddCategory(plugin.id)}>{t('add_category')}</AddBtn>
+							</div>
+						</Collapsible>
+					</div>
+				);
+			})}
 
 			<Divider />
 			<GroupHeader onClick={() => setAppsOpen(!appsOpen)}>
@@ -332,7 +473,13 @@ const SettingsSidebar = ({
 					<GroupItems>
 						{stopList.length === 0 && <EmptyApps>{t('stoplist_empty')}</EmptyApps>}
 						{stopList.map((entry, idx) => (
-							<AppItem key={entry.exe} $active={entry.exe === active} onClick={() => onSelect(entry.exe)}>
+							<AppItem
+								key={entry.exe}
+								$active={entry.exe === active}
+								onClick={() => onSelect(entry.exe)}
+								tabIndex={0}
+								onKeyDown={enterKey(() => onSelect(entry.exe))}
+							>
 								<span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
 									{entry.exe}
 								</span>
@@ -403,9 +550,12 @@ const SettingsSidebar = ({
 
 			<BottomSpacer />
 
-			{dragIdx !== null && ghostPos && (
+			{dragPluginId !== null && dragIdx !== null && ghostPos && (
 				<DragGhost style={{ left: ghostPos.x + 12, top: ghostPos.y - 16 }}>
-					{translateCategoryName(categories[dragIdx].name)}
+					{(() => {
+						const p = plugins.find((pl) => pl.id === dragPluginId);
+						return p ? translateCategoryName(p.categories[dragIdx]?.name ?? '') : '';
+					})()}
 				</DragGhost>
 			)}
 		</SidebarRoot>

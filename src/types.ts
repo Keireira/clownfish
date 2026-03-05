@@ -12,6 +12,34 @@ export type LanguageChoice = 'auto' | 'en' | 'ru' | 'es' | 'ja';
 export interface Shortcut {
 	trigger: string;
 	expansion: string;
+	variables?: Record<string, string>;
+}
+
+// ---------------------------------------------------------------------------
+// Plugin system
+// ---------------------------------------------------------------------------
+
+export type PluginId = string;
+
+export interface AutoCorrectRule {
+	pattern: string;
+	replacement: string;
+}
+
+export interface Plugin {
+	id: PluginId;
+	name: string;
+	version: string;
+	builtin: boolean;
+	categories: Category[];
+	shortcuts: Shortcut[];
+	autocorrect?: AutoCorrectRule[];
+}
+
+export interface PluginRegistryEntry {
+	id: PluginId;
+	enabled: boolean;
+	order: number;
 }
 
 export type CompassDirection = 'auto' | 'NW' | 'N' | 'NE' | 'W' | 'E' | 'SW' | 'S' | 'SE';
@@ -29,6 +57,8 @@ export interface StopListEntry {
 	hints: boolean;
 	direction: CompassDirection;
 	offset: HintsOffset;
+	autocorrect?: boolean;
+	autocorrect_rules?: AutoCorrectRule[];
 }
 
 const DISPLAY_MAP: Record<string, string> = {

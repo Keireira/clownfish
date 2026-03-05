@@ -52,6 +52,12 @@ export default styled.div`
 	padding: 8px 18px 12px 8px;
 	display: inline-flex;
 	gap: 6px;
+	overflow-x: auto;
+	max-width: 100vw;
+	scrollbar-width: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
 	color: var(--text-primary);
 `;

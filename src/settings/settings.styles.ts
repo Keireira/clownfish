@@ -33,6 +33,18 @@ export const SettingsGlobalStyle = createGlobalStyle`
 		background: var(--scrollbar-thumb);
 		border-radius: 3px;
 	}
+
+	[data-zone-state="focused"] {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+		border-radius: 4px;
+	}
+
+	[data-zone-state="drilled"] {
+		outline: 1px dashed var(--accent-border);
+		outline-offset: -1px;
+		border-radius: 4px;
+	}
 `;
 
 export const GlassOverrides = createGlobalStyle`
@@ -130,6 +142,31 @@ export const BtnSecondary = styled(Btn)`
 	}
 `;
 
+export const BtnIcon = styled.button`
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: none;
+	border-radius: 8px;
+	background: var(--fill);
+	color: var(--text-tertiary);
+	cursor: pointer;
+	transition:
+		background 0.15s,
+		opacity 0.15s;
+
+	&:hover:not(:disabled) {
+		background: var(--fill-hover);
+	}
+
+	&:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+`;
+
 export const SettingsGroup = styled.div`
 	background: var(--card-bg);
 	border: 1px solid var(--border);
@@ -158,6 +195,110 @@ export const Footer = styled.div`
 	padding: 0 20px 12px;
 `;
 
+export const SearchInput = styled.input`
+	padding: 6px 24px 6px 28px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--fill);
+	color: var(--text-primary);
+	font-size: 12px;
+	outline: none;
+	width: 160px;
+	transition:
+		border-color 0.2s,
+		opacity 0.2s;
+
+	&::placeholder {
+		color: var(--text-placeholder);
+	}
+
+	&:focus {
+		border-color: var(--accent-border);
+		width: 200px;
+	}
+
+	&:disabled {
+		opacity: 0.4;
+		cursor: default;
+	}
+`;
+
+export const SearchClear = styled.button`
+	position: absolute;
+	right: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border: none;
+	border-radius: 50%;
+	background: var(--fill-hover);
+	color: var(--text-tertiary);
+	font-size: 12px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0;
+
+	&:hover {
+		background: var(--border);
+	}
+`;
+
+export const SearchWrap = styled.div<{ $disabled?: boolean }>`
+	position: relative;
+	display: flex;
+	align-items: center;
+	opacity: ${(p) => (p.$disabled ? 0.4 : 1)};
+	pointer-events: ${(p) => (p.$disabled ? 'none' : 'auto')};
+
+	svg {
+		position: absolute;
+		left: 8px;
+		pointer-events: none;
+		color: var(--text-placeholder);
+	}
+`;
+
+export const SearchResultsGrid = styled.div`
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+`;
+
+export const SearchResultChar = styled.button`
+	width: 42px;
+	height: 42px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--fill);
+	color: var(--text-primary);
+	font-size: 18px;
+	cursor: pointer;
+	transition: background 0.12s;
+
+	&:hover {
+		background: var(--fill-hover);
+	}
+`;
+
+export const SearchCatLabel = styled.span`
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--text-faint);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	display: block;
+	margin-bottom: 6px;
+`;
+
+export const SearchCatGroup = styled.div`
+	margin-bottom: 14px;
+`;
+
 export const Copyright = styled.button`
 	display: flex;
 	align-items: center;
@@ -177,6 +318,11 @@ export const Copyright = styled.button`
 		color: var(--text-bright);
 		background: var(--fill);
 	}
+`;
+
+export const DataBtnRow = styled.div`
+	display: flex;
+	gap: 8px;
 `;
 
 export default styled.div`

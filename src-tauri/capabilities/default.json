@@ -9,6 +9,7 @@
     "core:window:allow-create",
     "core:window:allow-close",
     "core:window:allow-show",
+    "core:window:allow-hide",
     "core:window:allow-set-focus",
     "core:webview:allow-create-webview-window",
     "clipboard-manager:allow-write-text",
@@ -18,6 +19,23 @@
     "store:allow-set",
     "store:allow-delete",
     "store:allow-save",
-    "store:allow-reload"
+    "store:allow-reload",
+    "fs:allow-exists",
+    "fs:allow-mkdir",
+    "fs:allow-read-file",
+    "fs:allow-write-file",
+    "fs:allow-remove",
+    "fs:allow-read-dir",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$APPDATA/plugins/**" }
+      ]
+    },
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "global-shortcut:allow-is-registered"
   ]
 }

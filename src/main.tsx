@@ -8,21 +8,29 @@ import { initLanguage } from './i18n';
 initTheme();
 initLanguage();
 
-// Sync text expansion shortcuts and enabled state to Rust backend on startup
+// Migrate to plugin system (idempotent) then sync to Rust backend
 (async () => {
 	try {
+		const { migrateToPluginSystem, loadMergedData } = await import('./plugin-store');
+		await migrateToPluginSystem();
+
 		const { invoke } = await import('@tauri-apps/api/core');
-		const { loadShortcuts, loadExpansionEnabled, loadHintsPosition, loadStopList } = await import('./store');
-		const [shortcuts, enabled, hintsPos, stopList] = await Promise.all([
-			loadShortcuts(),
+		const { loadExpansionEnabled, loadHintsPosition, loadStopList, loadUnicodeHints, loadAutocorrectEnabled } = await import('./store');
+		const [merged, enabled, hintsPos, stopList, unicodeHints, autocorrectEnabled] = await Promise.all([
+			loadMergedData(),
 			loadExpansionEnabled(),
 			loadHintsPosition(),
-			loadStopList()
+			loadStopList(),
+			loadUnicodeHints(),
+			loadAutocorrectEnabled()
 		]);
-		await invoke('expansion_update_shortcuts', { shortcuts });
+		await invoke('expansion_update_shortcuts', { shortcuts: merged.shortcuts });
 		await invoke('expansion_set_enabled', { enabled });
 		await invoke('expansion_set_hints_mode', { mode: hintsPos });
 		await invoke('expansion_update_stoplist', { entries: stopList });
+		await invoke('expansion_set_unicode_hints', { enabled: unicodeHints });
+		await invoke('autocorrect_set_enabled', { enabled: autocorrectEnabled });
+		await invoke('autocorrect_update_rules', { rules: merged.autocorrect });
 	} catch (err) {
 		console.error('Failed to init text expansion:', err);
 	}

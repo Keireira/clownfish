@@ -23,6 +23,15 @@ use tauri::{AppHandle, Emitter, Manager};
 pub struct Shortcut {
     pub trigger: String,
     pub expansion: String,
+    #[serde(default)]
+    pub variables: HashMap<String, String>,
+}
+
+/// A single autocorrect rule: pattern → replacement.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AutoCorrectRule {
+    pub pattern: String,
+    pub replacement: String,
 }
 
 /// Per-app pixel offsets for hints positioning.
@@ -54,6 +63,16 @@ pub struct StopListEntry {
     /// Custom pixel offsets from the computed position.
     #[serde(default)]
     pub offset: HintsOffset,
+    /// Whether autocorrect is active for this app (default true).
+    #[serde(default = "default_true")]
+    pub autocorrect: bool,
+    /// Extra per-app autocorrect rules (added on top of global rules).
+    #[serde(default)]
+    pub autocorrect_rules: Vec<AutoCorrectRule>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 /// Screen-space caret rectangle in physical pixels.
@@ -72,6 +91,15 @@ struct AppConfig {
     hints: bool,
     direction: String,
     offset: HintsOffset,
+    autocorrect: bool,
+    autocorrect_rules: Vec<(String, String)>,
+}
+
+/// Data stored per-shortcut in the internal lookup map.
+#[derive(Clone, Debug)]
+struct ShortcutData {
+    expansion: String,
+    variables: HashMap<String, String>,
 }
 
 /// Internal state shared between the listener thread and Tauri commands.
@@ -81,7 +109,7 @@ struct ExpanderState {
     /// Maximum buffer capacity.
     max_buffer: usize,
     /// Active shortcuts keyed by trigger for fast lookup.
-    shortcuts: HashMap<String, String>,
+    shortcuts: HashMap<String, ShortcutData>,
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +124,9 @@ static SUPPRESSING: AtomicBool = AtomicBool::new(false);
 
 /// Hints position mode: 0 = caret, 1 = corner, 2 = off.
 static HINTS_MODE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+/// Whether Unicode code-point hints (\uXXXX) are enabled.
+static UNICODE_HINTS: AtomicBool = AtomicBool::new(false);
 
 /// Currently visible hints (stored so keyboard navigation can reference them).
 static ACTIVE_HINTS: LazyLock<Mutex<Vec<Shortcut>>> = LazyLock::new(|| Mutex::new(Vec::new()));
@@ -114,6 +145,26 @@ static STATE: LazyLock<Mutex<ExpanderState>> = LazyLock::new(|| {
         shortcuts: HashMap::new(),
     })
 });
+
+/// Configurable trigger character (default `:`).
+static TRIGGER_CHAR: LazyLock<Mutex<char>> = LazyLock::new(|| Mutex::new(':'));
+
+/// Whether autocorrect is globally enabled.
+static AUTOCORRECT_ENABLED: AtomicBool = AtomicBool::new(false);
+
+/// Active autocorrect rules: (pattern, replacement).
+static AUTOCORRECT_RULES: LazyLock<Mutex<Vec<(String, String)>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
+
+/// Returns the current trigger character.
+fn trigger_char() -> char {
+    *TRIGGER_CHAR.lock().unwrap()
+}
+
+/// Updates the trigger character at runtime.
+pub fn set_trigger_char(ch: char) {
+    *TRIGGER_CHAR.lock().unwrap() = ch;
+}
 
 /// Stored app handle for emitting events from the listener thread.
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
@@ -150,7 +201,13 @@ pub fn update_shortcuts(shortcuts: Vec<Shortcut>) {
     let mut state = STATE.lock().unwrap();
     state.shortcuts.clear();
     for s in shortcuts {
-        state.shortcuts.insert(s.trigger, s.expansion);
+        state.shortcuts.insert(
+            s.trigger,
+            ShortcutData {
+                expansion: s.expansion,
+                variables: s.variables,
+            },
+        );
     }
 }
 
@@ -192,12 +249,28 @@ pub fn expansion_set_hints_mode(mode: String) {
     HINTS_MODE.store(val, Ordering::Relaxed);
 }
 
+/// Enables or disables Unicode code-point hints.
+#[tauri::command]
+pub fn expansion_set_unicode_hints(enabled: bool) {
+    UNICODE_HINTS.store(enabled, Ordering::Relaxed);
+}
+
+#[tauri::command]
+pub fn expansion_is_unicode_hints() -> bool {
+    UNICODE_HINTS.load(Ordering::Relaxed)
+}
+
 /// Updates the per-app stop-list.
 #[tauri::command]
 pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
     let mut map = STOP_LIST.lock().unwrap();
     map.clear();
     for e in entries {
+        let app_rules: Vec<(String, String)> = e
+            .autocorrect_rules
+            .iter()
+            .map(|r| (r.pattern.clone(), r.replacement.clone()))
+            .collect();
         map.insert(
             e.exe.to_lowercase(),
             AppConfig {
@@ -205,8 +278,18 @@ pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
                 hints: e.hints,
                 direction: e.direction,
                 offset: e.offset,
+                autocorrect: e.autocorrect,
+                autocorrect_rules: app_rules,
             },
         );
+    }
+}
+
+/// Sets the trigger character used to delimit shortcuts.
+#[tauri::command]
+pub fn expansion_set_trigger_char(ch: String) {
+    if let Some(c) = ch.chars().next() {
+        set_trigger_char(c);
     }
 }
 
@@ -225,11 +308,12 @@ pub fn expansion_resolve_exe(path: String) -> Option<String> {
 
 /// Applies a hint: deletes the partial prefix from the buffer and inserts the expansion.
 #[tauri::command]
-pub fn expansion_apply_hint(expansion: String) {
+pub fn expansion_apply_hint(expansion: String, variables: Option<HashMap<String, String>>) {
     let mut state = STATE.lock().unwrap();
-    // Find the partial prefix length (`:xxx` without closing `:`).
-    let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
-        state.buffer[colon_pos..].chars().count()
+    // Find the partial prefix length (e.g. `:xxx` without closing `:`).
+    let tc = trigger_char();
+    let prefix_len = if let Some(pos) = state.buffer.rfind(tc) {
+        state.buffer[pos..].chars().count()
     } else {
         0
     };
@@ -242,9 +326,16 @@ pub fn expansion_apply_hint(expansion: String) {
 
     clear_hints();
 
+    record_expansion_stat(expansion.clone());
+    if let Some(app) = APP_HANDLE.get() {
+        let _ = app.emit("expansion-used", &expansion);
+    }
+
+    let vars = variables.unwrap_or_default();
+    let resolved = resolve_expansion(&expansion, &vars);
     SUPPRESSING.store(true, Ordering::SeqCst);
     std::thread::spawn(move || {
-        perform_replacement(prefix_len, &expansion);
+        perform_replacement(prefix_len, &resolved);
         SUPPRESSING.store(false, Ordering::SeqCst);
     });
 }
@@ -267,7 +358,8 @@ fn on_rdev_event(event: Event) -> Option<Event> {
     // Check per-app stop-list.
     let app_cfg = get_app_config();
     let (app_expansion, app_hints) = (app_cfg.expansion, app_cfg.hints);
-    if !app_expansion && !app_hints {
+    let app_autocorrect = app_cfg.autocorrect && AUTOCORRECT_ENABLED.load(Ordering::Relaxed);
+    if !app_expansion && !app_hints && !app_autocorrect {
         return Some(event);
     }
 
@@ -305,11 +397,12 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                     if sel >= 0 {
                         let hints = ACTIVE_HINTS.lock().unwrap();
                         if let Some(hint) = hints.get(sel as usize) {
-                            let expansion = hint.expansion.clone();
+                            let resolved = resolve_expansion(&hint.expansion, &hint.variables);
                             drop(hints);
+                            let tc = trigger_char();
                             let mut state = STATE.lock().unwrap();
-                            let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
-                                state.buffer[colon_pos..].chars().count()
+                            let prefix_len = if let Some(pos) = state.buffer.rfind(tc) {
+                                state.buffer[pos..].chars().count()
                             } else {
                                 0
                             };
@@ -319,7 +412,7 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                             if prefix_len > 0 {
                                 SUPPRESSING.store(true, Ordering::SeqCst);
                                 std::thread::spawn(move || {
-                                    perform_replacement(prefix_len, &expansion);
+                                    perform_replacement(prefix_len, &resolved);
                                     SUPPRESSING.store(false, Ordering::SeqCst);
                                 });
                             }
@@ -339,7 +432,19 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             }
         }
 
-        if is_buffer_reset_key(key) {
+        // Backspace: pop one character and recalculate hints.
+        if key == Key::Backspace {
+            let mut state = STATE.lock().unwrap();
+            state.buffer.pop();
+            if app_hints && !state.buffer.is_empty() {
+                let hints = find_hints(&state);
+                drop(state);
+                show_hints(hints);
+            } else {
+                drop(state);
+                clear_hints();
+            }
+        } else if is_buffer_reset_key(key) {
             let mut state = STATE.lock().unwrap();
             state.buffer.clear();
             drop(state);
@@ -348,21 +453,42 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             let mut state = STATE.lock().unwrap();
             state.buffer.push(ch);
 
-            if state.buffer.len() > state.max_buffer {
-                let excess = state.buffer.len() - state.max_buffer;
-                state.buffer.drain(..excess);
+            if state.buffer.chars().count() > state.max_buffer {
+                let excess = state.buffer.chars().count() - state.max_buffer;
+                let byte_off = state.buffer.char_indices().nth(excess).map_or(state.buffer.len(), |(i, _)| i);
+                state.buffer.drain(..byte_off);
             }
 
             if app_expansion {
-                if let Some((trigger_len, expansion)) = find_match(&state) {
-                    let expansion = expansion.clone();
+                if let Some((trigger_len, data)) = find_match(&state) {
+                    let expansion_str = data.expansion.clone();
+                    let resolved = resolve_expansion(&data.expansion, &data.variables);
                     state.buffer.clear();
                     drop(state);
                     clear_hints();
 
+                    record_expansion_stat(expansion_str.clone());
+                    if let Some(app) = APP_HANDLE.get() {
+                        let _ = app.emit("expansion-used", &expansion_str);
+                    }
+
                     SUPPRESSING.store(true, Ordering::SeqCst);
                     std::thread::spawn(move || {
-                        perform_replacement(trigger_len, &expansion);
+                        perform_replacement(trigger_len, &resolved);
+                        SUPPRESSING.store(false, Ordering::SeqCst);
+                    });
+                    return Some(event);
+                }
+            }
+
+            if app_autocorrect {
+                if let Some((trigger_len, replacement)) = find_autocorrect(&state, &app_cfg.autocorrect_rules) {
+                    state.buffer.clear();
+                    drop(state);
+                    clear_hints();
+                    SUPPRESSING.store(true, Ordering::SeqCst);
+                    std::thread::spawn(move || {
+                        perform_replacement(trigger_len, &replacement);
                         SUPPRESSING.store(false, Ordering::SeqCst);
                     });
                     return Some(event);
@@ -402,8 +528,7 @@ fn event_to_char(event: &Event) -> Option<char> {
 fn is_buffer_reset_key(key: Key) -> bool {
     matches!(
         key,
-        Key::Backspace
-            | Key::Return
+        Key::Return
             | Key::Tab
             | Key::Escape
             | Key::UpArrow
@@ -418,14 +543,104 @@ fn is_buffer_reset_key(key: Key) -> bool {
     )
 }
 
+/// Resolves `{{...}}` template variables in an expansion string.
+///
+/// - `{{name}}` → looked up in `variables` map
+/// - `{{date}}` → current date (YYYY-MM-DD)
+/// - `{{time}}` → current time (HH:MM)
+/// - `{{random:N}}` → N random alphanumeric characters
+/// - Unknown `{{...}}` with no matching variable → left as-is
+fn resolve_expansion(expansion: &str, variables: &HashMap<String, String>) -> String {
+    // Fast path: no templates at all.
+    if !expansion.contains("{{") {
+        return expansion.to_string();
+    }
+
+    let mut result = String::with_capacity(expansion.len());
+    let mut rest = expansion;
+
+    while let Some(start) = rest.find("{{") {
+        result.push_str(&rest[..start]);
+        let after_open = &rest[start + 2..];
+        if let Some(end) = after_open.find("}}") {
+            let key = &after_open[..end];
+            let replacement = resolve_variable(key, variables);
+            result.push_str(&replacement);
+            rest = &after_open[end + 2..];
+        } else {
+            // No closing `}}` — push the rest as-is.
+            result.push_str(&rest[start..]);
+            rest = "";
+            break;
+        }
+    }
+    result.push_str(rest);
+    result
+}
+
+/// Resolves a single template variable name to its value.
+fn resolve_variable(key: &str, variables: &HashMap<String, String>) -> String {
+    match key {
+        "date" => chrono::Local::now().format("%Y-%m-%d").to_string(),
+        "time" => chrono::Local::now().format("%H:%M").to_string(),
+        _ if key.starts_with("random:") => {
+            let n: usize = key[7..].parse().unwrap_or(6);
+            let n = n.min(64); // cap at 64 chars
+            use std::collections::hash_map::RandomState;
+            use std::hash::{BuildHasher, Hasher};
+            let chars: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
+            let rs = RandomState::new();
+            let mut out = String::with_capacity(n);
+            for i in 0..n {
+                let mut hasher = rs.build_hasher();
+                hasher.write_usize(i);
+                let idx = (hasher.finish() as usize) % chars.len();
+                out.push(chars[idx] as char);
+            }
+            out
+        }
+        _ => {
+            // User-defined variable lookup.
+            if let Some(val) = variables.get(key) {
+                val.clone()
+            } else {
+                // Unknown — leave as-is.
+                format!("{{{{{}}}}}", key)
+            }
+        }
+    }
+}
+
 /// Returns `(trigger_char_count, expansion)` if the buffer ends with a trigger.
-fn find_match(state: &ExpanderState) -> Option<(usize, &String)> {
+fn find_match(state: &ExpanderState) -> Option<(usize, &ShortcutData)> {
     if state.buffer.len() < 3 {
         return None;
     }
-    for (trigger, expansion) in &state.shortcuts {
+    for (trigger, data) in &state.shortcuts {
         if state.buffer.ends_with(trigger) {
-            return Some((trigger.chars().count(), expansion));
+            return Some((trigger.chars().count(), data));
+        }
+    }
+    None
+}
+
+/// Returns `(pattern_char_count, replacement)` if the buffer ends with an autocorrect pattern.
+/// Checks per-app rules first, then global rules.
+fn find_autocorrect(
+    state: &ExpanderState,
+    extra_rules: &[(String, String)],
+) -> Option<(usize, String)> {
+    // Per-app rules take priority.
+    for (pattern, replacement) in extra_rules {
+        if state.buffer.ends_with(pattern.as_str()) {
+            return Some((pattern.chars().count(), replacement.clone()));
+        }
+    }
+    // Global rules.
+    let rules = AUTOCORRECT_RULES.lock().unwrap();
+    for (pattern, replacement) in rules.iter() {
+        if state.buffer.ends_with(pattern.as_str()) {
+            return Some((pattern.chars().count(), replacement.clone()));
         }
     }
     None
@@ -488,7 +703,8 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
 
     let app_cfg = get_app_config();
     let (app_expansion, app_hints) = (app_cfg.expansion, app_cfg.hints);
-    if !app_expansion && !app_hints {
+    let app_autocorrect = app_cfg.autocorrect && AUTOCORRECT_ENABLED.load(Ordering::Relaxed);
+    if !app_expansion && !app_hints && !app_autocorrect {
         return false;
     }
 
@@ -522,11 +738,13 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                 if sel >= 0 {
                     let hints = ACTIVE_HINTS.lock().unwrap();
                     if let Some(hint) = hints.get(sel as usize) {
-                        let expansion = hint.expansion.clone();
+                        let expansion_str = hint.expansion.clone();
+                        let resolved = resolve_expansion(&hint.expansion, &hint.variables);
                         drop(hints);
+                        let tc = trigger_char();
                         let mut state = STATE.lock().unwrap();
-                        let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
-                            state.buffer[colon_pos..].chars().count()
+                        let prefix_len = if let Some(pos) = state.buffer.rfind(tc) {
+                            state.buffer[pos..].chars().count()
                         } else {
                             0
                         };
@@ -534,9 +752,13 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                         drop(state);
                         clear_hints();
                         if prefix_len > 0 {
+                            record_expansion_stat(expansion_str.clone());
+                            if let Some(app) = APP_HANDLE.get() {
+                                let _ = app.emit("expansion-used", &expansion_str);
+                            }
                             SUPPRESSING.store(true, Ordering::SeqCst);
                             std::thread::spawn(move || {
-                                perform_replacement(prefix_len, &expansion);
+                                perform_replacement(prefix_len, &resolved);
                                 SUPPRESSING.store(false, Ordering::SeqCst);
                             });
                         }
@@ -556,6 +778,24 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         }
     }
 
+    // Backspace: pop one character and recalculate hints.
+    {
+        use windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_BACK;
+        if vk == VK_BACK {
+            let mut state = STATE.lock().unwrap();
+            state.buffer.pop();
+            if app_hints && !state.buffer.is_empty() {
+                let hints = find_hints(&state);
+                drop(state);
+                show_hints(hints);
+            } else {
+                drop(state);
+                clear_hints();
+            }
+            return false;
+        }
+    }
+
     // Buffer reset keys.
     if is_reset_vk(vk) {
         let mut state = STATE.lock().unwrap();
@@ -570,23 +810,45 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         let mut state = STATE.lock().unwrap();
         state.buffer.push(ch);
 
-        if state.buffer.len() > state.max_buffer {
-            let excess = state.buffer.len() - state.max_buffer;
-            state.buffer.drain(..excess);
+        if state.buffer.chars().count() > state.max_buffer {
+            let excess = state.buffer.chars().count() - state.max_buffer;
+            let byte_off = state.buffer.char_indices().nth(excess).map_or(state.buffer.len(), |(i, _)| i);
+            state.buffer.drain(..byte_off);
         }
 
         if app_expansion {
-            if let Some((trigger_len, expansion)) = find_match(&state) {
-                let expansion = expansion.clone();
+            if let Some((trigger_len, data)) = find_match(&state) {
+                let expansion_str = data.expansion.clone();
+                let resolved = resolve_expansion(&data.expansion, &data.variables);
+                state.buffer.clear();
+                drop(state);
+                clear_hints();
+
+                record_expansion_stat(expansion_str.clone());
+                if let Some(app) = APP_HANDLE.get() {
+                    let _ = app.emit("expansion-used", &expansion_str);
+                }
+
+                SUPPRESSING.store(true, Ordering::SeqCst);
+                std::thread::spawn(move || {
+                    perform_replacement(trigger_len, &resolved);
+                    SUPPRESSING.store(false, Ordering::SeqCst);
+                });
+                return false; // don't consume the triggering character
+            }
+        }
+
+        if app_autocorrect {
+            if let Some((trigger_len, replacement)) = find_autocorrect(&state, &app_cfg.autocorrect_rules) {
                 state.buffer.clear();
                 drop(state);
                 clear_hints();
                 SUPPRESSING.store(true, Ordering::SeqCst);
                 std::thread::spawn(move || {
-                    perform_replacement(trigger_len, &expansion);
+                    perform_replacement(trigger_len, &replacement);
                     SUPPRESSING.store(false, Ordering::SeqCst);
                 });
-                return false; // don't consume the triggering character
+                return false;
             }
         }
 
@@ -608,8 +870,7 @@ fn is_reset_vk(vk: u16) -> bool {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
     matches!(
         vk,
-        VK_BACK
-            | VK_RETURN
+        VK_RETURN
             | VK_TAB
             | VK_ESCAPE
             | VK_UP
@@ -699,20 +960,109 @@ fn win_vk_to_char(vk: u16, scan: u32) -> Option<char> {
 // Hints
 // ---------------------------------------------------------------------------
 
-/// Finds shortcuts whose trigger starts with the current open prefix.
-/// An "open prefix" is `:` followed by 1+ chars without a closing `:`.
-fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
-    // Find the last `:` in the buffer.
-    let Some(colon_pos) = state.buffer.rfind(':') else {
-        return vec![];
+/// Generates Unicode character hints for `\uXXX`-style prefixes.
+///
+/// `prefix` is the text after the trigger char (e.g. `\u223`).
+/// Returns all valid `Shortcut` entries where `trigger` is the code (e.g. `\u2230`)
+/// and `expansion` is the actual character.
+fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
+    // Must start with \u followed by hex digits.
+    let rest = match prefix.strip_prefix("\\u") {
+        Some(r) => r,
+        None => return vec![],
     };
-    let prefix = &state.buffer[colon_pos..];
-    // Need at least `:` + 1 char, and must NOT end with `:` (that would be a completed trigger).
-    if prefix.len() < 2 || prefix.ends_with(':') && prefix.len() > 1 {
+    if rest.is_empty() || rest.len() < 3 || rest.len() > 5 {
         return vec![];
     }
-    // Don't show hints if the prefix itself ends with `:` (completed).
-    if prefix.len() > 1 && prefix[1..].contains(':') {
+    if !rest.chars().all(|c| c.is_ascii_hexdigit()) {
+        return vec![];
+    }
+
+    let mut hints = Vec::new();
+    let hex_digits = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'];
+
+    match rest.len() {
+        3 => {
+            // e.g. \u223 → enumerate \u2230..\u223F
+            for &h in &hex_digits {
+                let code_str = format!("{}{}", rest, h);
+                if let Ok(cp) = u32::from_str_radix(&code_str, 16) {
+                    if let Some(ch) = char::from_u32(cp) {
+                        if !ch.is_control() {
+                            hints.push(Shortcut {
+                                trigger: format!("\\u{}", code_str),
+                                expansion: ch.to_string(),
+                                variables: HashMap::new(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        4 => {
+            // Exact 4-digit code point first.
+            if let Ok(cp) = u32::from_str_radix(rest, 16) {
+                if let Some(ch) = char::from_u32(cp) {
+                    if !ch.is_control() {
+                        hints.push(Shortcut {
+                            trigger: format!("\\u{}", rest.to_ascii_uppercase()),
+                            expansion: ch.to_string(),
+                            variables: HashMap::new(),
+                        });
+                    }
+                }
+            }
+            // Then enumerate 5-digit completions.
+            for &h in &hex_digits {
+                let code_str = format!("{}{}", rest, h);
+                if let Ok(cp) = u32::from_str_radix(&code_str, 16) {
+                    if let Some(ch) = char::from_u32(cp) {
+                        if !ch.is_control() {
+                            hints.push(Shortcut {
+                                trigger: format!("\\u{}", code_str.to_ascii_uppercase()),
+                                expansion: ch.to_string(),
+                                variables: HashMap::new(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        5 => {
+            // Exact 5-digit code point.
+            if let Ok(cp) = u32::from_str_radix(rest, 16) {
+                if let Some(ch) = char::from_u32(cp) {
+                    if !ch.is_control() {
+                        hints.push(Shortcut {
+                            trigger: format!("\\u{}", rest.to_ascii_uppercase()),
+                            expansion: ch.to_string(),
+                            variables: HashMap::new(),
+                        });
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+
+    hints
+}
+
+/// Finds shortcuts whose trigger starts with the current open prefix.
+/// An "open prefix" is the trigger char followed by 1+ chars without a closing trigger char.
+fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
+    let tc = trigger_char();
+    // Find the last trigger char in the buffer.
+    let Some(tc_pos) = state.buffer.rfind(tc) else {
+        return vec![];
+    };
+    let prefix = &state.buffer[tc_pos..];
+    // Need at least trigger char + 1 char, and must NOT end with trigger char (completed trigger).
+    if prefix.len() < 2 || prefix.ends_with(tc) && prefix.len() > 1 {
+        return vec![];
+    }
+    // Don't show hints if the prefix itself contains a second trigger char (completed).
+    if prefix.len() > 1 && prefix[1..].contains(tc) {
         return vec![];
     }
 
@@ -721,16 +1071,160 @@ fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
         .iter()
         .filter(|(trigger, _)| trigger.starts_with(prefix))
         .take(6)
-        .map(|(trigger, expansion)| Shortcut {
+        .map(|(trigger, data)| Shortcut {
             trigger: trigger.clone(),
-            expansion: expansion.clone(),
+            expansion: data.expansion.clone(),
+            variables: data.variables.clone(),
         })
         .collect();
     hints.sort_by(|a, b| a.trigger.len().cmp(&b.trigger.len()));
+
+    // Append Unicode code-point hints (prefix without the leading trigger char).
+    if UNICODE_HINTS.load(Ordering::Relaxed) {
+        let unicode_prefix = &prefix[tc.len_utf8()..];
+        let unicode_hints = find_unicode_hints(unicode_prefix);
+        hints.extend(unicode_hints);
+    }
+
     hints
 }
 
 /// Payload emitted to the hints frontend.
+// ---------------------------------------------------------------------------
+// Usage statistics — plain JSON file, no store plugin dependency.
+// ---------------------------------------------------------------------------
+
+#[derive(Default, Clone, Serialize, Deserialize)]
+pub struct StatsData {
+    #[serde(default)]
+    pub char_usage: HashMap<String, u64>,
+    #[serde(default)]
+    pub expansion_usage: HashMap<String, u64>,
+    #[serde(default)]
+    pub drag_usage: HashMap<String, u64>,
+    #[serde(default)]
+    pub daily: HashMap<String, DayStats>,
+}
+
+#[derive(Default, Clone, Serialize, Deserialize)]
+pub struct DayStats {
+    #[serde(default)]
+    pub copies: u64,
+    #[serde(default)]
+    pub expansions: u64,
+    #[serde(default)]
+    pub drags: u64,
+}
+
+static STATS_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+fn stats_path() -> Option<std::path::PathBuf> {
+    APP_HANDLE.get().and_then(|app| {
+        app.path().app_data_dir().ok().map(|d| d.join("stats.json"))
+    })
+}
+
+fn read_stats(path: &std::path::Path) -> StatsData {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default()
+}
+
+fn write_stats(path: &std::path::Path, stats: &StatsData) {
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if let Ok(json) = serde_json::to_string(stats) {
+        let _ = std::fs::write(path, json);
+    }
+}
+
+fn today_key() -> String {
+    chrono::Local::now().format("%Y-%m-%d").to_string()
+}
+
+/// Records an expansion stat (spawns a background thread).
+fn record_expansion_stat(expansion: String) {
+    std::thread::spawn(move || {
+        let Some(path) = stats_path() else { return };
+        let _guard = STATS_LOCK.lock().unwrap();
+        let mut stats = read_stats(&path);
+        *stats.expansion_usage.entry(expansion).or_default() += 1;
+        stats.daily.entry(today_key()).or_default().expansions += 1;
+        write_stats(&path, &stats);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Autocorrect commands
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn autocorrect_set_enabled(enabled: bool) {
+    AUTOCORRECT_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
+#[tauri::command]
+pub fn autocorrect_is_enabled() -> bool {
+    AUTOCORRECT_ENABLED.load(Ordering::Relaxed)
+}
+
+#[tauri::command]
+pub fn autocorrect_update_rules(rules: Vec<AutoCorrectRule>) {
+    let mut list = AUTOCORRECT_RULES.lock().unwrap();
+    list.clear();
+    for r in rules {
+        list.push((r.pattern, r.replacement));
+    }
+}
+
+#[tauri::command]
+pub fn stats_record_char(app: AppHandle, ch: String) {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return;
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    let mut stats = read_stats(&path);
+    *stats.char_usage.entry(ch).or_default() += 1;
+    stats.daily.entry(today_key()).or_default().copies += 1;
+    write_stats(&path, &stats);
+}
+
+#[tauri::command]
+pub fn stats_record_drag(app: AppHandle, ch: String) {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return;
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    let mut stats = read_stats(&path);
+    *stats.drag_usage.entry(ch).or_default() += 1;
+    stats.daily.entry(today_key()).or_default().drags += 1;
+    write_stats(&path, &stats);
+}
+
+#[tauri::command]
+pub fn stats_load(app: AppHandle) -> StatsData {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return StatsData::default();
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    read_stats(&path)
+}
+
+#[tauri::command]
+pub fn stats_reset(app: AppHandle) {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return;
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    let _ = std::fs::remove_file(path);
+}
+
+// ---------------------------------------------------------------------------
+// Hints
+// ---------------------------------------------------------------------------
+
 #[derive(Clone, Serialize)]
 struct HintsPayload {
     hints: Vec<Shortcut>,
@@ -819,7 +1313,7 @@ fn emit_hints(hints: &[Shortcut]) {
             let _ = win.hide();
         } else {
             let n = effective_hints.len() as f64;
-            let width = n * 38.0 + 22.0;
+            let width = n.min(6.0) * 38.0 + 22.0;
             let height = 54.0_f64;
 
             let _ = win.set_size(tauri::LogicalSize::new(width, height));
@@ -961,13 +1455,18 @@ fn win_replace(trigger_char_count: usize, expansion: &str) {
         std::thread::sleep(Duration::from_millis(10));
     }
 
-    // 2. Send Backspace presses to delete the trigger text.
+    // 2. Send Backspace presses to delete the trigger text (batched).
+    let mut bs_inputs: Vec<INPUT> = Vec::with_capacity(trigger_char_count * 2);
     for _ in 0..trigger_char_count {
-        let bs = [kb(VK_BACK, 0), kb(VK_BACK, KEYEVENTF_KEYUP)];
-        unsafe {
-            SendInput(bs.len() as u32, bs.as_ptr(), mem::size_of::<INPUT>() as i32);
-        }
-        std::thread::sleep(Duration::from_millis(20));
+        bs_inputs.push(kb(VK_BACK, 0));
+        bs_inputs.push(kb(VK_BACK, KEYEVENTF_KEYUP));
+    }
+    unsafe {
+        SendInput(
+            bs_inputs.len() as u32,
+            bs_inputs.as_ptr(),
+            mem::size_of::<INPUT>() as i32,
+        );
     }
 
     std::thread::sleep(Duration::from_millis(20));
@@ -1199,6 +1698,8 @@ fn get_app_config() -> AppConfig {
         hints: true,
         direction: "auto".to_string(),
         offset: HintsOffset::default(),
+        autocorrect: true,
+        autocorrect_rules: Vec::new(),
     }
 }
 

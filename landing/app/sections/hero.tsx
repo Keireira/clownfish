@@ -118,7 +118,7 @@ const Hero = ({ userOS, setDlOverride }: Props) => {
 							))}
 							<div className="mt-3 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2">
 								<span className="font-mono text-xs text-text-muted">:shrug:</span>
-								<span className="flex-1 text-xs text-text-secondary italic">typing…</span>
+								<span className="flex-1 text-xs text-text-secondary italic">→</span>
 								<span className="text-sm text-text-primary">¯\_(ツ)_/¯</span>
 							</div>
 						</div>

@@ -4,17 +4,35 @@ type TranslationRecord = Record<string, TranslationValue>;
 
 export const translations: Record<string, TranslationRecord> = {
 	en: {
+		// Tabs
+		tab_characters: 'Characters',
+		tab_compose: 'Compose',
+
+		// Compose
+		compose_base: 'Base Character',
+		compose_base_placeholder: 'Type a character',
+		compose_modifiers: 'Modifiers',
+		compose_selected_marks: 'Applied',
+		compose_preview: 'Preview',
+		compose_preview_empty: 'Type a base character and select modifiers',
+		compose_copy: (char: unknown) => `Copy ${char}`,
+		compose_nfc: 'NFC normalize',
+
 		// App
 		search_placeholder: 'Search characters...',
 		nothing_found: 'Nothing found',
 		settings: 'Settings',
 		copied_char: (char) => `Copied ${char}`,
+		copied_multi: (n) => `Copied ${n} characters`,
+		multi_copy: 'Copy',
+		multi_clear: 'Clear',
 
 		// Settings header
 		settings_title: 'Settings',
 		reset_to_default: 'Reset to Default',
 		save_changes: 'Save Changes',
 		saved: 'Saved',
+		undo: 'Undo',
 
 		// Settings tabs
 		tab_categories: 'Categories',
@@ -42,6 +60,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'Category name',
 		add: 'Add',
 
+		no_characters: 'No characters yet. Add one or use presets.',
+
 		// PresetPicker
 		add_from_presets: 'Add from Presets',
 		n_selected: (n) => `${n} selected`,
@@ -67,12 +87,19 @@ export const translations: Record<string, TranslationRecord> = {
 		// Text Expansion
 		tab_shortcuts: 'Shortcuts',
 		expansion_enabled_label: 'Text Expansion',
-		shortcut_trigger_placeholder: ':trigger:',
+		shortcut_trigger_placeholder: 'trigger',
 		shortcut_expansion_placeholder: 'Expansion text',
 		shortcuts_count: (n: unknown) => `Shortcuts (${n})`,
 		no_shortcuts: 'No shortcuts yet. Add one to get started.',
 		duplicate_trigger: 'This trigger already exists',
 		hints_position_label: 'Hints Position',
+		trigger_char_label: 'Trigger Character',
+		hotkey_label: 'Global Hotkey',
+		hotkey_not_set: 'Not set',
+		hotkey_record: 'Record',
+		hotkey_recording: 'Press a key combo...',
+		hotkey_clear: 'Clear',
+		unicode_hints_label: 'Unicode Lookup (\\uXXXX)',
 		hints_caret: 'Near cursor',
 		hints_corner: 'Bottom-right corner',
 		hints_off: 'Disabled',
@@ -89,6 +116,19 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_offset: 'Offset (px)',
 		stoplist_select_app: 'Select an app',
 
+		// Variables (snippet templates)
+		var_section: 'Variables',
+		var_add: '+ Variable',
+		var_key_placeholder: 'name',
+		var_value_placeholder: 'value',
+		var_builtin_hint: 'Built-in: {{date}}, {{time}}, {{random:N}}',
+		var_help_title: 'Template variables',
+		var_help_body: 'Use {{name}} in expansion text for dynamic values.',
+		var_help_custom: 'Custom — set in edit mode',
+		var_help_date: 'Current date',
+		var_help_time: 'Current time',
+		var_help_random: 'Random characters',
+
 		// Category names (defaults)
 		cat_arrows: 'Arrows',
 		cat_math: 'Math',
@@ -101,19 +141,100 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: 'Subscript & Superscript',
 		cat_lines_boxes: 'Lines & Boxes',
-		cat_latin_ext: 'Latin Extended'
+		cat_latin_ext: 'Latin Extended',
+
+		cat_kaomoji_happy: 'Happy',
+		cat_kaomoji_sad: 'Sad',
+		cat_kaomoji_angry: 'Angry',
+		cat_kaomoji_love: 'Love',
+		cat_kaomoji_surprise: 'Surprise',
+		cat_kaomoji_animals: 'Animals',
+		cat_kaomoji_actions: 'Actions',
+
+		// TriggerPrompt
+		enter_trigger: 'Add Shortcut',
+		trigger_keyword_placeholder: 'keyword',
+		trigger_exists: 'This trigger already exists',
+		shortcut_added: 'Shortcut added',
+		right_click_shortcut: 'Right-click → shortcut',
+		inspector_copied: (v: unknown) => `Copied ${v}`,
+		help_title: 'Tips',
+		help_click: 'copy character',
+		help_drag: 'drag to another app',
+		help_rclick: 'add shortcut',
+		help_alt: 'character details',
+
+		// Plugins
+		section_plugins: 'Plugins',
+		plugin_create: 'Create',
+		plugin_import: 'Import',
+		plugin_export: 'Export',
+		plugin_delete: 'Delete',
+		plugin_builtin: 'Built-in plugin',
+		plugin_enabled: 'Enabled',
+		plugin_disabled: 'Disabled',
+		plugin_name_placeholder: 'New plugin name...',
+		plugin_reset: 'Reset',
+
+		// Export / Import
+		data_label: 'Data',
+		export_settings: 'Export',
+		import_settings: 'Import',
+
+		// Auto-Correction
+		section_autocorrect: 'Auto-Correction',
+		autocorrect_enabled_label: 'Auto-Correction',
+		autocorrect_pattern_placeholder: 'pattern',
+		autocorrect_replacement_placeholder: 'replacement',
+		autocorrect_empty: 'No autocorrect rules. Add one to get started.',
+		stoplist_autocorrect: 'Auto-Correction',
+		stoplist_autocorrect_rules: 'Per-app rules',
+
+		// Stats
+		section_stats: 'Stats',
+		stats_top_chars: 'Top Characters',
+		stats_top_drags: 'Top Drag & Drop',
+		stats_top_expansions: 'Top Expansions',
+		stats_total_copies: 'Total copies',
+		stats_total_drags: 'Drag & drop',
+		stats_total_expansions: 'Total expansions',
+		stats_active_days: 'Active days',
+		stats_reset: 'Reset Stats',
+		stats_no_data: 'No usage data yet',
+		stats_uses: 'uses',
+
+		// Packs
+		section_packs: 'Packs',
+		pack_install: 'Install',
+		pack_uninstall: 'Uninstall'
 	},
 
 	ru: {
+		tab_characters: 'Символы',
+		tab_compose: 'Составить',
+
+		compose_base: 'Базовый символ',
+		compose_base_placeholder: 'Введите символ',
+		compose_modifiers: 'Модификаторы',
+		compose_selected_marks: 'Применены',
+		compose_preview: 'Предпросмотр',
+		compose_preview_empty: 'Введите символ и выберите модификаторы',
+		compose_copy: (char: unknown) => `Копировать ${char}`,
+		compose_nfc: 'NFC нормализация',
+
 		search_placeholder: 'Поиск символов…',
 		nothing_found: 'Ничего не найдено',
 		settings: 'Настройки',
 		copied_char: (char) => `${char} скопирован`,
+		copied_multi: (n) => `Скопировано ${n} символов`,
+		multi_copy: 'Копировать',
+		multi_clear: 'Очистить',
 
 		settings_title: 'Настройки',
 		reset_to_default: 'Сбросить',
 		save_changes: 'Сохранить',
 		saved: 'Сохранено',
+		undo: 'Отменить',
 
 		tab_categories: 'Категории',
 		tab_appearance: 'Оформление',
@@ -136,6 +257,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'Название категории',
 		add: 'Добавить',
 
+		no_characters: 'Нет символов. Добавьте или используйте наборы.',
+
 		add_from_presets: 'Добавить из наборов',
 		n_selected: (n) => `Выбрано: ${n}`,
 		cancel: 'Отмена',
@@ -156,12 +279,19 @@ export const translations: Record<string, TranslationRecord> = {
 
 		tab_shortcuts: 'Автозамена',
 		expansion_enabled_label: 'Автозамена текста',
-		shortcut_trigger_placeholder: ':триггер:',
+		shortcut_trigger_placeholder: 'триггер',
 		shortcut_expansion_placeholder: 'Текст замены',
 		shortcuts_count: (n: unknown) => `Замены (${n})`,
 		no_shortcuts: 'Нет замен. Добавьте первую.',
 		duplicate_trigger: 'Такой триггер уже существует',
 		hints_position_label: 'Подсказки',
+		trigger_char_label: 'Символ-разделитель',
+		hotkey_label: 'Глобальный хоткей',
+		hotkey_not_set: 'Не задан',
+		hotkey_record: 'Записать',
+		hotkey_recording: 'Нажмите комбинацию...',
+		hotkey_clear: 'Очистить',
+		unicode_hints_label: 'Поиск по коду (\\uXXXX)',
 		hints_caret: 'У курсора',
 		hints_corner: 'В углу экрана',
 		hints_off: 'Выключены',
@@ -178,6 +308,18 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_offset: 'Смещение (пикс.)',
 		stoplist_select_app: 'Выберите приложение',
 
+		var_section: 'Переменные',
+		var_add: '+ Переменная',
+		var_key_placeholder: 'имя',
+		var_value_placeholder: 'значение',
+		var_builtin_hint: 'Встроенные: {{date}}, {{time}}, {{random:N}}',
+		var_help_title: 'Шаблоны переменных',
+		var_help_body: 'Используйте {{имя}} в тексте замены для динамических значений.',
+		var_help_custom: 'Свои — задаются при редактировании',
+		var_help_date: 'Текущая дата',
+		var_help_time: 'Текущее время',
+		var_help_random: 'Случайные символы',
+
 		cat_arrows: 'Стрелки',
 		cat_math: 'Математика',
 		cat_currency: 'Валюты',
@@ -189,14 +331,88 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: 'Подстрочные и надстрочные',
 		cat_lines_boxes: 'Линии и рамки',
-		cat_latin_ext: 'Латиница расш.'
+		cat_latin_ext: 'Латиница расш.',
+
+		cat_kaomoji_happy: 'Радость',
+		cat_kaomoji_sad: 'Грусть',
+		cat_kaomoji_angry: 'Злость',
+		cat_kaomoji_love: 'Любовь',
+		cat_kaomoji_surprise: 'Удивление',
+		cat_kaomoji_animals: 'Животные',
+		cat_kaomoji_actions: 'Действия',
+
+		enter_trigger: 'Новая автозамена',
+		trigger_keyword_placeholder: 'ключевое слово',
+		trigger_exists: 'Такой триггер уже существует',
+		shortcut_added: 'Автозамена добавлена',
+		right_click_shortcut: 'ПКМ → автозамена',
+		inspector_copied: (v: unknown) => `Скопировано: ${v}`,
+		help_title: 'Подсказки',
+		help_click: 'копировать символ',
+		help_drag: 'перетащить в другое приложение',
+		help_rclick: 'добавить автозамену',
+		help_alt: 'подробности о символе',
+
+		section_plugins: 'Плагины',
+		plugin_create: 'Создать',
+		plugin_import: 'Импорт',
+		plugin_export: 'Экспорт',
+		plugin_delete: 'Удалить',
+		plugin_builtin: 'Встроенный плагин',
+		plugin_enabled: 'Включён',
+		plugin_disabled: 'Отключён',
+		plugin_name_placeholder: 'Название плагина...',
+		plugin_reset: 'Сбросить',
+
+		data_label: 'Данные',
+		export_settings: 'Экспорт',
+		import_settings: 'Импорт',
+
+		section_autocorrect: 'Автокоррекция',
+		autocorrect_enabled_label: 'Автокоррекция',
+		autocorrect_pattern_placeholder: 'паттерн',
+		autocorrect_replacement_placeholder: 'замена',
+		autocorrect_empty: 'Нет правил автокоррекции. Добавьте первое.',
+		stoplist_autocorrect: 'Автокоррекция',
+		stoplist_autocorrect_rules: 'Правила для приложения',
+
+		section_stats: 'Статистика',
+		stats_top_chars: 'Популярные символы',
+		stats_top_drags: 'Drag & Drop',
+		stats_top_expansions: 'Популярные замены',
+		stats_total_copies: 'Всего копирований',
+		stats_total_drags: 'Drag & drop',
+		stats_total_expansions: 'Всего замен',
+		stats_active_days: 'Активных дней',
+		stats_reset: 'Сбросить',
+		stats_no_data: 'Нет данных',
+		stats_uses: 'исп.',
+
+		section_packs: 'Наборы',
+		pack_install: 'Установить',
+		pack_uninstall: 'Удалить'
 	},
 
 	es: {
+		tab_characters: 'Caracteres',
+		tab_compose: 'Componer',
+
+		compose_base: 'Carácter base',
+		compose_base_placeholder: 'Escribe un carácter',
+		compose_modifiers: 'Modificadores',
+		compose_selected_marks: 'Aplicados',
+		compose_preview: 'Vista previa',
+		compose_preview_empty: 'Escribe un carácter y selecciona modificadores',
+		compose_copy: (char: unknown) => `Copiar ${char}`,
+		compose_nfc: 'Normalizar NFC',
+
 		search_placeholder: 'Buscar caracteres…',
 		nothing_found: 'No se encontró nada',
 		settings: 'Ajustes',
 		copied_char: (char) => `${char} copiado`,
+		copied_multi: (n) => `${n} caracteres copiados`,
+		multi_copy: 'Copiar',
+		multi_clear: 'Limpiar',
 
 		settings_title: 'Ajustes',
 		reset_to_default: 'Restablecer',
@@ -224,6 +440,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'Nombre de categoría',
 		add: 'Añadir',
 
+		no_characters: 'Sin caracteres. Añade uno o usa preajustes.',
+
 		add_from_presets: 'Añadir de preajustes',
 		n_selected: (n) => `${n} seleccionados`,
 		cancel: 'Cancelar',
@@ -244,12 +462,19 @@ export const translations: Record<string, TranslationRecord> = {
 
 		tab_shortcuts: 'Atajos',
 		expansion_enabled_label: 'Expansión de texto',
-		shortcut_trigger_placeholder: ':atajo:',
+		shortcut_trigger_placeholder: 'atajo',
 		shortcut_expansion_placeholder: 'Texto de expansión',
 		shortcuts_count: (n: unknown) => `Atajos (${n})`,
 		no_shortcuts: 'No hay atajos. Añade uno para empezar.',
 		duplicate_trigger: 'Este atajo ya existe',
 		hints_position_label: 'Posición de sugerencias',
+		trigger_char_label: 'Carácter disparador',
+		hotkey_label: 'Atajo global',
+		hotkey_not_set: 'No configurado',
+		hotkey_record: 'Grabar',
+		hotkey_recording: 'Presione una combinación...',
+		hotkey_clear: 'Borrar',
+		unicode_hints_label: 'Búsqueda Unicode (\\uXXXX)',
 		hints_caret: 'Cerca del cursor',
 		hints_corner: 'Esquina inferior derecha',
 		hints_off: 'Desactivado',
@@ -266,6 +491,18 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_offset: 'Desplazamiento (px)',
 		stoplist_select_app: 'Selecciona una app',
 
+		var_section: 'Variables',
+		var_add: '+ Variable',
+		var_key_placeholder: 'nombre',
+		var_value_placeholder: 'valor',
+		var_builtin_hint: 'Integradas: {{date}}, {{time}}, {{random:N}}',
+		var_help_title: 'Variables de plantilla',
+		var_help_body: 'Usa {{nombre}} en el texto para valores dinámicos.',
+		var_help_custom: 'Personalizadas — se definen al editar',
+		var_help_date: 'Fecha actual',
+		var_help_time: 'Hora actual',
+		var_help_random: 'Caracteres aleatorios',
+
 		cat_arrows: 'Flechas',
 		cat_math: 'Matemáticas',
 		cat_currency: 'Monedas',
@@ -277,14 +514,88 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: 'Subíndices y superíndices',
 		cat_lines_boxes: 'Líneas y marcos',
-		cat_latin_ext: 'Latín extendido'
+		cat_latin_ext: 'Latín extendido',
+
+		cat_kaomoji_happy: 'Feliz',
+		cat_kaomoji_sad: 'Triste',
+		cat_kaomoji_angry: 'Enojado',
+		cat_kaomoji_love: 'Amor',
+		cat_kaomoji_surprise: 'Sorpresa',
+		cat_kaomoji_animals: 'Animales',
+		cat_kaomoji_actions: 'Acciones',
+
+		enter_trigger: 'Añadir atajo',
+		trigger_keyword_placeholder: 'palabra clave',
+		trigger_exists: 'Este atajo ya existe',
+		shortcut_added: 'Atajo añadido',
+		right_click_shortcut: 'Clic derecho → atajo',
+		inspector_copied: (v: unknown) => `Copiado: ${v}`,
+		help_title: 'Consejos',
+		help_click: 'copiar carácter',
+		help_drag: 'arrastrar a otra app',
+		help_rclick: 'añadir atajo',
+		help_alt: 'detalles del carácter',
+
+		section_plugins: 'Plugins',
+		plugin_create: 'Crear',
+		plugin_import: 'Importar',
+		plugin_export: 'Exportar',
+		plugin_delete: 'Eliminar',
+		plugin_builtin: 'Plugin integrado',
+		plugin_enabled: 'Activado',
+		plugin_disabled: 'Desactivado',
+		plugin_name_placeholder: 'Nombre del plugin...',
+		plugin_reset: 'Restablecer',
+
+		data_label: 'Datos',
+		export_settings: 'Exportar',
+		import_settings: 'Importar',
+
+		section_autocorrect: 'Autocorrección',
+		autocorrect_enabled_label: 'Autocorrección',
+		autocorrect_pattern_placeholder: 'patrón',
+		autocorrect_replacement_placeholder: 'reemplazo',
+		autocorrect_empty: 'Sin reglas de autocorrección. Añade una.',
+		stoplist_autocorrect: 'Autocorrección',
+		stoplist_autocorrect_rules: 'Reglas por app',
+
+		section_stats: 'Estadísticas',
+		stats_top_chars: 'Caracteres populares',
+		stats_top_drags: 'Drag & Drop',
+		stats_top_expansions: 'Expansiones populares',
+		stats_total_copies: 'Total de copias',
+		stats_total_drags: 'Drag & drop',
+		stats_total_expansions: 'Total de expansiones',
+		stats_active_days: 'Días activos',
+		stats_reset: 'Restablecer',
+		stats_no_data: 'Sin datos aún',
+		stats_uses: 'usos',
+
+		section_packs: 'Paquetes',
+		pack_install: 'Instalar',
+		pack_uninstall: 'Desinstalar'
 	},
 
 	ja: {
+		tab_characters: '文字',
+		tab_compose: '合成',
+
+		compose_base: 'ベース文字',
+		compose_base_placeholder: '文字を入力',
+		compose_modifiers: '修飾子',
+		compose_selected_marks: '適用済み',
+		compose_preview: 'プレビュー',
+		compose_preview_empty: 'ベース文字を入力し修飾子を選択',
+		compose_copy: (char: unknown) => `${char} をコピー`,
+		compose_nfc: 'NFC正規化',
+
 		search_placeholder: '文字を検索…',
 		nothing_found: '見つかりません',
 		settings: '設定',
 		copied_char: (char) => `${char} をコピー`,
+		copied_multi: (n) => `${n}文字をコピー`,
+		multi_copy: 'コピー',
+		multi_clear: 'クリア',
 
 		settings_title: '設定',
 		reset_to_default: 'リセット',
@@ -312,6 +623,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'カテゴリー名',
 		add: '追加',
 
+		no_characters: '文字がありません。追加するかプリセットを使用してください。',
+
 		add_from_presets: 'プリセットから追加',
 		n_selected: (n) => `${n}件選択`,
 		cancel: 'キャンセル',
@@ -332,12 +645,19 @@ export const translations: Record<string, TranslationRecord> = {
 
 		tab_shortcuts: 'ショートカット',
 		expansion_enabled_label: 'テキスト展開',
-		shortcut_trigger_placeholder: ':トリガー:',
+		shortcut_trigger_placeholder: 'トリガー',
 		shortcut_expansion_placeholder: '展開テキスト',
 		shortcuts_count: (n: unknown) => `ショートカット (${n})`,
 		no_shortcuts: 'ショートカットがありません。追加してください。',
 		duplicate_trigger: 'このトリガーは既に存在します',
 		hints_position_label: 'ヒント位置',
+		trigger_char_label: 'トリガー文字',
+		hotkey_label: 'グローバルホットキー',
+		hotkey_not_set: '未設定',
+		hotkey_record: '記録',
+		hotkey_recording: 'キーの組み合わせを押してください...',
+		hotkey_clear: 'クリア',
+		unicode_hints_label: 'Unicode検索 (\\uXXXX)',
 		hints_caret: 'カーソル付近',
 		hints_corner: '右下コーナー',
 		hints_off: '無効',
@@ -354,6 +674,18 @@ export const translations: Record<string, TranslationRecord> = {
 		stoplist_offset: 'オフセット (px)',
 		stoplist_select_app: 'アプリを選択',
 
+		var_section: '変数',
+		var_add: '+ 変数',
+		var_key_placeholder: '名前',
+		var_value_placeholder: '値',
+		var_builtin_hint: '組み込み: {{date}}, {{time}}, {{random:N}}',
+		var_help_title: 'テンプレート変数',
+		var_help_body: '展開テキストに{{名前}}を使用して動的な値を挿入できます。',
+		var_help_custom: 'カスタム — 編集時に設定',
+		var_help_date: '現在の日付',
+		var_help_time: '現在の時刻',
+		var_help_random: 'ランダム文字',
+
 		cat_arrows: '矢印',
 		cat_math: '数学',
 		cat_currency: '通貨',
@@ -365,6 +697,65 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: '上付き・下付き',
 		cat_lines_boxes: '罫線・囲み',
-		cat_latin_ext: 'ラテン拡張'
+		cat_latin_ext: 'ラテン拡張',
+
+		cat_kaomoji_happy: '嬉しい',
+		cat_kaomoji_sad: '悲しい',
+		cat_kaomoji_angry: '怒り',
+		cat_kaomoji_love: '愛',
+		cat_kaomoji_surprise: '驚き',
+		cat_kaomoji_animals: '動物',
+		cat_kaomoji_actions: 'アクション',
+
+		enter_trigger: 'ショートカット追加',
+		trigger_keyword_placeholder: 'キーワード',
+		trigger_exists: 'このトリガーは既に存在します',
+		shortcut_added: 'ショートカットを追加しました',
+		right_click_shortcut: '右クリック → ショートカット',
+		inspector_copied: (v: unknown) => `${v} をコピー`,
+		help_title: 'ヒント',
+		help_click: '文字をコピー',
+		help_drag: '他のアプリにドラッグ',
+		help_rclick: 'ショートカット追加',
+		help_alt: '文字の詳細',
+
+		section_plugins: 'プラグイン',
+		plugin_create: '作成',
+		plugin_import: 'インポート',
+		plugin_export: 'エクスポート',
+		plugin_delete: '削除',
+		plugin_builtin: 'ビルトインプラグイン',
+		plugin_enabled: '有効',
+		plugin_disabled: '無効',
+		plugin_name_placeholder: 'プラグイン名...',
+		plugin_reset: 'リセット',
+
+		data_label: 'データ',
+		export_settings: 'エクスポート',
+		import_settings: 'インポート',
+
+		section_autocorrect: 'オートコレクト',
+		autocorrect_enabled_label: 'オートコレクト',
+		autocorrect_pattern_placeholder: 'パターン',
+		autocorrect_replacement_placeholder: '置換',
+		autocorrect_empty: 'オートコレクトルールがありません。追加してください。',
+		stoplist_autocorrect: 'オートコレクト',
+		stoplist_autocorrect_rules: 'アプリ別ルール',
+
+		section_stats: '統計',
+		stats_top_chars: 'よく使う文字',
+		stats_top_drags: 'ドラッグ&ドロップ',
+		stats_top_expansions: 'よく使う展開',
+		stats_total_copies: 'コピー合計',
+		stats_total_drags: 'ドラッグ&ドロップ',
+		stats_total_expansions: '展開合計',
+		stats_active_days: 'アクティブ日数',
+		stats_reset: 'リセット',
+		stats_no_data: 'データなし',
+		stats_uses: '回',
+
+		section_packs: 'パック',
+		pack_install: 'インストール',
+		pack_uninstall: 'アンインストール'
 	}
 };

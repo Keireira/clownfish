@@ -149,6 +149,111 @@ export const OffsetInput = styled.input`
 	}
 `;
 
+// Per-app autocorrect rules
+
+export const AcSection = styled.div`
+	padding: 10px 16px;
+	border-top: 1px solid var(--border);
+`;
+
+export const AcRow = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 0;
+`;
+
+export const AcPattern = styled.span`
+	font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+	font-size: 12px;
+	color: var(--text-primary);
+	min-width: 32px;
+	text-align: right;
+	flex-shrink: 0;
+`;
+
+export const AcArrow = styled.span`
+	font-size: 10px;
+	color: var(--text-faint);
+	flex-shrink: 0;
+`;
+
+export const AcReplacement = styled.span`
+	font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+	font-size: 14px;
+	color: var(--text-primary);
+	flex: 1;
+`;
+
+export const AcDeleteBtn = styled.button`
+	all: unset;
+	font-size: 13px;
+	color: var(--text-faint);
+	cursor: pointer;
+	padding: 0 3px;
+	border-radius: 3px;
+	line-height: 1;
+	opacity: 0;
+	transition: opacity 0.15s;
+
+	${AcRow}:hover & {
+		opacity: 1;
+	}
+
+	&:hover {
+		color: var(--text-primary);
+		background: var(--fill-hover);
+	}
+`;
+
+export const AcAddRow = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 6px;
+`;
+
+export const AcInput = styled.input`
+	flex: 1;
+	min-width: 0;
+	padding: 3px 6px;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	background: var(--fill-light);
+	color: var(--text-primary);
+	font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+	font-size: 11px;
+	outline: none;
+	transition: border-color 0.15s;
+
+	&:focus {
+		border-color: var(--accent);
+	}
+
+	&::placeholder {
+		color: var(--text-faint);
+	}
+`;
+
+export const AcAddBtn = styled.button`
+	all: unset;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--accent);
+	cursor: pointer;
+	padding: 2px 8px;
+	border-radius: 4px;
+
+	&:hover {
+		background: var(--fill-light);
+	}
+
+	&:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+`;
+
 export const DropOverlay = styled.div`
 	position: absolute;
 	inset: 0;

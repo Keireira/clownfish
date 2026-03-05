@@ -1,7 +1,19 @@
 //! Window creation, glass effects, and navigation commands.
 
+use serde::{Deserialize, Serialize};
 use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tauri::{App, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+
+/// Persisted settings-window geometry.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WindowGeometry {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+const GEOMETRY_KEY: &str = "settings_window_geometry";
 
 /// Main popup window width in logical pixels.
 pub const MAIN_WIDTH: f64 = 420.0;
@@ -10,7 +22,7 @@ pub const MAIN_WIDTH: f64 = 420.0;
 pub const MAIN_HEIGHT: f64 = 520.0;
 
 /// Settings window default dimensions.
-const SETTINGS_WIDTH: f64 = 780.0;
+const SETTINGS_WIDTH: f64 = 880.0;
 const SETTINGS_HEIGHT: f64 = 600.0;
 
 /// Settings window minimum dimensions.
@@ -68,14 +80,28 @@ pub fn build_main(app: &App) -> tauri::Result<()> {
 ///
 /// The close button is intercepted so the window hides instead of
 /// being destroyed, keeping the WebView2 runtime warm for instant re-show.
+/// Window position and size are persisted across sessions via the store plugin.
 pub fn build_settings(app: &App) -> tauri::Result<()> {
-    let builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
+    // Try to load saved geometry
+    let saved = load_geometry(app.handle());
+
+    let (width, height) = saved
+        .as_ref()
+        .map(|g| (g.width, g.height))
+        .unwrap_or((SETTINGS_WIDTH, SETTINGS_HEIGHT));
+
+    let mut builder = WebviewWindowBuilder::new(app, "settings", WebviewUrl::default())
         .title("Hot Symbols Settings")
         .initialization_script("window.__IS_SETTINGS_WINDOW__=true;")
-        .inner_size(SETTINGS_WIDTH, SETTINGS_HEIGHT)
+        .inner_size(width, height)
         .min_inner_size(SETTINGS_MIN_WIDTH, SETTINGS_MIN_HEIGHT)
-        .center()
         .visible(false);
+
+    if let Some(ref geo) = saved {
+        builder = builder.position(geo.x, geo.y);
+    } else {
+        builder = builder.center();
+    }
 
     // On macOS, overlay the traffic-light buttons on the content area
     // so the sidebar can extend to the top of the window.
@@ -88,11 +114,49 @@ pub fn build_settings(app: &App) -> tauri::Result<()> {
     win.on_window_event(move |event| {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
             api.prevent_close();
+            save_geometry(&handle);
             let _ = handle.hide();
         }
     });
 
     Ok(())
+}
+
+/// Saves the current settings-window position and size to the store.
+fn save_geometry(win: &tauri::WebviewWindow) {
+    let pos = win.outer_position().ok();
+    let size = win.inner_size().ok();
+    let scale = win.scale_factor().unwrap_or(1.0);
+
+    if let (Some(pos), Some(size)) = (pos, size) {
+        let geo = WindowGeometry {
+            x: pos.x as f64 / scale,
+            y: pos.y as f64 / scale,
+            width: size.width as f64 / scale,
+            height: size.height as f64 / scale,
+        };
+        let handle = win.app_handle();
+        std::thread::spawn({
+            let handle = handle.clone();
+            move || {
+                if let Ok(store) = tauri_plugin_store::StoreBuilder::new(&handle, "settings.json")
+                    .build()
+                {
+                    let _ = store.set(GEOMETRY_KEY, serde_json::to_value(&geo).unwrap());
+                    let _ = store.save();
+                }
+            }
+        });
+    }
+}
+
+/// Loads saved settings-window geometry from the store.
+fn load_geometry(handle: &AppHandle) -> Option<WindowGeometry> {
+    let store = tauri_plugin_store::StoreBuilder::new(handle, "settings.json")
+        .build()
+        .ok()?;
+    let val = store.get(GEOMETRY_KEY)?;
+    serde_json::from_value(val).ok()
 }
 
 /// Creates a small hints popup for text expansion autocomplete.

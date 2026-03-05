@@ -47,13 +47,13 @@ export const NoResults = styled.div`
 	font-size: 13px;
 `;
 
-export const SettingsBtn = styled.button`
+export const SettingsBtn = styled.button<{ $focused?: boolean }>`
 	display: flex;
 	align-items: center;
 	gap: 5px;
-	background: none;
+	background: ${(p) => (p.$focused ? 'var(--fill)' : 'none')};
 	border: none;
-	color: var(--text-faint);
+	color: ${(p) => (p.$focused ? 'var(--text-bright)' : 'var(--text-faint)')};
 	font-size: 11px;
 	cursor: pointer;
 	padding: 4px 8px;
@@ -61,6 +61,12 @@ export const SettingsBtn = styled.button`
 	transition:
 		color 0.15s,
 		background 0.15s;
+	${(p) =>
+		p.$focused &&
+		`
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+	`}
 
 	&:hover {
 		color: var(--text-bright);
@@ -76,6 +82,49 @@ export const BtnGroup = styled.div`
 	display: flex;
 	align-items: center;
 	gap: 2px;
+`;
+
+export const MultiSelectBar = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	margin-bottom: 6px;
+	background: var(--accent-bg);
+	border: 1px solid var(--accent-border);
+	border-radius: var(--radius-s);
+	min-height: 36px;
+	flex-shrink: 0;
+`;
+
+export const MultiSelectPreview = styled.span`
+	flex: 1;
+	font-size: 14px;
+	letter-spacing: 1px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+`;
+
+export const MultiSelectCount = styled.span`
+	font-size: 11px;
+	color: var(--text-muted);
+	flex-shrink: 0;
+`;
+
+export const MultiSelectBtn = styled.button<{ $primary?: boolean }>`
+	padding: 4px 10px;
+	border: none;
+	border-radius: 8px;
+	font-size: 11px;
+	font-weight: 500;
+	cursor: pointer;
+	flex-shrink: 0;
+	background: ${(p) => (p.$primary ? 'var(--accent)' : 'var(--fill)')};
+	color: ${(p) => (p.$primary ? '#fff' : 'var(--text-tertiary)')};
+	&:hover {
+		background: ${(p) => (p.$primary ? 'var(--accent-hover)' : 'var(--fill-hover)')};
+	}
 `;
 
 export default styled.div`

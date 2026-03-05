@@ -1,8 +1,8 @@
 declare const APP_VERSION: string;
 
 import { invoke } from '@tauri-apps/api/core';
-import Root, { Info, Link } from './bottom-bar.styles';
-
+import Root, { Info, Link, HelpWrap, HelpBtn, HelpPopover, HelpLine } from './bottom-bar.styles';
+import { t } from '../../i18n';
 import type { Props } from './bottom-bar.d';
 
 const GitHubIcon = () => (
@@ -21,6 +21,15 @@ const BottomBar = ({ right }: Props) => (
 			<Link onClick={() => openUrl('https://github.com/Keireira/clownfish/releases')} title="GitHub Releases">
 				<GitHubIcon />v{APP_VERSION}
 			</Link>
+			<HelpWrap>
+				<HelpBtn title={t('help_title') as string}>?</HelpBtn>
+				<HelpPopover>
+					<HelpLine><kbd>Click</kbd> {t('help_click')}</HelpLine>
+					<HelpLine><kbd>Drag</kbd> {t('help_drag')}</HelpLine>
+					<HelpLine><kbd>RMB</kbd> {t('help_rclick')}</HelpLine>
+					<HelpLine><kbd>Alt</kbd> {t('help_alt')}</HelpLine>
+				</HelpPopover>
+			</HelpWrap>
 		</Info>
 		{right}
 	</Root>

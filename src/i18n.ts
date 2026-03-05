@@ -68,7 +68,14 @@ const CATEGORY_KEY_MAP: Record<string, string> = {
 	Misc: 'cat_misc',
 	'Subscript & Superscript': 'cat_sub_super',
 	'Lines & Boxes': 'cat_lines_boxes',
-	'Latin Extended': 'cat_latin_ext'
+	'Latin Extended': 'cat_latin_ext',
+	Happy: 'cat_kaomoji_happy',
+	Sad: 'cat_kaomoji_sad',
+	Angry: 'cat_kaomoji_angry',
+	Love: 'cat_kaomoji_love',
+	Surprise: 'cat_kaomoji_surprise',
+	Animals: 'cat_kaomoji_animals',
+	Actions: 'cat_kaomoji_actions'
 };
 
 export function translateCategoryName(name: string): string {

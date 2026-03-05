@@ -44,16 +44,39 @@ export const CharGrid = styled.div`
 
 export const CharItem = styled.div`
 	position: relative;
-	width: 42px;
-	height: 42px;
+	min-width: 42px;
+	min-height: 42px;
+	max-width: 100%;
+	padding: 4px 6px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 8px;
 	background: var(--fill);
 	font-size: 18px;
+	cursor: pointer;
+	transition: transform 0.1s;
+
+	& > span {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
+	}
 
 	&:hover button {
+		display: flex;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+		background: var(--fill-active);
+		transform: scale(1.08);
+	}
+
+	&:focus-visible button {
 		display: flex;
 	}
 `;
@@ -74,6 +97,23 @@ export const CharDelete = styled.button`
 	display: none;
 	align-items: center;
 	justify-content: center;
+`;
+
+export const CharShortcutBadge = styled.button`
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	width: 16px;
+	height: 16px;
+	background: none;
+	border: none;
+	font-size: 10px;
+	line-height: 1;
+	cursor: pointer;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
 `;
 
 export const AddRow = styled.div`
@@ -118,6 +158,13 @@ export const SmallBtn = styled.button`
 	&:hover {
 		background: var(--fill-hover);
 	}
+`;
+
+export const EmptyChars = styled.div`
+	color: var(--text-disabled);
+	text-align: center;
+	padding: 24px 0;
+	font-size: 12px;
 `;
 
 export default styled.div`

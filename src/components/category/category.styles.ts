@@ -17,10 +17,10 @@ export const Label = styled.span`
 	border-radius: 14px 14px 0 0;
 `;
 
-export const Grid = styled.div`
+export const Grid = styled.div<{ $wide?: boolean }>`
 	display: grid;
-	grid-template-columns: repeat(auto-fill, 40px);
-	gap: 7px;
+	grid-template-columns: ${(p) => (p.$wide ? 'repeat(auto-fill, minmax(140px, 1fr))' : 'repeat(auto-fill, 40px)')};
+	gap: ${(p) => (p.$wide ? '5px' : '7px')};
 `;
 
 export default styled.div`

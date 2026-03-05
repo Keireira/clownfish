@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useLanguage } from '../../i18n';
-import type { StopListEntry, CompassDirection, HintsOffset } from '../../types';
+import type { StopListEntry, AutoCorrectRule, CompassDirection, HintsOffset } from '../../types';
 import {
 	SettingRow,
 	SettingLabel,
@@ -14,7 +15,16 @@ import {
 	OffsetGrid,
 	OffsetCell,
 	OffsetCellLabel,
-	OffsetInput
+	OffsetInput,
+	AcSection,
+	AcRow,
+	AcPattern,
+	AcArrow,
+	AcReplacement,
+	AcDeleteBtn,
+	AcAddRow,
+	AcInput,
+	AcAddBtn
 } from './stoplist-editor.styles';
 
 const COMPASS_GRID: CompassDirection[] = ['NW', 'N', 'NE', 'W', 'auto', 'E', 'SW', 'S', 'SE'];
@@ -45,8 +55,14 @@ type Props = {
 
 const AppSettingsPanel = ({ entry, onChange }: Props) => {
 	const t = useLanguage();
+	const [newPattern, setNewPattern] = useState('');
+	const [newReplacement, setNewReplacement] = useState('');
 
-	const handleToggle = (field: 'expansion' | 'hints') => {
+	const handleToggle = (field: 'expansion' | 'hints' | 'autocorrect') => {
+		if (field === 'autocorrect') {
+			onChange({ ...entry, autocorrect: entry.autocorrect === false ? true : false });
+			return;
+		}
 		const newVal = !entry[field];
 		if (field === 'expansion' && !newVal) {
 			onChange({ ...entry, expansion: false, hints: false });
@@ -61,6 +77,26 @@ const AppSettingsPanel = ({ entry, onChange }: Props) => {
 
 	const handleOffset = (side: keyof HintsOffset, value: number) => {
 		onChange({ ...entry, offset: { ...entry.offset, [side]: value } });
+	};
+
+	const rules = entry.autocorrect_rules ?? [];
+
+	const handleAddRule = () => {
+		const pattern = newPattern.trim();
+		const replacement = newReplacement.trim();
+		if (!pattern || !replacement) return;
+		if (rules.some((r) => r.pattern === pattern)) return;
+		onChange({ ...entry, autocorrect_rules: [...rules, { pattern, replacement }] });
+		setNewPattern('');
+		setNewReplacement('');
+	};
+
+	const handleDeleteRule = (idx: number) => {
+		onChange({ ...entry, autocorrect_rules: rules.filter((_, i) => i !== idx) });
+	};
+
+	const handleRuleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Enter') handleAddRule();
 	};
 
 	return (
@@ -81,6 +117,42 @@ const AppSettingsPanel = ({ entry, onChange }: Props) => {
 					</ToggleTrack>
 				</ToggleGroup>
 			</SettingRow>
+			<SettingRow>
+				<SettingLabel>{t('stoplist_autocorrect')}</SettingLabel>
+				<ToggleGroup onClick={() => handleToggle('autocorrect')}>
+					<ToggleTrack $on={entry.autocorrect !== false}>
+						<ToggleKnob $on={entry.autocorrect !== false} />
+					</ToggleTrack>
+				</ToggleGroup>
+			</SettingRow>
+			{entry.autocorrect !== false && (
+				<AcSection>
+					<DetailLabel>{t('stoplist_autocorrect_rules')}</DetailLabel>
+					{rules.map((rule, idx) => (
+						<AcRow key={`${rule.pattern}-${idx}`}>
+							<AcPattern>{rule.pattern}</AcPattern>
+							<AcArrow>&rarr;</AcArrow>
+							<AcReplacement>{rule.replacement}</AcReplacement>
+							<AcDeleteBtn onClick={() => handleDeleteRule(idx)}>&times;</AcDeleteBtn>
+						</AcRow>
+					))}
+					<AcAddRow>
+						<AcInput
+							value={newPattern}
+							onChange={(e) => setNewPattern(e.target.value)}
+							onKeyDown={handleRuleKeyDown}
+							placeholder={t('autocorrect_pattern_placeholder') as string}
+						/>
+						<AcInput
+							value={newReplacement}
+							onChange={(e) => setNewReplacement(e.target.value)}
+							onKeyDown={handleRuleKeyDown}
+							placeholder={t('autocorrect_replacement_placeholder') as string}
+						/>
+						<AcAddBtn onClick={handleAddRule} disabled={!newPattern.trim() || !newReplacement.trim()}>+</AcAddBtn>
+					</AcAddRow>
+				</AcSection>
+			)}
 			{entry.expansion && (
 				<DetailPanel>
 					<DetailSection>
