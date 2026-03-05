@@ -9,6 +9,9 @@ export const translations: Record<string, TranslationRecord> = {
 		nothing_found: 'Nothing found',
 		settings: 'Settings',
 		copied_char: (char) => `Copied ${char}`,
+		copied_multi: (n) => `Copied ${n} characters`,
+		multi_copy: 'Copy',
+		multi_clear: 'Clear',
 
 		// Settings header
 		settings_title: 'Settings',
@@ -167,6 +170,9 @@ export const translations: Record<string, TranslationRecord> = {
 		nothing_found: 'Ничего не найдено',
 		settings: 'Настройки',
 		copied_char: (char) => `${char} скопирован`,
+		copied_multi: (n) => `Скопировано ${n} символов`,
+		multi_copy: 'Копировать',
+		multi_clear: 'Очистить',
 
 		settings_title: 'Настройки',
 		reset_to_default: 'Сбросить',
@@ -308,6 +314,9 @@ export const translations: Record<string, TranslationRecord> = {
 		nothing_found: 'No se encontró nada',
 		settings: 'Ajustes',
 		copied_char: (char) => `${char} copiado`,
+		copied_multi: (n) => `${n} caracteres copiados`,
+		multi_copy: 'Copiar',
+		multi_clear: 'Limpiar',
 
 		settings_title: 'Ajustes',
 		reset_to_default: 'Restablecer',
@@ -448,6 +457,9 @@ export const translations: Record<string, TranslationRecord> = {
 		nothing_found: '見つかりません',
 		settings: '設定',
 		copied_char: (char) => `${char} をコピー`,
+		copied_multi: (n) => `${n}文字をコピー`,
+		multi_copy: 'コピー',
+		multi_clear: 'クリア',
 
 		settings_title: '設定',
 		reset_to_default: 'リセット',

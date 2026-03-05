@@ -7,7 +7,7 @@ import { t } from '../../i18n';
 import { displayChar } from '../../types';
 import type { Props } from './char-button.d';
 
-const CharButton = ({ char, name, onCopy, onAddShortcut, focused }: Props) => {
+const CharButton = ({ char, name, onCopy, onAddShortcut, focused, selected, onModifiedClick }: Props) => {
 	const [copied, setCopied] = useState(false);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const ref = useRef<HTMLButtonElement>(null);
@@ -19,7 +19,11 @@ const CharButton = ({ char, name, onCopy, onAddShortcut, focused }: Props) => {
 		}
 	}, [focused]);
 
-	const handleClick = async () => {
+	const handleClick = async (e: React.MouseEvent) => {
+		if ((e.ctrlKey || e.metaKey || e.shiftKey) && onModifiedClick) {
+			onModifiedClick(e);
+			return;
+		}
 		try {
 			await writeText(char);
 			import('../../stats-store').then(({ recordCharCopy }) => recordCharCopy(char));
@@ -57,6 +61,7 @@ const CharButton = ({ char, name, onCopy, onAddShortcut, focused }: Props) => {
 			ref={ref}
 			$copied={copied}
 			$focused={focused}
+			$selected={selected}
 			onClick={handleClick}
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}

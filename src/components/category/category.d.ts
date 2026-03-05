@@ -7,4 +7,6 @@ export type Props = {
 	existingExpansions?: string[];
 	focusedStart?: number;
 	focusedIndex?: number;
+	selectedChars?: Set<string>;
+	onCharModifiedClick?: (char: string, flatIndex: number, e: React.MouseEvent) => void;
 };

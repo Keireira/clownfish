@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-import Root, { AppGlobalStyle, GridArea, NoResults, SettingsBtn } from './app.styles';
+import Root, { AppGlobalStyle, GridArea, NoResults, SettingsBtn, MultiSelectBar, MultiSelectPreview, MultiSelectCount, MultiSelectBtn } from './app.styles';
 import { CATEGORIES as DEFAULT_CATEGORIES } from '../data/characters';
 import SearchBar from '../components/search-bar';
 import Category from '../components/category';
@@ -10,6 +10,7 @@ import TriggerPrompt from '../components/trigger-prompt';
 import BottomBar from '../components/bottom-bar';
 import { useLanguage, getLanguageChoice, applyLanguage } from '../i18n';
 import { charMatchesQuery } from '../utils/char-match';
+import { displayChar } from '../types';
 import type { Category as CategoryType, Shortcut } from '../types';
 
 const MAX_HEIGHT = 520;
@@ -24,6 +25,9 @@ export default function App() {
 	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
 	const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
+	const [multiSelected, setMultiSelected] = useState<string[]>([]);
+	const lastSelectIdx = useRef<number>(-1);
+	const multiSelectedSet = useMemo(() => new Set(multiSelected), [multiSelected]);
 	const appRef = useRef<HTMLDivElement>(null);
 	const lastHeight = useRef(0);
 	const gridColsRef = useRef(8);
@@ -70,6 +74,8 @@ export default function App() {
 				unlistenPromise = win.onFocusChanged(({ payload: focused }) => {
 					if (!focused) return;
 					load();
+					setMultiSelected([]);
+					lastSelectIdx.current = -1;
 					import('../theme').then(({ getThemeChoice, applyTheme }) => {
 						getThemeChoice().then(applyTheme);
 					});
@@ -192,9 +198,11 @@ export default function App() {
 		});
 	}, [filtered]);
 
-	// Reset focus when query changes
+	// Reset focus and multi-select when query changes
 	useEffect(() => {
 		setFocusedIndex(-1);
+		setMultiSelected([]);
+		lastSelectIdx.current = -1;
 	}, [q]);
 
 	const openSettings = () => {
@@ -210,6 +218,55 @@ export default function App() {
 		if (grid) {
 			gridColsRef.current = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
 		}
+	}, []);
+
+	const handleCharModifiedClick = useCallback(
+		(char: string, flatIndex: number, e: React.MouseEvent) => {
+			if (e.shiftKey && lastSelectIdx.current >= 0) {
+				// Range select
+				const from = Math.min(lastSelectIdx.current, flatIndex);
+				const to = Math.max(lastSelectIdx.current, flatIndex);
+				setMultiSelected((prev) => {
+					const set = new Set(prev);
+					for (let i = from; i <= to; i++) {
+						const [ch] = flatChars[i];
+						if (!set.has(ch)) {
+							set.add(ch);
+						}
+					}
+					return [...set];
+				});
+			} else {
+				// Ctrl/Cmd click — toggle single char
+				setMultiSelected((prev) => {
+					const idx = prev.indexOf(char);
+					if (idx >= 0) {
+						return prev.filter((_, i) => i !== idx);
+					}
+					return [...prev, char];
+				});
+				lastSelectIdx.current = flatIndex;
+			}
+		},
+		[flatChars]
+	);
+
+	const copyMultiBuffer = useCallback(() => {
+		const text = multiSelected.join('');
+		writeText(text).then(() => {
+			import('../stats-store').then(({ recordCharCopy }) => {
+				for (const ch of multiSelected) recordCharCopy(ch);
+			});
+			showToast(t('copied_multi', multiSelected.length));
+			setMultiSelected([]);
+			lastSelectIdx.current = -1;
+			import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().hide());
+		});
+	}, [multiSelected, showToast, t]);
+
+	const clearMultiBuffer = useCallback(() => {
+		setMultiSelected([]);
+		lastSelectIdx.current = -1;
 	}, []);
 
 	const handleKeyDown = useCallback(
@@ -264,7 +321,31 @@ export default function App() {
 					break;
 				}
 				case 'Enter': {
-					if (focusedIndex === max) {
+					if ((e.ctrlKey || e.metaKey) && focusedIndex >= 0 && focusedIndex < max) {
+						e.preventDefault();
+						const [ch] = flatChars[focusedIndex];
+						setMultiSelected((prev) => {
+							const idx = prev.indexOf(ch);
+							if (idx >= 0) return prev.filter((_, i) => i !== idx);
+							return [...prev, ch];
+						});
+						lastSelectIdx.current = focusedIndex;
+					} else if (e.shiftKey && focusedIndex >= 0 && focusedIndex < max && lastSelectIdx.current >= 0) {
+						e.preventDefault();
+						const from = Math.min(lastSelectIdx.current, focusedIndex);
+						const to = Math.max(lastSelectIdx.current, focusedIndex);
+						setMultiSelected((prev) => {
+							const set = new Set(prev);
+							for (let i = from; i <= to; i++) {
+								const [c] = flatChars[i];
+								if (!set.has(c)) set.add(c);
+							}
+							return [...set];
+						});
+					} else if (multiSelected.length > 0) {
+						e.preventDefault();
+						copyMultiBuffer();
+					} else if (focusedIndex === max) {
 						e.preventDefault();
 						openSettings();
 					} else if (focusedIndex >= 0 && focusedIndex < max) {
@@ -319,7 +400,9 @@ export default function App() {
 				}
 				case 'Escape': {
 					e.preventDefault();
-					if (query) {
+					if (multiSelected.length > 0) {
+						clearMultiBuffer();
+					} else if (query) {
 						setQuery('');
 					} else {
 						import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().hide());
@@ -328,7 +411,7 @@ export default function App() {
 				}
 			}
 		},
-		[focusedIndex, flatChars, categoryOffsets, measureCols, showToast, t, query, openSettings]
+		[focusedIndex, flatChars, categoryOffsets, measureCols, showToast, t, query, openSettings, multiSelected, copyMultiBuffer, clearMultiBuffer, handleCharModifiedClick]
 	);
 
 	const settingsFocused = focusedIndex === flatChars.length;
@@ -338,6 +421,14 @@ export default function App() {
 			<AppGlobalStyle />
 			<Root ref={appRef} onKeyDown={handleKeyDown}>
 				<SearchBar value={query} onChange={setQuery} onKeyDown={handleKeyDown} />
+				{multiSelected.length > 0 && (
+					<MultiSelectBar>
+						<MultiSelectPreview>{multiSelected.map(displayChar).join('')}</MultiSelectPreview>
+						<MultiSelectCount>{t('n_selected', multiSelected.length)}</MultiSelectCount>
+						<MultiSelectBtn onClick={clearMultiBuffer}>{t('multi_clear')}</MultiSelectBtn>
+						<MultiSelectBtn $primary onClick={copyMultiBuffer}>{t('multi_copy')}</MultiSelectBtn>
+					</MultiSelectBar>
+				)}
 				<GridArea>
 					{filtered.length > 0 ? (
 						filtered.map((cat, ci) => (
@@ -349,6 +440,8 @@ export default function App() {
 								onCopy={showToast}
 								onAddShortcut={handleAddShortcut}
 								existingExpansions={shortcuts.map((s) => s.expansion)}
+								selectedChars={multiSelectedSet}
+								onCharModifiedClick={handleCharModifiedClick}
 							/>
 						))
 					) : (

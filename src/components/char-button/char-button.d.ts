@@ -4,4 +4,6 @@ export type Props = {
 	onCopy: (message: string) => void;
 	onAddShortcut?: (char: string, name: string) => void;
 	focused?: boolean;
+	selected?: boolean;
+	onModifiedClick?: (e: React.MouseEvent) => void;
 };
