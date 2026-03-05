@@ -43,6 +43,7 @@ pub fn run() {
             text_expand::autocorrect_is_enabled,
             text_expand::autocorrect_update_rules,
             text_expand::stats_record_char,
+            text_expand::stats_record_drag,
             text_expand::stats_load,
             text_expand::stats_reset,
             hotkey::set_global_hotkey,

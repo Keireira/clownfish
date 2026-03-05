@@ -27,32 +27,6 @@ export const Link = styled.button`
 	}
 `;
 
-export const HelpWrap = styled.div`
-	position: relative;
-`;
-
-export const HelpBtn = styled.button`
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 10px;
-	width: 18px;
-	height: 18px;
-	color: var(--text-faint);
-	background: none;
-	border: 1px solid var(--border);
-	border-radius: 50%;
-	cursor: pointer;
-	transition:
-		color 0.15s,
-		border-color 0.15s;
-
-	&:hover {
-		color: var(--text-bright);
-		border-color: var(--text-faint);
-	}
-`;
-
 export const HelpPopover = styled.div`
 	position: absolute;
 	bottom: calc(100% + 6px);
@@ -67,11 +41,41 @@ export const HelpPopover = styled.div`
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 	z-index: 50;
 	white-space: nowrap;
-	animation: helpIn 0.1s ease-out;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(4px);
+	transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+`;
 
-	@keyframes helpIn {
-		from { opacity: 0; transform: translateY(4px); }
-		to { opacity: 1; transform: translateY(0); }
+export const HelpWrap = styled.div`
+	position: relative;
+
+	&:hover ${HelpPopover} {
+		opacity: 1;
+		transform: translateY(0);
+		pointer-events: auto;
+	}
+`;
+
+export const HelpBtn = styled.button`
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	width: 18px;
+	height: 18px;
+	color: var(--text-faint);
+	background: none;
+	border: 1px solid var(--border);
+	border-radius: 50%;
+	cursor: default;
+	transition:
+		color 0.15s,
+		border-color 0.15s;
+
+	&:hover {
+		color: var(--text-bright);
+		border-color: var(--text-faint);
 	}
 `;
 

@@ -138,6 +138,7 @@ export const translations: Record<string, TranslationRecord> = {
 		inspector_copied: (v: unknown) => `Copied ${v}`,
 		help_title: 'Tips',
 		help_click: 'copy character',
+		help_drag: 'drag to another app',
 		help_rclick: 'add shortcut',
 		help_alt: 'character details',
 
@@ -170,8 +171,10 @@ export const translations: Record<string, TranslationRecord> = {
 		// Stats
 		section_stats: 'Stats',
 		stats_top_chars: 'Top Characters',
+		stats_top_drags: 'Top Drag & Drop',
 		stats_top_expansions: 'Top Expansions',
 		stats_total_copies: 'Total copies',
+		stats_total_drags: 'Drag & drop',
 		stats_total_expansions: 'Total expansions',
 		stats_active_days: 'Active days',
 		stats_reset: 'Reset Stats',
@@ -299,6 +302,7 @@ export const translations: Record<string, TranslationRecord> = {
 		inspector_copied: (v: unknown) => `Скопировано: ${v}`,
 		help_title: 'Подсказки',
 		help_click: 'копировать символ',
+		help_drag: 'перетащить в другое приложение',
 		help_rclick: 'добавить автозамену',
 		help_alt: 'подробности о символе',
 
@@ -327,8 +331,10 @@ export const translations: Record<string, TranslationRecord> = {
 
 		section_stats: 'Статистика',
 		stats_top_chars: 'Популярные символы',
+		stats_top_drags: 'Drag & Drop',
 		stats_top_expansions: 'Популярные замены',
 		stats_total_copies: 'Всего копирований',
+		stats_total_drags: 'Drag & drop',
 		stats_total_expansions: 'Всего замен',
 		stats_active_days: 'Активных дней',
 		stats_reset: 'Сбросить',
@@ -455,6 +461,7 @@ export const translations: Record<string, TranslationRecord> = {
 		inspector_copied: (v: unknown) => `Copiado: ${v}`,
 		help_title: 'Consejos',
 		help_click: 'copiar carácter',
+		help_drag: 'arrastrar a otra app',
 		help_rclick: 'añadir atajo',
 		help_alt: 'detalles del carácter',
 
@@ -483,8 +490,10 @@ export const translations: Record<string, TranslationRecord> = {
 
 		section_stats: 'Estadísticas',
 		stats_top_chars: 'Caracteres populares',
+		stats_top_drags: 'Drag & Drop',
 		stats_top_expansions: 'Expansiones populares',
 		stats_total_copies: 'Total de copias',
+		stats_total_drags: 'Drag & drop',
 		stats_total_expansions: 'Total de expansiones',
 		stats_active_days: 'Días activos',
 		stats_reset: 'Restablecer',
@@ -611,6 +620,7 @@ export const translations: Record<string, TranslationRecord> = {
 		inspector_copied: (v: unknown) => `${v} をコピー`,
 		help_title: 'ヒント',
 		help_click: '文字をコピー',
+		help_drag: '他のアプリにドラッグ',
 		help_rclick: 'ショートカット追加',
 		help_alt: '文字の詳細',
 
@@ -639,8 +649,10 @@ export const translations: Record<string, TranslationRecord> = {
 
 		section_stats: '統計',
 		stats_top_chars: 'よく使う文字',
+		stats_top_drags: 'ドラッグ&ドロップ',
 		stats_top_expansions: 'よく使う展開',
 		stats_total_copies: 'コピー合計',
+		stats_total_drags: 'ドラッグ&ドロップ',
 		stats_total_expansions: '展開合計',
 		stats_active_days: 'アクティブ日数',
 		stats_reset: 'リセット',

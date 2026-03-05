@@ -57,7 +57,7 @@ const StatsPanel = () => {
 
 	const handleReset = async () => {
 		await resetStats();
-		setStats({ char_usage: {}, expansion_usage: {}, daily: {} });
+		setStats({ char_usage: {}, expansion_usage: {}, drag_usage: {}, daily: {} });
 	};
 
 	if (!stats) return null;
@@ -65,6 +65,7 @@ const StatsPanel = () => {
 	const hasData =
 		Object.keys(stats.char_usage).length > 0 ||
 		Object.keys(stats.expansion_usage).length > 0 ||
+		Object.keys(stats.drag_usage).length > 0 ||
 		Object.keys(stats.daily).length > 0;
 
 	if (!hasData) {
@@ -77,13 +78,16 @@ const StatsPanel = () => {
 
 	const topChars = topEntries(stats.char_usage);
 	const topExpansions = topEntries(stats.expansion_usage);
+	const topDrags = topEntries(stats.drag_usage);
 
 	const totalCopies = Object.values(stats.daily).reduce((s, d) => s + d.copies, 0);
 	const totalExpansions = Object.values(stats.daily).reduce((s, d) => s + d.expansions, 0);
+	const totalDrags = Object.values(stats.daily).reduce((s, d) => s + (d.drags || 0), 0);
 	const activeDays = Object.keys(stats.daily).length;
 
 	const charMax = topChars[0]?.[1] ?? 1;
 	const expMax = topExpansions[0]?.[1] ?? 1;
+	const dragMax = topDrags[0]?.[1] ?? 1;
 
 	return (
 		<PanelRoot>
@@ -91,6 +95,10 @@ const StatsPanel = () => {
 				<SummaryCard>
 					<SummaryValue>{totalCopies}</SummaryValue>
 					<SummaryLabel>{t('stats_total_copies')}</SummaryLabel>
+				</SummaryCard>
+				<SummaryCard>
+					<SummaryValue>{totalDrags}</SummaryValue>
+					<SummaryLabel>{t('stats_total_drags')}</SummaryLabel>
 				</SummaryCard>
 				<SummaryCard>
 					<SummaryValue>{totalExpansions}</SummaryValue>
@@ -110,6 +118,23 @@ const StatsPanel = () => {
 							<BarLabel>{char}</BarLabel>
 							<BarTrack>
 								<BarFill $pct={(count / charMax) * 100} />
+							</BarTrack>
+							<BarCount>
+								{count} {t('stats_uses')}
+							</BarCount>
+						</BarRow>
+					))}
+				</Section>
+			)}
+
+			{topDrags.length > 0 && (
+				<Section>
+					<SectionTitle>{t('stats_top_drags')}</SectionTitle>
+					{topDrags.map(([char, count]) => (
+						<BarRow key={char}>
+							<BarLabel>{char}</BarLabel>
+							<BarTrack>
+								<BarFill $pct={(count / dragMax) * 100} />
 							</BarTrack>
 							<BarCount>
 								{count} {t('stats_uses')}

@@ -1101,6 +1101,8 @@ pub struct StatsData {
     #[serde(default)]
     pub expansion_usage: HashMap<String, u64>,
     #[serde(default)]
+    pub drag_usage: HashMap<String, u64>,
+    #[serde(default)]
     pub daily: HashMap<String, DayStats>,
 }
 
@@ -1110,6 +1112,8 @@ pub struct DayStats {
     pub copies: u64,
     #[serde(default)]
     pub expansions: u64,
+    #[serde(default)]
+    pub drags: u64,
 }
 
 static STATS_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
@@ -1184,6 +1188,18 @@ pub fn stats_record_char(app: AppHandle, ch: String) {
     let mut stats = read_stats(&path);
     *stats.char_usage.entry(ch).or_default() += 1;
     stats.daily.entry(today_key()).or_default().copies += 1;
+    write_stats(&path, &stats);
+}
+
+#[tauri::command]
+pub fn stats_record_drag(app: AppHandle, ch: String) {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return;
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    let mut stats = read_stats(&path);
+    *stats.drag_usage.entry(ch).or_default() += 1;
+    stats.daily.entry(today_key()).or_default().drags += 1;
     write_stats(&path, &stats);
 }
 

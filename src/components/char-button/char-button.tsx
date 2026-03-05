@@ -56,9 +56,21 @@ const CharButton = ({ char, name, onCopy, onAddShortcut, focused, selected, onMo
 		[char, name, onAddShortcut]
 	);
 
+	const handleDragStart = useCallback(
+		(e: React.DragEvent) => {
+			e.dataTransfer.setData('text/plain', char);
+			e.dataTransfer.effectAllowed = 'copy';
+			import('../../stats-store').then(({ recordCharDrag }) => recordCharDrag(char));
+			// Fallback: also copy to clipboard
+			writeText(char).catch(() => {});
+		},
+		[char]
+	);
+
 	return (
 		<Root
 			ref={ref}
+			draggable
 			$copied={copied}
 			$focused={focused}
 			$selected={selected}
@@ -66,6 +78,7 @@ const CharButton = ({ char, name, onCopy, onAddShortcut, focused, selected, onMo
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
 			onContextMenu={handleContextMenu}
+			onDragStart={handleDragStart}
 		>
 			{displayChar(char)}
 		</Root>

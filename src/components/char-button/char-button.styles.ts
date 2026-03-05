@@ -39,4 +39,9 @@ export default styled.button<{ $copied?: boolean; $focused?: boolean; $selected?
 	&:active {
 		transform: scale(0.95);
 	}
+
+	&:drag,
+	&[dragging] {
+		opacity: 0.5;
+	}
 `;

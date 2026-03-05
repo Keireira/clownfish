@@ -1,6 +1,5 @@
 declare const APP_VERSION: string;
 
-import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import Root, { Info, Link, HelpWrap, HelpBtn, HelpPopover, HelpLine } from './bottom-bar.styles';
 import { t } from '../../i18n';
@@ -16,41 +15,24 @@ export const openUrl = (url: string) => {
 	invoke('open_url_cmd', { url }).catch(() => window.open(url, '_blank'));
 };
 
-const BottomBar = ({ right }: Props) => {
-	const [helpOpen, setHelpOpen] = useState(false);
-	const wrapRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (!helpOpen) return;
-		const handler = (e: MouseEvent) => {
-			if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-				setHelpOpen(false);
-			}
-		};
-		document.addEventListener('mousedown', handler);
-		return () => document.removeEventListener('mousedown', handler);
-	}, [helpOpen]);
-
-	return (
-		<Root>
-			<Info>
-				<Link onClick={() => openUrl('https://github.com/Keireira/clownfish/releases')} title="GitHub Releases">
-					<GitHubIcon />v{APP_VERSION}
-				</Link>
-				<HelpWrap ref={wrapRef}>
-					<HelpBtn onClick={() => setHelpOpen((v) => !v)} title={t('help_title') as string}>?</HelpBtn>
-					{helpOpen && (
-						<HelpPopover>
-							<HelpLine><kbd>Click</kbd> {t('help_click')}</HelpLine>
-							<HelpLine><kbd>RMB</kbd> {t('help_rclick')}</HelpLine>
-							<HelpLine><kbd>Alt</kbd> {t('help_alt')}</HelpLine>
-						</HelpPopover>
-					)}
-				</HelpWrap>
-			</Info>
-			{right}
-		</Root>
-	);
-};
+const BottomBar = ({ right }: Props) => (
+	<Root>
+		<Info>
+			<Link onClick={() => openUrl('https://github.com/Keireira/clownfish/releases')} title="GitHub Releases">
+				<GitHubIcon />v{APP_VERSION}
+			</Link>
+			<HelpWrap>
+				<HelpBtn title={t('help_title') as string}>?</HelpBtn>
+				<HelpPopover>
+					<HelpLine><kbd>Click</kbd> {t('help_click')}</HelpLine>
+					<HelpLine><kbd>Drag</kbd> {t('help_drag')}</HelpLine>
+					<HelpLine><kbd>RMB</kbd> {t('help_rclick')}</HelpLine>
+					<HelpLine><kbd>Alt</kbd> {t('help_alt')}</HelpLine>
+				</HelpPopover>
+			</HelpWrap>
+		</Info>
+		{right}
+	</Root>
+);
 
 export default BottomBar;
