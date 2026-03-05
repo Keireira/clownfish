@@ -7,6 +7,7 @@ import Root, {
 	CharItem,
 	CharDelete,
 	CharShortcutBadge,
+	EmptyChars,
 	AddRow,
 	AddCharInput,
 	AddNameInput,
@@ -69,6 +70,8 @@ const CategoryEditor = ({ category, onChange, onOpenPresets, onDeleteChar, onAdd
 					<SectionLabel>{t('characters_count', category.chars.length)}</SectionLabel>
 					<SmallBtn onClick={onOpenPresets}>{t('from_presets')}</SmallBtn>
 				</CharsHeader>
+
+				{category.chars.length === 0 && <EmptyChars>{t('no_characters')}</EmptyChars>}
 
 				<CharGrid>
 					{category.chars.map(([char, name], idx) => {

@@ -43,6 +43,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'Category name',
 		add: 'Add',
 
+		no_characters: 'No characters yet. Add one or use presets.',
+
 		// PresetPicker
 		add_from_presets: 'Add from Presets',
 		n_selected: (n) => `${n} selected`,
@@ -146,6 +148,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'Название категории',
 		add: 'Добавить',
 
+		no_characters: 'Нет символов. Добавьте или используйте наборы.',
+
 		add_from_presets: 'Добавить из наборов',
 		n_selected: (n) => `Выбрано: ${n}`,
 		cancel: 'Отмена',
@@ -241,6 +245,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_category_name: 'Nombre de categoría',
 		add: 'Añadir',
 
+		no_characters: 'Sin caracteres. Añade uno o usa preajustes.',
+
 		add_from_presets: 'Añadir de preajustes',
 		n_selected: (n) => `${n} seleccionados`,
 		cancel: 'Cancelar',
@@ -335,6 +341,8 @@ export const translations: Record<string, TranslationRecord> = {
 		placeholder_name_optional: '名前（任意）',
 		placeholder_category_name: 'カテゴリー名',
 		add: '追加',
+
+		no_characters: '文字がありません。追加するかプリセットを使用してください。',
 
 		add_from_presets: 'プリセットから追加',
 		n_selected: (n) => `${n}件選択`,

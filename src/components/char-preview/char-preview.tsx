@@ -12,7 +12,7 @@ const CharPreview = () => {
 	return (
 		<Root $x={x} $y={y}>
 			<Name>{preview.name}</Name>
-			<Hint>{t('right_click_shortcut')}</Hint>
+			{!preview.hasShortcut && <Hint>{t('right_click_shortcut')}</Hint>}
 		</Root>
 	);
 };

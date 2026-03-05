@@ -16,15 +16,17 @@ import Root, {
 } from './shortcut-editor.styles';
 import { useLanguage } from '../../i18n';
 import { loadTriggerChar } from '../../store';
+import { charMatchesQuery } from '../../utils/char-match';
 import type { Shortcut } from '../../types';
 
 type Props = {
 	shortcuts: Shortcut[];
 	onChange: (shortcuts: Shortcut[]) => void;
 	onDelete?: (idx: number) => void;
+	filterQuery?: string;
 };
 
-const ShortcutEditor = ({ shortcuts, onChange, onDelete }: Props) => {
+const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) => {
 	const t = useLanguage();
 	const [newTrigger, setNewTrigger] = useState('');
 	const [newExpansion, setNewExpansion] = useState('');
@@ -133,11 +135,19 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete }: Props) => {
 				<SmallBtn onClick={handleAdd}>{t('add')}</SmallBtn>
 			</AddRow>
 
-			{shortcuts.length === 0 && <EmptyState>{t('no_shortcuts')}</EmptyState>}
+			{shortcuts.length === 0 && !filterQuery && <EmptyState>{t('no_shortcuts')}</EmptyState>}
 
 			<Grid>
-				{shortcuts.map((s, idx) =>
-					editIdx === idx ? (
+				{shortcuts.map((s, idx) => {
+					if (filterQuery) {
+						const fq = filterQuery.toLowerCase();
+						const match =
+							s.trigger.toLowerCase().includes(fq) ||
+							s.expansion.toLowerCase().includes(fq) ||
+							charMatchesQuery(s.expansion, '', filterQuery);
+						if (!match) return null;
+					}
+					return editIdx === idx ? (
 						<EditRow key={s.trigger} ref={editRef}>
 							<EditTriggerInput
 								value={editTrigger}
@@ -164,9 +174,16 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete }: Props) => {
 								&times;
 							</CardDelete>
 						</Card>
-					)
-				)}
+					);
+				})}
 			</Grid>
+
+			{filterQuery && shortcuts.length > 0 && !shortcuts.some((s) => {
+				const fq = filterQuery.toLowerCase();
+				return s.trigger.toLowerCase().includes(fq) ||
+					s.expansion.toLowerCase().includes(fq) ||
+					charMatchesQuery(s.expansion, '', filterQuery);
+			}) && <EmptyState>{t('nothing_found')}</EmptyState>}
 		</Root>
 	);
 };

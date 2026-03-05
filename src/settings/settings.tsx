@@ -13,6 +13,13 @@ import Root, {
 	SettingsGroup,
 	SettingsRow,
 	SettingsRowLabel,
+	SearchInput,
+	SearchClear,
+	SearchWrap,
+	SearchResultsGrid,
+	SearchResultChar,
+	SearchCatLabel,
+	SearchCatGroup,
 	Footer,
 	Copyright
 } from './settings.styles';
@@ -46,6 +53,8 @@ import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
 import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
+import { charMatchesQuery } from '../utils/char-match';
+import { displayChar } from '../types';
 import { DropOverlay } from '../components/stoplist-editor/stoplist-editor.styles';
 import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
 
@@ -67,6 +76,7 @@ const Settings = () => {
 	const [dragging, setDragging] = useState(false);
 	const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
 	const [promptChar, setPromptChar] = useState<[string, string] | null>(null);
+	const [searchQuery, setSearchQuery] = useState('');
 
 	const savedCategoriesRef = useRef('[]');
 	const savedShortcutsRef = useRef('[]');
@@ -238,6 +248,17 @@ const Settings = () => {
 	const selectedStopEntry = stopList.find((e) => e.exe === active) ?? null;
 
 	const anyDirty = dirty || shortcutsDirty || stopListDirty;
+	const searchEnabled = active === 'shortcuts' || isCategorySection(active);
+
+	const sq = searchEnabled ? searchQuery.trim() : '';
+	const searchCharResults = sq
+		? categories
+				.map((cat) => ({
+					name: cat.name,
+					chars: cat.chars.filter(([char, name]) => charMatchesQuery(char, name, sq))
+				}))
+				.filter((cat) => cat.chars.length > 0)
+		: null;
 
 	/* ---- Category handlers ---- */
 	const updateCategories = (newCats: Category[]) => {
@@ -330,6 +351,24 @@ const Settings = () => {
 				<Header data-tauri-drag-region>
 					<h1>{t('settings_title')}</h1>
 					<HeaderRight>
+						<SearchWrap $disabled={!searchEnabled}>
+							<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+								<path fillRule="evenodd" clipRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
+							</svg>
+							<SearchInput
+								type="text"
+								placeholder={t('search_placeholder') as string}
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); } }}
+								disabled={!searchEnabled}
+								spellCheck={false}
+								autoComplete="off"
+							/>
+							{searchQuery && searchEnabled && (
+								<SearchClear onClick={() => setSearchQuery('')}>&times;</SearchClear>
+							)}
+						</SearchWrap>
 						<BtnIcon onClick={undo} disabled={undoStack.length === 0} title={t('undo') as string}>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 								<path d="M3 7v6h6" />
@@ -361,6 +400,7 @@ const Settings = () => {
 						{active === 'shortcuts' && (
 							<ShortcutEditor
 								shortcuts={shortcuts}
+								filterQuery={sq || undefined}
 								onChange={(s) => {
 									setShortcuts(s);
 									setShortcutsDirty(true);
@@ -411,7 +451,7 @@ const Settings = () => {
 							</>
 						)}
 
-						{selectedCat && (
+						{selectedCat && !sq && (
 							<CategoryEditor
 								category={selectedCat}
 								onChange={(cat) => handleUpdateCategory(selectedCatIdx, cat)}
@@ -429,6 +469,31 @@ const Settings = () => {
 									});
 								}}
 							/>
+						)}
+
+						{isCategorySection(active) && sq && (
+							searchCharResults && searchCharResults.length > 0 ? (
+								<>
+									{searchCharResults.map((cat) => (
+										<SearchCatGroup key={cat.name}>
+											<SearchCatLabel>{cat.name}</SearchCatLabel>
+											<SearchResultsGrid>
+												{cat.chars.map(([char, name]) => (
+													<SearchResultChar
+														key={char}
+														title={`${char} ${name}`}
+														onClick={() => setPromptChar([char, name])}
+													>
+														{displayChar(char)}
+													</SearchResultChar>
+												))}
+											</SearchResultsGrid>
+										</SearchCatGroup>
+									))}
+								</>
+							) : (
+								<Empty>{t('nothing_found')}</Empty>
+							)
 						)}
 
 						{selectedStopEntry && (

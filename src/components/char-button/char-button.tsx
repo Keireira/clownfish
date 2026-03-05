@@ -26,9 +26,9 @@ const CharButton = ({ char, name, onCopy, onAddShortcut }: Props) => {
 
 	const handleMouseEnter = useCallback(
 		(e: React.MouseEvent<HTMLButtonElement>) => {
-			show(char, name, e.currentTarget.getBoundingClientRect());
+			show(char, name, e.currentTarget.getBoundingClientRect(), !onAddShortcut);
 		},
-		[char, name, show]
+		[char, name, show, onAddShortcut]
 	);
 
 	const handleMouseLeave = useCallback(() => {

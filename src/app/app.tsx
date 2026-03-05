@@ -8,6 +8,7 @@ import Toast from '../components/toast';
 import TriggerPrompt from '../components/trigger-prompt';
 import BottomBar from '../components/bottom-bar';
 import { useLanguage, getLanguageChoice, applyLanguage } from '../i18n';
+import { charMatchesQuery } from '../utils/char-match';
 import type { Category as CategoryType, Shortcut } from '../types';
 
 const MAX_HEIGHT = 520;
@@ -152,13 +153,13 @@ export default function App() {
 		return () => ro.disconnect();
 	}, []);
 
-	const q = query.toLowerCase().trim();
+	const q = query.trim();
 
 	const filtered = categories
 		.map((cat) => {
 			if (!q) return cat;
-			const categoryMatch = cat.name.toLowerCase().includes(q);
-			const matchedChars = cat.chars.filter(([char, name]) => categoryMatch || char.includes(q) || name.includes(q));
+			const categoryMatch = cat.name.toLowerCase().includes(q.toLowerCase());
+			const matchedChars = cat.chars.filter(([char, name]) => categoryMatch || charMatchesQuery(char, name, q));
 			return { ...cat, chars: matchedChars };
 		})
 		.filter((cat) => cat.chars.length > 0);

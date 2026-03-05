@@ -13,8 +13,8 @@ export const useCharPreview = () => useContext(CharPreviewContext);
 export const CharPreviewProvider = ({ children }: { children: ReactNode }) => {
 	const [preview, setPreview] = useState<PreviewData>(null);
 
-	const show = useCallback((char: string, name: string, rect: DOMRect) => {
-		setPreview({ char, name, rect });
+	const show = useCallback((char: string, name: string, rect: DOMRect, hasShortcut?: boolean) => {
+		setPreview({ char, name, rect, hasShortcut });
 	}, []);
 
 	const hide = useCallback(() => {

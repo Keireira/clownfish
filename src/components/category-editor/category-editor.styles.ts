@@ -137,6 +137,13 @@ export const SmallBtn = styled.button`
 	}
 `;
 
+export const EmptyChars = styled.div`
+	color: var(--text-disabled);
+	text-align: center;
+	padding: 24px 0;
+	font-size: 12px;
+`;
+
 export default styled.div`
 	display: flex;
 	flex-direction: column;
