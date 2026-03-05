@@ -9,6 +9,7 @@
     "core:window:allow-create",
     "core:window:allow-close",
     "core:window:allow-show",
+    "core:window:allow-hide",
     "core:window:allow-set-focus",
     "core:webview:allow-create-webview-window",
     "clipboard-manager:allow-write-text",
@@ -32,6 +33,9 @@
       ]
     },
     "dialog:allow-open",
-    "dialog:allow-save"
+    "dialog:allow-save",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "global-shortcut:allow-is-registered"
   ]
 }

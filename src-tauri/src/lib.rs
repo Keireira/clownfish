@@ -4,6 +4,7 @@
 //! window management, clipboard access, and platform-specific autostart.
 
 mod autostart;
+mod hotkey;
 mod text_expand;
 mod tray;
 mod window;
@@ -19,6 +20,7 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
+        .plugin(tauri_plugin_global_shortcut::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             window::open_settings_cmd,
             window::open_url_cmd,
@@ -36,6 +38,8 @@ pub fn run() {
             text_expand::expansion_set_trigger_char,
             text_expand::expansion_set_unicode_hints,
             text_expand::expansion_is_unicode_hints,
+            hotkey::set_global_hotkey,
+            hotkey::get_global_hotkey,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -46,6 +50,7 @@ pub fn run() {
             window::build_hints(app)?;
             tray::build(app)?;
             text_expand::start_listener(app.handle());
+            hotkey::init(app.handle());
 
             // Sync tray check-mark when the frontend toggles expansion
             {

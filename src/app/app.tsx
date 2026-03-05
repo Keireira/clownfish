@@ -138,6 +138,19 @@ export default function App() {
 		[promptChar, showToast, t]
 	);
 
+	// Close the popup on Escape
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+					getCurrentWindow().hide();
+				});
+			}
+		};
+		document.addEventListener('keydown', handler);
+		return () => document.removeEventListener('keydown', handler);
+	}, []);
+
 	// Resize the Tauri window to fit content
 	useEffect(() => {
 		const el = appRef.current;

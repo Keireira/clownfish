@@ -48,6 +48,7 @@ import AutostartToggle from '../components/autostart-toggle';
 import ExpansionToggle from '../components/expansion-toggle';
 import HintsPositionPicker from '../components/hints-position';
 import UnicodeHintsToggle from '../components/unicode-hints-toggle/unicode-hints-toggle';
+import HotkeyPicker from '../components/hotkey-picker';
 import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
@@ -574,6 +575,10 @@ const Settings = () => {
 									<SettingsRow>
 										<SettingsRowLabel>{t('unicode_hints_label')}</SettingsRowLabel>
 										<UnicodeHintsToggle />
+									</SettingsRow>
+									<SettingsRow>
+										<SettingsRowLabel>{t('hotkey_label')}</SettingsRowLabel>
+										<HotkeyPicker />
 									</SettingsRow>
 								</SettingsGroup>
 								<SettingsGroup>

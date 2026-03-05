@@ -35,7 +35,7 @@ pub fn within_grace_period() -> bool {
 }
 
 /// Records the current time as the moment the popup was opened.
-fn mark_opened() {
+pub fn mark_opened() {
     LAST_OPEN.store(now_ms(), Ordering::Relaxed);
 }
 

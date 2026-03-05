@@ -172,4 +172,29 @@ export async function saveStopList(entries: StopListEntry[]): Promise<void> {
 	await store.save();
 }
 
+// ---------------------------------------------------------------------------
+// Global hotkey
+// ---------------------------------------------------------------------------
+
+export async function loadHotkey(): Promise<string | null> {
+	try {
+		const store = await getStore();
+		const val = await store.get<string>('global_hotkey');
+		if (val && typeof val === 'string') return val;
+	} catch {
+		/* use default */
+	}
+	return null;
+}
+
+export async function saveHotkey(shortcut: string | null): Promise<void> {
+	const store = await getStore();
+	if (shortcut) {
+		await store.set('global_hotkey', shortcut);
+	} else {
+		await store.delete('global_hotkey');
+	}
+	await store.save();
+}
+
 export { DEFAULT_CATEGORIES, DEFAULT_SHORTCUTS };
