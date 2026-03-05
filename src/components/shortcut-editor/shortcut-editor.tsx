@@ -15,6 +15,7 @@ import Root, {
 	EmptyState
 } from './shortcut-editor.styles';
 import { useLanguage } from '../../i18n';
+import { loadTriggerChar } from '../../store';
 import type { Shortcut } from '../../types';
 
 type Props = {
@@ -29,15 +30,20 @@ const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
 	const [editIdx, setEditIdx] = useState<number | null>(null);
 	const [editTrigger, setEditTrigger] = useState('');
 	const [editExpansion, setEditExpansion] = useState('');
+	const [tc, setTc] = useState(':');
 	const editRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		loadTriggerChar().then(setTc);
+	}, []);
 
 	const handleAdd = () => {
 		let trigger = newTrigger.trim();
 		const expansion = newExpansion.trim();
 		if (!trigger || !expansion) return;
 
-		if (!trigger.startsWith(':')) trigger = ':' + trigger;
-		if (!trigger.endsWith(':')) trigger = trigger + ':';
+		if (!trigger.startsWith(tc)) trigger = tc + trigger;
+		if (!trigger.endsWith(tc)) trigger = trigger + tc;
 
 		if (shortcuts.some((s) => s.trigger === trigger)) return;
 
@@ -69,8 +75,8 @@ const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
 			setEditIdx(null);
 			return;
 		}
-		if (!trigger.startsWith(':')) trigger = ':' + trigger;
-		if (!trigger.endsWith(':')) trigger = trigger + ':';
+		if (!trigger.startsWith(tc)) trigger = tc + trigger;
+		if (!trigger.endsWith(tc)) trigger = trigger + tc;
 
 		// Check for duplicate trigger (except self)
 		if (shortcuts.some((s, i) => i !== editIdx && s.trigger === trigger)) {

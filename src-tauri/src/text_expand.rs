@@ -115,6 +115,19 @@ static STATE: LazyLock<Mutex<ExpanderState>> = LazyLock::new(|| {
     })
 });
 
+/// Configurable trigger character (default `:`).
+static TRIGGER_CHAR: LazyLock<Mutex<char>> = LazyLock::new(|| Mutex::new(':'));
+
+/// Returns the current trigger character.
+fn trigger_char() -> char {
+    *TRIGGER_CHAR.lock().unwrap()
+}
+
+/// Updates the trigger character at runtime.
+pub fn set_trigger_char(ch: char) {
+    *TRIGGER_CHAR.lock().unwrap() = ch;
+}
+
 /// Stored app handle for emitting events from the listener thread.
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
@@ -210,6 +223,14 @@ pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
     }
 }
 
+/// Sets the trigger character used to delimit shortcuts.
+#[tauri::command]
+pub fn expansion_set_trigger_char(ch: String) {
+    if let Some(c) = ch.chars().next() {
+        set_trigger_char(c);
+    }
+}
+
 /// Returns a list of currently running applications (visible windows).
 #[tauri::command]
 pub fn expansion_list_running_apps() -> Vec<RunningApp> {
@@ -227,9 +248,10 @@ pub fn expansion_resolve_exe(path: String) -> Option<String> {
 #[tauri::command]
 pub fn expansion_apply_hint(expansion: String) {
     let mut state = STATE.lock().unwrap();
-    // Find the partial prefix length (`:xxx` without closing `:`).
-    let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
-        state.buffer[colon_pos..].chars().count()
+    // Find the partial prefix length (e.g. `:xxx` without closing `:`).
+    let tc = trigger_char();
+    let prefix_len = if let Some(pos) = state.buffer.rfind(tc) {
+        state.buffer[pos..].chars().count()
     } else {
         0
     };
@@ -307,9 +329,10 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                         if let Some(hint) = hints.get(sel as usize) {
                             let expansion = hint.expansion.clone();
                             drop(hints);
+                            let tc = trigger_char();
                             let mut state = STATE.lock().unwrap();
-                            let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
-                                state.buffer[colon_pos..].chars().count()
+                            let prefix_len = if let Some(pos) = state.buffer.rfind(tc) {
+                                state.buffer[pos..].chars().count()
                             } else {
                                 0
                             };
@@ -524,9 +547,10 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                     if let Some(hint) = hints.get(sel as usize) {
                         let expansion = hint.expansion.clone();
                         drop(hints);
+                        let tc = trigger_char();
                         let mut state = STATE.lock().unwrap();
-                        let prefix_len = if let Some(colon_pos) = state.buffer.rfind(':') {
-                            state.buffer[colon_pos..].chars().count()
+                        let prefix_len = if let Some(pos) = state.buffer.rfind(tc) {
+                            state.buffer[pos..].chars().count()
                         } else {
                             0
                         };
@@ -700,19 +724,20 @@ fn win_vk_to_char(vk: u16, scan: u32) -> Option<char> {
 // ---------------------------------------------------------------------------
 
 /// Finds shortcuts whose trigger starts with the current open prefix.
-/// An "open prefix" is `:` followed by 1+ chars without a closing `:`.
+/// An "open prefix" is the trigger char followed by 1+ chars without a closing trigger char.
 fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
-    // Find the last `:` in the buffer.
-    let Some(colon_pos) = state.buffer.rfind(':') else {
+    let tc = trigger_char();
+    // Find the last trigger char in the buffer.
+    let Some(tc_pos) = state.buffer.rfind(tc) else {
         return vec![];
     };
-    let prefix = &state.buffer[colon_pos..];
-    // Need at least `:` + 1 char, and must NOT end with `:` (that would be a completed trigger).
-    if prefix.len() < 2 || prefix.ends_with(':') && prefix.len() > 1 {
+    let prefix = &state.buffer[tc_pos..];
+    // Need at least trigger char + 1 char, and must NOT end with trigger char (completed trigger).
+    if prefix.len() < 2 || prefix.ends_with(tc) && prefix.len() > 1 {
         return vec![];
     }
-    // Don't show hints if the prefix itself ends with `:` (completed).
-    if prefix.len() > 1 && prefix[1..].contains(':') {
+    // Don't show hints if the prefix itself contains a second trigger char (completed).
+    if prefix.len() > 1 && prefix[1..].contains(tc) {
         return vec![];
     }
 
@@ -961,13 +986,18 @@ fn win_replace(trigger_char_count: usize, expansion: &str) {
         std::thread::sleep(Duration::from_millis(10));
     }
 
-    // 2. Send Backspace presses to delete the trigger text.
+    // 2. Send Backspace presses to delete the trigger text (batched).
+    let mut bs_inputs: Vec<INPUT> = Vec::with_capacity(trigger_char_count * 2);
     for _ in 0..trigger_char_count {
-        let bs = [kb(VK_BACK, 0), kb(VK_BACK, KEYEVENTF_KEYUP)];
-        unsafe {
-            SendInput(bs.len() as u32, bs.as_ptr(), mem::size_of::<INPUT>() as i32);
-        }
-        std::thread::sleep(Duration::from_millis(20));
+        bs_inputs.push(kb(VK_BACK, 0));
+        bs_inputs.push(kb(VK_BACK, KEYEVENTF_KEYUP));
+    }
+    unsafe {
+        SendInput(
+            bs_inputs.len() as u32,
+            bs_inputs.as_ptr(),
+            mem::size_of::<INPUT>() as i32,
+        );
     }
 
     std::thread::sleep(Duration::from_millis(20));

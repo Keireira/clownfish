@@ -111,6 +111,27 @@ export async function saveHintsPosition(pos: HintsPosition): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Trigger character
+// ---------------------------------------------------------------------------
+
+export async function loadTriggerChar(): Promise<string> {
+	try {
+		const store = await getStore();
+		const val = await store.get<string>('trigger_char');
+		if (val && typeof val === 'string' && val.length === 1) return val;
+	} catch {
+		/* use default */
+	}
+	return ':';
+}
+
+export async function saveTriggerChar(ch: string): Promise<void> {
+	const store = await getStore();
+	await store.set('trigger_char', ch);
+	await store.save();
+}
+
+// ---------------------------------------------------------------------------
 // Stop-list
 // ---------------------------------------------------------------------------
 

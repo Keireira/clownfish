@@ -39,6 +39,7 @@ import LanguagePicker from '../components/language-picker';
 import AutostartToggle from '../components/autostart-toggle';
 import ExpansionToggle from '../components/expansion-toggle';
 import HintsPositionPicker from '../components/hints-position';
+import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
 import BottomBar, { openUrl } from '../components/bottom-bar';
@@ -280,6 +281,16 @@ const Settings = () => {
 									<SettingsRow>
 										<SettingsRowLabel>{t('hints_position_label')}</SettingsRowLabel>
 										<HintsPositionPicker />
+									</SettingsRow>
+									<SettingsRow>
+										<SettingsRowLabel>{t('trigger_char_label')}</SettingsRowLabel>
+										<TriggerCharPicker
+											shortcuts={shortcuts}
+											onShortcutsChange={(s) => {
+												setShortcuts(s);
+												setShortcutsDirty(true);
+											}}
+										/>
 									</SettingsRow>
 								</SettingsGroup>
 								<SettingsGroup>
