@@ -103,7 +103,14 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: 'Subscript & Superscript',
 		cat_lines_boxes: 'Lines & Boxes',
-		cat_latin_ext: 'Latin Extended'
+		cat_latin_ext: 'Latin Extended',
+
+		// TriggerPrompt
+		enter_trigger: 'Add Shortcut',
+		trigger_keyword_placeholder: 'keyword',
+		trigger_exists: 'This trigger already exists',
+		shortcut_added: 'Shortcut added',
+		right_click_shortcut: 'Right-click → shortcut'
 	},
 
 	ru: {
@@ -193,7 +200,13 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: 'Подстрочные и надстрочные',
 		cat_lines_boxes: 'Линии и рамки',
-		cat_latin_ext: 'Латиница расш.'
+		cat_latin_ext: 'Латиница расш.',
+
+		enter_trigger: 'Новая автозамена',
+		trigger_keyword_placeholder: 'ключевое слово',
+		trigger_exists: 'Такой триггер уже существует',
+		shortcut_added: 'Автозамена добавлена',
+		right_click_shortcut: 'ПКМ → автозамена'
 	},
 
 	es: {
@@ -282,7 +295,13 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: 'Subíndices y superíndices',
 		cat_lines_boxes: 'Líneas y marcos',
-		cat_latin_ext: 'Latín extendido'
+		cat_latin_ext: 'Latín extendido',
+
+		enter_trigger: 'Añadir atajo',
+		trigger_keyword_placeholder: 'palabra clave',
+		trigger_exists: 'Este atajo ya existe',
+		shortcut_added: 'Atajo añadido',
+		right_click_shortcut: 'Clic derecho → atajo'
 	},
 
 	ja: {
@@ -371,6 +390,12 @@ export const translations: Record<string, TranslationRecord> = {
 
 		cat_sub_super: '上付き・下付き',
 		cat_lines_boxes: '罫線・囲み',
-		cat_latin_ext: 'ラテン拡張'
+		cat_latin_ext: 'ラテン拡張',
+
+		enter_trigger: 'ショートカット追加',
+		trigger_keyword_placeholder: 'キーワード',
+		trigger_exists: 'このトリガーは既に存在します',
+		shortcut_added: 'ショートカットを追加しました',
+		right_click_shortcut: '右クリック → ショートカット'
 	}
 };

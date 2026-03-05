@@ -1,5 +1,6 @@
-import Root, { Name } from './char-preview.styles';
+import Root, { Name, Hint } from './char-preview.styles';
 import { useCharPreview } from './char-preview-context';
+import { t } from '../../i18n';
 
 const CharPreview = () => {
 	const { preview } = useCharPreview();
@@ -11,6 +12,7 @@ const CharPreview = () => {
 	return (
 		<Root $x={x} $y={y}>
 			<Name>{preview.name}</Name>
+			<Hint>{t('right_click_shortcut')}</Hint>
 		</Root>
 	);
 };

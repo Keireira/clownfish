@@ -76,6 +76,23 @@ export const CharDelete = styled.button`
 	justify-content: center;
 `;
 
+export const CharShortcutBadge = styled.button`
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	width: 16px;
+	height: 16px;
+	background: none;
+	border: none;
+	font-size: 10px;
+	line-height: 1;
+	cursor: pointer;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+`;
+
 export const AddRow = styled.div`
 	display: flex;
 	gap: 6px;

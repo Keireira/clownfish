@@ -6,6 +6,7 @@ import Root, {
 	CharGrid,
 	CharItem,
 	CharDelete,
+	CharShortcutBadge,
 	AddRow,
 	AddCharInput,
 	AddNameInput,
@@ -16,7 +17,8 @@ import { useLanguage } from '../../i18n';
 import { displayChar } from '../../types';
 import type { Props } from './category-editor.d';
 
-const CategoryEditor = ({ category, onChange, onOpenPresets, onDeleteChar }: Props) => {
+const CategoryEditor = ({ category, onChange, onOpenPresets, onDeleteChar, onAddShortcut, existingExpansions }: Props) => {
+	const expansionSet = new Set(existingExpansions);
 	const t = useLanguage();
 	const [newChar, setNewChar] = useState('');
 	const [newName, setNewName] = useState('');
@@ -69,12 +71,34 @@ const CategoryEditor = ({ category, onChange, onOpenPresets, onDeleteChar }: Pro
 				</CharsHeader>
 
 				<CharGrid>
-					{category.chars.map(([char, name], idx) => (
-						<CharItem key={idx} title={name}>
-							<span style={{ pointerEvents: 'none' }}>{displayChar(char)}</span>
-							<CharDelete onClick={() => handleDeleteChar(idx)}>&times;</CharDelete>
-						</CharItem>
-					))}
+					{category.chars.map(([char, name], idx) => {
+						const alreadyShortcut = expansionSet.has(char);
+						return (
+							<CharItem
+								key={idx}
+								title={name}
+								onContextMenu={(e) => {
+									if (!onAddShortcut || alreadyShortcut) return;
+									e.preventDefault();
+									onAddShortcut(char, name);
+								}}
+							>
+								<span style={{ pointerEvents: 'none' }}>{displayChar(char)}</span>
+								<CharDelete onClick={() => handleDeleteChar(idx)}>&times;</CharDelete>
+								{onAddShortcut && !alreadyShortcut && (
+									<CharShortcutBadge
+										onClick={(e) => {
+											e.stopPropagation();
+											onAddShortcut(char, name);
+										}}
+										title={t('right_click_shortcut') as string}
+									>
+										⚡
+									</CharShortcutBadge>
+								)}
+							</CharItem>
+						);
+					})}
 				</CharGrid>
 			</div>
 

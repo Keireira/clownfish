@@ -5,9 +5,10 @@ import SearchBar from '../components/search-bar';
 import Category from '../components/category';
 import CharPreview, { CharPreviewProvider } from '../components/char-preview';
 import Toast from '../components/toast';
+import TriggerPrompt from '../components/trigger-prompt';
 import BottomBar from '../components/bottom-bar';
 import { useLanguage, getLanguageChoice, applyLanguage } from '../i18n';
-import type { Category as CategoryType } from '../types';
+import type { Category as CategoryType, Shortcut } from '../types';
 
 const MAX_HEIGHT = 520;
 const WIDTH = 420;
@@ -17,20 +18,25 @@ export default function App() {
 	const [categories, setCategories] = useState<CategoryType[]>(DEFAULT_CATEGORIES);
 	const [query, setQuery] = useState('');
 	const [toast, setToast] = useState<string | null>(null);
+	const [promptChar, setPromptChar] = useState<[string, string] | null>(null);
+	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
 	const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const appRef = useRef<HTMLDivElement>(null);
 	const lastHeight = useRef(0);
 
-	// Load categories from store on mount and on focus
+	// Load categories + shortcuts from store on mount and on focus
 	useEffect(() => {
 		let cancelled = false;
 		let unlistenPromise: Promise<() => void> | undefined;
 
 		async function load() {
 			try {
-				const { loadCategories } = await import('../store');
-				const cats = await loadCategories();
-				if (!cancelled) setCategories(cats);
+				const { loadCategories, loadShortcuts } = await import('../store');
+				const [cats, sc] = await Promise.all([loadCategories(), loadShortcuts()]);
+				if (!cancelled) {
+					setCategories(cats);
+					setShortcuts(sc);
+				}
 			} catch (e) {
 				console.error('Store load failed:', e);
 			}
@@ -39,10 +45,14 @@ export default function App() {
 
 		// Listen for explicit categories-changed event from settings window
 		let unlistenCatsPromise: Promise<() => void> | undefined;
+		let unlistenShortcutsPromise: Promise<() => void> | undefined;
 		import('@tauri-apps/api/event')
 			.then(({ listen }) => {
 				if (cancelled) return;
 				unlistenCatsPromise = listen('categories-changed', () => {
+					load();
+				});
+				unlistenShortcutsPromise = listen('shortcuts-changed', () => {
 					load();
 				});
 			})
@@ -74,6 +84,7 @@ export default function App() {
 			cancelled = true;
 			if (unlistenPromise) unlistenPromise.then((fn) => fn()).catch(() => {});
 			if (unlistenCatsPromise) unlistenCatsPromise.then((fn) => fn()).catch(() => {});
+			if (unlistenShortcutsPromise) unlistenShortcutsPromise.then((fn) => fn()).catch(() => {});
 		};
 	}, []);
 
@@ -82,6 +93,35 @@ export default function App() {
 		if (toastTimer.current) clearTimeout(toastTimer.current);
 		toastTimer.current = setTimeout(() => setToast(null), 1200);
 	}, []);
+
+	const handleAddShortcut = useCallback((char: string, name: string) => {
+		setPromptChar([char, name]);
+	}, []);
+
+	const handlePromptAdd = useCallback(
+		async (keyword: string) => {
+			if (!promptChar) return;
+			try {
+				const { loadShortcuts, saveShortcuts, loadTriggerChar } = await import('../store');
+				const { emitEvent } = await import('../events');
+				const { invoke } = await import('@tauri-apps/api/core');
+				const tc = await loadTriggerChar();
+				const shortcuts = await loadShortcuts();
+				const current = await loadShortcuts();
+				const newShortcut = { trigger: tc + keyword + tc, expansion: promptChar[0] };
+				const updated = [...current, newShortcut];
+				await saveShortcuts(updated);
+				await invoke('expansion_update_shortcuts', { shortcuts: updated });
+				await emitEvent('shortcuts-changed');
+				setShortcuts(updated);
+				showToast(t('shortcut_added') as string);
+			} catch (e) {
+				console.error('Failed to add shortcut:', e);
+			}
+			setPromptChar(null);
+		},
+		[promptChar, showToast, t]
+	);
 
 	// Resize the Tauri window to fit content
 	useEffect(() => {
@@ -138,7 +178,7 @@ export default function App() {
 				<SearchBar value={query} onChange={setQuery} />
 				<GridArea>
 					{filtered.length > 0 ? (
-						filtered.map((cat) => <Category key={cat.name} category={cat} onCopy={showToast} />)
+						filtered.map((cat) => <Category key={cat.name} category={cat} onCopy={showToast} onAddShortcut={handleAddShortcut} existingExpansions={shortcuts.map((s) => s.expansion)} />)
 					) : (
 						<NoResults>{t('nothing_found')}</NoResults>
 					)}
@@ -159,6 +199,15 @@ export default function App() {
 				/>
 				<Toast message={toast} />
 				<CharPreview />
+				{promptChar && (
+					<TriggerPrompt
+						char={promptChar[0]}
+						name={promptChar[1]}
+						existingTriggers={shortcuts.map((s) => s.trigger)}
+						onAdd={handlePromptAdd}
+						onClose={() => setPromptChar(null)}
+					/>
+				)}
 			</Root>
 		</CharPreviewProvider>
 	);

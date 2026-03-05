@@ -7,7 +7,7 @@ import { t } from '../../i18n';
 import { displayChar } from '../../types';
 import type { Props } from './char-button.d';
 
-const CharButton = ({ char, name, onCopy }: Props) => {
+const CharButton = ({ char, name, onCopy, onAddShortcut }: Props) => {
 	const [copied, setCopied] = useState(false);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const { show, hide } = useCharPreview();
@@ -35,8 +35,17 @@ const CharButton = ({ char, name, onCopy }: Props) => {
 		hide();
 	}, [hide]);
 
+	const handleContextMenu = useCallback(
+		(e: React.MouseEvent) => {
+			if (!onAddShortcut) return;
+			e.preventDefault();
+			onAddShortcut(char, name);
+		},
+		[char, name, onAddShortcut]
+	);
+
 	return (
-		<Root $copied={copied} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+		<Root $copied={copied} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onContextMenu={handleContextMenu}>
 			{displayChar(char)}
 		</Root>
 	);

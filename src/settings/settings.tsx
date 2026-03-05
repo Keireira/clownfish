@@ -35,6 +35,7 @@ import SettingsSidebar, { isCategorySection, categoryIdx, categorySection } from
 import type { ActiveSection } from '../components/settings-sidebar';
 import CategoryEditor from '../components/category-editor';
 import PresetPicker from '../components/preset-picker';
+import TriggerPrompt from '../components/trigger-prompt';
 import ThemePicker from '../components/theme-picker';
 import LanguagePicker from '../components/language-picker';
 import AutostartToggle from '../components/autostart-toggle';
@@ -65,6 +66,7 @@ const Settings = () => {
 	const [stopListDirty, setStopListDirty] = useState(false);
 	const [dragging, setDragging] = useState(false);
 	const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+	const [promptChar, setPromptChar] = useState<[string, string] | null>(null);
 
 	const savedCategoriesRef = useRef('[]');
 	const savedShortcutsRef = useRef('[]');
@@ -86,14 +88,26 @@ const Settings = () => {
 		loadStopList().then(setStopList);
 
 		let unlisten: (() => void) | undefined;
+		let unlistenShortcuts: (() => void) | undefined;
 		import('@tauri-apps/api/event')
-			.then(({ listen }) => listen('open-shortcuts-tab', () => setActive('shortcuts')))
-			.then((fn) => {
-				unlisten = fn;
+			.then(({ listen }) => {
+				listen('open-shortcuts-tab', () => setActive('shortcuts')).then((fn) => {
+					unlisten = fn;
+				});
+				listen('shortcuts-changed', () => {
+					loadShortcuts().then((s) => {
+						setShortcuts(s);
+						savedShortcutsRef.current = JSON.stringify(s);
+						setShortcutsDirty(false);
+					});
+				}).then((fn) => {
+					unlistenShortcuts = fn;
+				});
 			})
 			.catch(() => {});
 		return () => {
 			unlisten?.();
+			unlistenShortcuts?.();
 		};
 	}, []);
 
@@ -402,6 +416,8 @@ const Settings = () => {
 								category={selectedCat}
 								onChange={(cat) => handleUpdateCategory(selectedCatIdx, cat)}
 								onOpenPresets={() => setShowPresets(true)}
+								onAddShortcut={(char, name) => setPromptChar([char, name])}
+								existingExpansions={shortcuts.map((s) => s.expansion)}
 								onDeleteChar={(charIdx) => {
 									setUndoStack((prev) => [
 										...prev,
@@ -450,6 +466,25 @@ const Settings = () => {
 						onAdd={handleAddFromPresets}
 						onClose={() => setShowPresets(false)}
 						existingChars={selectedCat.chars.map(([ch]) => ch)}
+					/>
+				)}
+
+				{promptChar && (
+					<TriggerPrompt
+						char={promptChar[0]}
+						name={promptChar[1]}
+						existingTriggers={shortcuts.map((s) => s.trigger)}
+						onAdd={(keyword) => {
+							import('../store').then(({ loadTriggerChar }) => {
+								loadTriggerChar().then((tc) => {
+									const newShortcut = { trigger: tc + keyword + tc, expansion: promptChar[0] };
+									setShortcuts((prev) => [...prev, newShortcut]);
+									setShortcutsDirty(true);
+									setPromptChar(null);
+								});
+							});
+						}}
+						onClose={() => setPromptChar(null)}
 					/>
 				)}
 			</Root>
