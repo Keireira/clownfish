@@ -97,6 +97,9 @@ static SUPPRESSING: AtomicBool = AtomicBool::new(false);
 /// Hints position mode: 0 = caret, 1 = corner, 2 = off.
 static HINTS_MODE: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
 
+/// Whether Unicode code-point hints (\uXXXX) are enabled.
+static UNICODE_HINTS: AtomicBool = AtomicBool::new(false);
+
 /// Currently visible hints (stored so keyboard navigation can reference them).
 static ACTIVE_HINTS: LazyLock<Mutex<Vec<Shortcut>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
@@ -203,6 +206,17 @@ pub fn expansion_set_hints_mode(mode: String) {
         _ => 0, // "caret"
     };
     HINTS_MODE.store(val, Ordering::Relaxed);
+}
+
+/// Enables or disables Unicode code-point hints.
+#[tauri::command]
+pub fn expansion_set_unicode_hints(enabled: bool) {
+    UNICODE_HINTS.store(enabled, Ordering::Relaxed);
+}
+
+#[tauri::command]
+pub fn expansion_is_unicode_hints() -> bool {
+    UNICODE_HINTS.load(Ordering::Relaxed)
 }
 
 /// Updates the per-app stop-list.
@@ -362,7 +376,19 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             }
         }
 
-        if is_buffer_reset_key(key) {
+        // Backspace: pop one character and recalculate hints.
+        if key == Key::Backspace {
+            let mut state = STATE.lock().unwrap();
+            state.buffer.pop();
+            if app_hints && !state.buffer.is_empty() {
+                let hints = find_hints(&state);
+                drop(state);
+                show_hints(hints);
+            } else {
+                drop(state);
+                clear_hints();
+            }
+        } else if is_buffer_reset_key(key) {
             let mut state = STATE.lock().unwrap();
             state.buffer.clear();
             drop(state);
@@ -425,8 +451,7 @@ fn event_to_char(event: &Event) -> Option<char> {
 fn is_buffer_reset_key(key: Key) -> bool {
     matches!(
         key,
-        Key::Backspace
-            | Key::Return
+        Key::Return
             | Key::Tab
             | Key::Escape
             | Key::UpArrow
@@ -580,6 +605,24 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         }
     }
 
+    // Backspace: pop one character and recalculate hints.
+    {
+        use windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_BACK;
+        if vk == VK_BACK {
+            let mut state = STATE.lock().unwrap();
+            state.buffer.pop();
+            if app_hints && !state.buffer.is_empty() {
+                let hints = find_hints(&state);
+                drop(state);
+                show_hints(hints);
+            } else {
+                drop(state);
+                clear_hints();
+            }
+            return false;
+        }
+    }
+
     // Buffer reset keys.
     if is_reset_vk(vk) {
         let mut state = STATE.lock().unwrap();
@@ -632,8 +675,7 @@ fn is_reset_vk(vk: u16) -> bool {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::*;
     matches!(
         vk,
-        VK_BACK
-            | VK_RETURN
+        VK_RETURN
             | VK_TAB
             | VK_ESCAPE
             | VK_UP
@@ -723,6 +765,90 @@ fn win_vk_to_char(vk: u16, scan: u32) -> Option<char> {
 // Hints
 // ---------------------------------------------------------------------------
 
+/// Generates Unicode character hints for `\uXXX`-style prefixes.
+///
+/// `prefix` is the text after the trigger char (e.g. `\u223`).
+/// Returns all valid `Shortcut` entries where `trigger` is the code (e.g. `\u2230`)
+/// and `expansion` is the actual character.
+fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
+    // Must start with \u followed by hex digits.
+    let rest = match prefix.strip_prefix("\\u") {
+        Some(r) => r,
+        None => return vec![],
+    };
+    if rest.is_empty() || rest.len() < 3 || rest.len() > 5 {
+        return vec![];
+    }
+    if !rest.chars().all(|c| c.is_ascii_hexdigit()) {
+        return vec![];
+    }
+
+    let mut hints = Vec::new();
+    let hex_digits = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'];
+
+    match rest.len() {
+        3 => {
+            // e.g. \u223 → enumerate \u2230..\u223F
+            for &h in &hex_digits {
+                let code_str = format!("{}{}", rest, h);
+                if let Ok(cp) = u32::from_str_radix(&code_str, 16) {
+                    if let Some(ch) = char::from_u32(cp) {
+                        if !ch.is_control() {
+                            hints.push(Shortcut {
+                                trigger: format!("\\u{}", code_str),
+                                expansion: ch.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        4 => {
+            // Exact 4-digit code point first.
+            if let Ok(cp) = u32::from_str_radix(rest, 16) {
+                if let Some(ch) = char::from_u32(cp) {
+                    if !ch.is_control() {
+                        hints.push(Shortcut {
+                            trigger: format!("\\u{}", rest.to_ascii_uppercase()),
+                            expansion: ch.to_string(),
+                        });
+                    }
+                }
+            }
+            // Then enumerate 5-digit completions.
+            for &h in &hex_digits {
+                let code_str = format!("{}{}", rest, h);
+                if let Ok(cp) = u32::from_str_radix(&code_str, 16) {
+                    if let Some(ch) = char::from_u32(cp) {
+                        if !ch.is_control() {
+                            hints.push(Shortcut {
+                                trigger: format!("\\u{}", code_str.to_ascii_uppercase()),
+                                expansion: ch.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        5 => {
+            // Exact 5-digit code point.
+            if let Ok(cp) = u32::from_str_radix(rest, 16) {
+                if let Some(ch) = char::from_u32(cp) {
+                    if !ch.is_control() {
+                        hints.push(Shortcut {
+                            trigger: format!("\\u{}", rest.to_ascii_uppercase()),
+                            expansion: ch.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
+
+    hints
+}
+
 /// Finds shortcuts whose trigger starts with the current open prefix.
 /// An "open prefix" is the trigger char followed by 1+ chars without a closing trigger char.
 fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
@@ -752,6 +878,14 @@ fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
         })
         .collect();
     hints.sort_by(|a, b| a.trigger.len().cmp(&b.trigger.len()));
+
+    // Append Unicode code-point hints (prefix without the leading trigger char).
+    if UNICODE_HINTS.load(Ordering::Relaxed) {
+        let unicode_prefix = &prefix[tc.len_utf8()..];
+        let unicode_hints = find_unicode_hints(unicode_prefix);
+        hints.extend(unicode_hints);
+    }
+
     hints
 }
 
@@ -844,7 +978,7 @@ fn emit_hints(hints: &[Shortcut]) {
             let _ = win.hide();
         } else {
             let n = effective_hints.len() as f64;
-            let width = n * 38.0 + 22.0;
+            let width = n.min(6.0) * 38.0 + 22.0;
             let height = 54.0_f64;
 
             let _ = win.set_size(tauri::LogicalSize::new(width, height));

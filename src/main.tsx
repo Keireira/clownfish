@@ -12,17 +12,19 @@ initLanguage();
 (async () => {
 	try {
 		const { invoke } = await import('@tauri-apps/api/core');
-		const { loadShortcuts, loadExpansionEnabled, loadHintsPosition, loadStopList } = await import('./store');
-		const [shortcuts, enabled, hintsPos, stopList] = await Promise.all([
+		const { loadShortcuts, loadExpansionEnabled, loadHintsPosition, loadStopList, loadUnicodeHints } = await import('./store');
+		const [shortcuts, enabled, hintsPos, stopList, unicodeHints] = await Promise.all([
 			loadShortcuts(),
 			loadExpansionEnabled(),
 			loadHintsPosition(),
-			loadStopList()
+			loadStopList(),
+			loadUnicodeHints()
 		]);
 		await invoke('expansion_update_shortcuts', { shortcuts });
 		await invoke('expansion_set_enabled', { enabled });
 		await invoke('expansion_set_hints_mode', { mode: hintsPos });
 		await invoke('expansion_update_stoplist', { entries: stopList });
+		await invoke('expansion_set_unicode_hints', { enabled: unicodeHints });
 	} catch (err) {
 		console.error('Failed to init text expansion:', err);
 	}

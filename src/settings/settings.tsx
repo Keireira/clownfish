@@ -48,6 +48,7 @@ import LanguagePicker from '../components/language-picker';
 import AutostartToggle from '../components/autostart-toggle';
 import ExpansionToggle from '../components/expansion-toggle';
 import HintsPositionPicker from '../components/hints-position';
+import UnicodeHintsToggle from '../components/unicode-hints-toggle/unicode-hints-toggle';
 import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
@@ -433,6 +434,10 @@ const Settings = () => {
 												setShortcutsDirty(true);
 											}}
 										/>
+									</SettingsRow>
+									<SettingsRow>
+										<SettingsRowLabel>{t('unicode_hints_label')}</SettingsRowLabel>
+										<UnicodeHintsToggle />
 									</SettingsRow>
 								</SettingsGroup>
 								<SettingsGroup>

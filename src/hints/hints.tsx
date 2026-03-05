@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -9,9 +9,17 @@ import type { HintsPayload } from './hints.d';
 
 const HintCell = ({ hint, selected, onApply }: { hint: Shortcut; selected: boolean; onApply: () => void }) => {
 	const [hovered, setHovered] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (selected && ref.current) {
+			ref.current.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+		}
+	}, [selected]);
 
 	return (
 		<Cell
+			ref={ref}
 			$is_hovered={hovered}
 			$is_selected={selected}
 			title={hint.trigger}

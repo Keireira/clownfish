@@ -32,6 +32,8 @@ pub fn run() {
             text_expand::expansion_list_running_apps,
             text_expand::expansion_resolve_exe,
             text_expand::expansion_set_trigger_char,
+            text_expand::expansion_set_unicode_hints,
+            text_expand::expansion_is_unicode_hints,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

@@ -111,6 +111,26 @@ export async function saveHintsPosition(pos: HintsPosition): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Unicode hints
+// ---------------------------------------------------------------------------
+
+export async function loadUnicodeHints(): Promise<boolean> {
+	try {
+		const store = await getStore();
+		const val = await store.get<boolean>('unicode_hints');
+		return val ?? false;
+	} catch {
+		return false;
+	}
+}
+
+export async function saveUnicodeHints(enabled: boolean): Promise<void> {
+	const store = await getStore();
+	await store.set('unicode_hints', enabled);
+	await store.save();
+}
+
+// ---------------------------------------------------------------------------
 // Trigger character
 // ---------------------------------------------------------------------------
 
