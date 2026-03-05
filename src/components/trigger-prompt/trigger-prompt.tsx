@@ -91,7 +91,11 @@ const TriggerPrompt = ({ char, name, existingTriggers, onAdd, onClose }: Props) 
 						autoCorrect="off"
 						autoComplete="off"
 					/>
-					{trimmed.length > 0 && <Preview>{fullTrigger} → {char}</Preview>}
+					{trimmed.length > 0 && (
+						<Preview>
+							{fullTrigger} → {char}
+						</Preview>
+					)}
 					{duplicate && <ErrorText>{t('trigger_exists')}</ErrorText>}
 				</Body>
 

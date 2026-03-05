@@ -25,15 +25,15 @@ export default function App() {
 	const appRef = useRef<HTMLDivElement>(null);
 	const lastHeight = useRef(0);
 
-	// Load categories + shortcuts from store on mount and on focus
+	// Load categories + shortcuts from plugin system on mount and on focus
 	useEffect(() => {
 		let cancelled = false;
 		let unlistenPromise: Promise<() => void> | undefined;
 
 		async function load() {
 			try {
-				const { loadCategories, loadShortcuts } = await import('../store');
-				const [cats, sc] = await Promise.all([loadCategories(), loadShortcuts()]);
+				const { loadMergedData } = await import('../plugin-store');
+				const { categories: cats, shortcuts: sc } = await loadMergedData();
 				if (!cancelled) {
 					setCategories(cats);
 					setShortcuts(sc);
@@ -103,18 +103,32 @@ export default function App() {
 		async (keyword: string) => {
 			if (!promptChar) return;
 			try {
-				const { loadShortcuts, saveShortcuts, loadTriggerChar } = await import('../store');
+				const { loadPluginRegistry, loadAllPlugins, savePlugin, mergePlugins } = await import('../plugin-store');
+				const { loadTriggerChar } = await import('../store');
 				const { emitEvent } = await import('../events');
 				const { invoke } = await import('@tauri-apps/api/core');
 				const tc = await loadTriggerChar();
-				const shortcuts = await loadShortcuts();
-				const current = await loadShortcuts();
 				const newShortcut = { trigger: tc + keyword + tc, expansion: promptChar[0] };
-				const updated = [...current, newShortcut];
-				await saveShortcuts(updated);
-				await invoke('expansion_update_shortcuts', { shortcuts: updated });
+
+				// Find which plugin owns the character's category, default to first enabled
+				const registry = await loadPluginRegistry();
+				const plugins = await loadAllPlugins(registry);
+				let targetPlugin = plugins[0];
+				for (const p of plugins) {
+					if (p.categories.some((cat) => cat.chars.some(([ch]) => ch === promptChar[0]))) {
+						targetPlugin = p;
+						break;
+					}
+				}
+				if (targetPlugin) {
+					targetPlugin.shortcuts = [...targetPlugin.shortcuts, newShortcut];
+					await savePlugin(targetPlugin);
+				}
+
+				const merged = mergePlugins(plugins, registry);
+				await invoke('expansion_update_shortcuts', { shortcuts: merged.shortcuts });
 				await emitEvent('shortcuts-changed');
-				setShortcuts(updated);
+				setShortcuts(merged.shortcuts);
 				showToast(t('shortcut_added') as string);
 			} catch (e) {
 				console.error('Failed to add shortcut:', e);
@@ -179,7 +193,15 @@ export default function App() {
 				<SearchBar value={query} onChange={setQuery} />
 				<GridArea>
 					{filtered.length > 0 ? (
-						filtered.map((cat) => <Category key={cat.name} category={cat} onCopy={showToast} onAddShortcut={handleAddShortcut} existingExpansions={shortcuts.map((s) => s.expansion)} />)
+						filtered.map((cat) => (
+							<Category
+								key={cat.name}
+								category={cat}
+								onCopy={showToast}
+								onAddShortcut={handleAddShortcut}
+								existingExpansions={shortcuts.map((s) => s.expansion)}
+							/>
+						))
 					) : (
 						<NoResults>{t('nothing_found')}</NoResults>
 					)}

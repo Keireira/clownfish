@@ -45,7 +45,13 @@ const CharButton = ({ char, name, onCopy, onAddShortcut }: Props) => {
 	);
 
 	return (
-		<Root $copied={copied} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onContextMenu={handleContextMenu}>
+		<Root
+			$copied={copied}
+			onClick={handleClick}
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={handleMouseLeave}
+			onContextMenu={handleContextMenu}
+		>
 			{displayChar(char)}
 		</Root>
 	);

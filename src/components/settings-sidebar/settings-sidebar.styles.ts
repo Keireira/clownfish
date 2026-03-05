@@ -389,3 +389,131 @@ export const NoApps = styled.p`
 export const BottomSpacer = styled.div`
 	flex: 1;
 `;
+
+export const ShortcutsItem = styled.div<{ $active: boolean }>`
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 16px;
+	border-radius: 10px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	position: relative;
+	transition:
+		background 0.15s,
+		color 0.15s;
+	color: ${(p) => (p.$active ? 'var(--text-bright)' : 'var(--text-muted)')};
+	background: transparent;
+	user-select: none;
+
+	&::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 6px;
+		bottom: 6px;
+		width: 3px;
+		border-radius: 2px;
+		background: ${(p) => (p.$active ? 'var(--accent)' : 'transparent')};
+		transition: background 0.15s;
+	}
+
+	&:hover {
+		color: var(--text-bright);
+		background: ${(p) => (p.$active ? 'transparent' : 'var(--fill-subtle)')};
+	}
+`;
+
+export const ShortcutsIcon = styled.span`
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 5px;
+	background: var(--fill);
+	color: var(--text-hint);
+	font-size: 10px;
+	flex-shrink: 0;
+	line-height: 1;
+`;
+
+export const CatSubLabel = styled.span`
+	font-size: 9px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--text-disabled);
+	padding: 8px 16px 2px;
+	user-select: none;
+`;
+
+export const PluginGroupHeader = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 16px 6px;
+	user-select: none;
+`;
+
+export const PluginGroupName = styled.button`
+	all: unset;
+	flex: 1;
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--text-hint);
+	cursor: pointer;
+	transition: color 0.15s;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+
+	&:hover {
+		color: var(--text-muted);
+	}
+`;
+
+export const PluginGroupRight = styled.div`
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+`;
+
+export const PluginToggle = styled.input`
+	width: 28px;
+	height: 16px;
+	appearance: none;
+	background: var(--fill);
+	border-radius: 8px;
+	position: relative;
+	cursor: pointer;
+	transition: background 0.2s;
+	flex-shrink: 0;
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--text-hint);
+		transition:
+			transform 0.2s,
+			background 0.2s;
+	}
+
+	&:checked {
+		background: var(--accent);
+	}
+
+	&:checked::after {
+		transform: translateX(12px);
+		background: #fff;
+	}
+`;

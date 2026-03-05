@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Root, {
 	SettingsGlobalStyle,
 	GlassOverrides,
@@ -23,23 +23,22 @@ import Root, {
 	Footer,
 	Copyright
 } from './settings.styles';
+import { loadStopList, saveStopList } from '../store';
 import {
-	loadCategories,
-	saveCategories,
-	resetCategories,
-	DEFAULT_CATEGORIES,
-	loadShortcuts,
-	saveShortcuts,
-	resetShortcuts,
-	DEFAULT_SHORTCUTS,
-	loadStopList,
-	saveStopList
-} from '../store';
+	loadPluginRegistry,
+	savePluginRegistry,
+	loadAllPlugins,
+	savePlugin,
+	deletePluginFile,
+	mergePlugins,
+	getDefaultPluginTemplate
+} from '../plugin-store';
 import { emitEvent } from '../events';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import SettingsSidebar, { isCategorySection, categoryIdx, categorySection } from '../components/settings-sidebar';
+import SettingsSidebar from '../components/settings-sidebar';
 import type { ActiveSection } from '../components/settings-sidebar';
+import { parseCategorySection, parseShortcutsSection } from '../components/settings-sidebar';
 import CategoryEditor from '../components/category-editor';
 import PresetPicker from '../components/preset-picker';
 import TriggerPrompt from '../components/trigger-prompt';
@@ -52,26 +51,27 @@ import UnicodeHintsToggle from '../components/unicode-hints-toggle/unicode-hints
 import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
+import PluginManager from '../components/plugin-manager';
 import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
 import { charMatchesQuery } from '../utils/char-match';
 import { displayChar } from '../types';
 import { DropOverlay } from '../components/stoplist-editor/stoplist-editor.styles';
-import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
+import type { Category, CharEntry, Plugin, PluginId, PluginRegistryEntry, Shortcut, StopListEntry } from '../types';
 
 type UndoEntry =
-	| { type: 'shortcut'; index: number; item: Shortcut }
-	| { type: 'category'; index: number; item: Category }
-	| { type: 'char'; categoryIndex: number; charIndex: number; item: CharEntry };
+	| { type: 'shortcut'; pluginId: PluginId; index: number; item: Shortcut }
+	| { type: 'category'; pluginId: PluginId; index: number; item: Category }
+	| { type: 'char'; pluginId: PluginId; categoryIndex: number; charIndex: number; item: CharEntry };
 
 const Settings = () => {
 	const t = useLanguage();
 	const [active, setActive] = useState<ActiveSection>('settings');
-	const [categories, setCategories] = useState<Category[]>([]);
+	const [plugins, setPlugins] = useState<Plugin[]>([]);
+	const [registry, setRegistry] = useState<PluginRegistryEntry[]>([]);
+	const [pluginDirty, setPluginDirty] = useState<Set<PluginId>>(new Set());
+	const [registryDirty, setRegistryDirty] = useState(false);
 	const [showPresets, setShowPresets] = useState(false);
-	const [dirty, setDirty] = useState(false);
-	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
-	const [shortcutsDirty, setShortcutsDirty] = useState(false);
 	const [stopList, setStopList] = useState<StopListEntry[]>([]);
 	const [stopListDirty, setStopListDirty] = useState(false);
 	const [dragging, setDragging] = useState(false);
@@ -79,37 +79,48 @@ const Settings = () => {
 	const [promptChar, setPromptChar] = useState<[string, string] | null>(null);
 	const [searchQuery, setSearchQuery] = useState('');
 
-	const savedCategoriesRef = useRef('[]');
-	const savedShortcutsRef = useRef('[]');
+	const savedPluginsRef = useRef<Map<PluginId, string>>(new Map());
 
 	const stopListRef = useRef(stopList);
 	useEffect(() => {
 		stopListRef.current = stopList;
 	}, [stopList]);
 
-	useEffect(() => {
-		loadCategories().then((c) => {
-			setCategories(c);
-			savedCategoriesRef.current = JSON.stringify(c);
-		});
-		loadShortcuts().then((s) => {
-			setShortcuts(s);
-			savedShortcutsRef.current = JSON.stringify(s);
-		});
-		loadStopList().then(setStopList);
+	// Derived merged data
+	const merged = useMemo(() => mergePlugins(plugins, registry), [plugins, registry]);
 
+	// Load plugins + registry on mount
+	useEffect(() => {
 		let unlisten: (() => void) | undefined;
 		let unlistenShortcuts: (() => void) | undefined;
+
+		async function loadAll() {
+			const reg = await loadPluginRegistry();
+			const allPlugins = await loadAllPlugins(reg);
+			setRegistry(reg);
+			setPlugins(allPlugins);
+			for (const p of allPlugins) {
+				savedPluginsRef.current.set(p.id, JSON.stringify(p));
+			}
+		}
+
+		loadAll();
+		loadStopList().then(setStopList);
+
 		import('@tauri-apps/api/event')
 			.then(({ listen }) => {
-				listen('open-shortcuts-tab', () => setActive('shortcuts')).then((fn) => {
+				listen('open-shortcuts-tab', () => {
+					// Select the first plugin's shortcuts section
+					loadPluginRegistry().then((reg) => {
+						if (reg.length > 0) setActive(`shortcuts:${reg[0].id}`);
+					});
+				}).then((fn) => {
 					unlisten = fn;
 				});
 				listen('shortcuts-changed', () => {
-					loadShortcuts().then((s) => {
-						setShortcuts(s);
-						savedShortcutsRef.current = JSON.stringify(s);
-						setShortcutsDirty(false);
+					loadAll().then(() => {
+						setPluginDirty(new Set());
+						setRegistryDirty(false);
 					});
 				}).then((fn) => {
 					unlistenShortcuts = fn;
@@ -169,6 +180,25 @@ const Settings = () => {
 		};
 	}, [addExe]);
 
+	/* ---- Plugin helpers ---- */
+	const markPluginDirty = useCallback((id: PluginId) => {
+		setPluginDirty((prev) => {
+			const next = new Set(prev);
+			next.add(id);
+			return next;
+		});
+	}, []);
+
+	const updatePlugin = useCallback(
+		(id: PluginId, updater: (p: Plugin) => Plugin) => {
+			setPlugins((prev) => prev.map((p) => (p.id === id ? updater(p) : p)));
+			markPluginDirty(id);
+		},
+		[markPluginDirty]
+	);
+
+	const getPlugin = useCallback((id: PluginId): Plugin | undefined => plugins.find((p) => p.id === id), [plugins]);
+
 	/* ---- Undo ---- */
 	const undo = useCallback(() => {
 		setUndoStack((prev) => {
@@ -176,56 +206,63 @@ const Settings = () => {
 			const entry = prev[prev.length - 1];
 			switch (entry.type) {
 				case 'shortcut':
-					setShortcuts((s) => {
-						const next = [...s];
+					updatePlugin(entry.pluginId, (p) => {
+						const next = [...p.shortcuts];
 						next.splice(entry.index, 0, entry.item);
-						setShortcutsDirty(JSON.stringify(next) !== savedShortcutsRef.current);
-						return next;
+						return { ...p, shortcuts: next };
 					});
 					break;
 				case 'category':
-					setCategories((cats) => {
-						const next = [...cats];
+					updatePlugin(entry.pluginId, (p) => {
+						const next = [...p.categories];
 						next.splice(entry.index, 0, entry.item);
-						setDirty(JSON.stringify(next) !== savedCategoriesRef.current);
-						return next;
+						return { ...p, categories: next };
 					});
 					break;
 				case 'char':
-					setCategories((cats) => {
-						const next = cats.map((cat, i) => {
+					updatePlugin(entry.pluginId, (p) => {
+						const next = p.categories.map((cat, i) => {
 							if (i !== entry.categoryIndex) return cat;
 							const chars = [...cat.chars];
 							chars.splice(entry.charIndex, 0, entry.item);
 							return { ...cat, chars };
 						});
-						setDirty(JSON.stringify(next) !== savedCategoriesRef.current);
-						return next;
+						return { ...p, categories: next };
 					});
 					break;
 			}
 			return prev.slice(0, -1);
 		});
-	}, []);
+	}, [updatePlugin]);
 
 	const handleSave = useCallback(async () => {
-		if (dirty) {
-			await saveCategories(categories);
-			savedCategoriesRef.current = JSON.stringify(categories);
-			setDirty(false);
-			await emitEvent('categories-changed');
+		// Save dirty plugins
+		for (const id of pluginDirty) {
+			const p = plugins.find((pl) => pl.id === id);
+			if (p) {
+				await savePlugin(p);
+				savedPluginsRef.current.set(p.id, JSON.stringify(p));
+			}
 		}
-		if (shortcutsDirty || stopListDirty) {
-			await saveShortcuts(shortcuts);
-			savedShortcutsRef.current = JSON.stringify(shortcuts);
+		if (registryDirty) {
+			await savePluginRegistry(registry);
+		}
+
+		// Always sync merged shortcuts to Rust
+		const m = mergePlugins(plugins, registry);
+		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		await emitEvent('shortcuts-changed');
+		await emitEvent('categories-changed');
+
+		if (stopListDirty) {
 			await saveStopList(stopList);
-			setShortcutsDirty(false);
-			setStopListDirty(false);
-			await invoke('expansion_update_shortcuts', { shortcuts });
 			await invoke('expansion_update_stoplist', { entries: stopList });
-			await emitEvent('shortcuts-changed');
+			setStopListDirty(false);
 		}
-	}, [dirty, categories, shortcutsDirty, stopListDirty, shortcuts, stopList]);
+
+		setPluginDirty(new Set());
+		setRegistryDirty(false);
+	}, [pluginDirty, plugins, registry, registryDirty, stopListDirty, stopList]);
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
@@ -244,16 +281,24 @@ const Settings = () => {
 	}, [undo, handleSave]);
 
 	/* ---- Derived state ---- */
-	const selectedCatIdx = isCategorySection(active) ? categoryIdx(active) : -1;
-	const selectedCat = categories[selectedCatIdx] ?? null;
+	const catSection = parseCategorySection(active);
+	const shortcutsSection = parseShortcutsSection(active);
+	const selectedPlugin = catSection
+		? getPlugin(catSection.pluginId)
+		: shortcutsSection
+			? getPlugin(shortcutsSection.pluginId)
+			: null;
+	const selectedCatIdx = catSection ? catSection.catIdx : -1;
+	const selectedCat =
+		selectedPlugin && selectedCatIdx >= 0 ? (selectedPlugin.categories[selectedCatIdx] ?? null) : null;
 	const selectedStopEntry = stopList.find((e) => e.exe === active) ?? null;
 
-	const anyDirty = dirty || shortcutsDirty || stopListDirty;
-	const searchEnabled = active === 'shortcuts' || isCategorySection(active);
+	const anyDirty = pluginDirty.size > 0 || registryDirty || stopListDirty;
+	const searchEnabled = shortcutsSection !== null || catSection !== null;
 
 	const sq = searchEnabled ? searchQuery.trim() : '';
 	const searchCharResults = sq
-		? categories
+		? merged.categories
 				.map((cat) => ({
 					name: cat.name,
 					chars: cat.chars.filter(([char, name]) => charMatchesQuery(char, name, sq))
@@ -262,86 +307,148 @@ const Settings = () => {
 		: null;
 
 	/* ---- Category handlers ---- */
-	const updateCategories = (newCats: Category[]) => {
-		setCategories(newCats);
-		setDirty(true);
-	};
-
-	const handleAddCategory = () => {
+	const handleAddCategory = (pluginId: PluginId) => {
 		const newCat: Category = { name: 'New Category', chars: [] };
-		const newCats = [...categories, newCat];
-		updateCategories(newCats);
-		setActive(categorySection(newCats.length - 1));
+		updatePlugin(pluginId, (p) => ({ ...p, categories: [...p.categories, newCat] }));
+		const plugin = getPlugin(pluginId);
+		const newIdx = plugin ? plugin.categories.length : 0;
+		setActive(`cat:${pluginId}:${newIdx}`);
 	};
 
-	const handleDeleteCategory = (idx: number) => {
-		setUndoStack((prev) => [...prev, { type: 'category', index: idx, item: categories[idx] }]);
-		const newCats = categories.filter((_, i) => i !== idx);
-		updateCategories(newCats);
-		// If deleted category was active, select adjacent
-		if (selectedCatIdx === idx) {
-			if (newCats.length === 0) {
-				setActive('shortcuts');
-			} else {
-				setActive(categorySection(Math.min(idx, newCats.length - 1)));
+	const handleDeleteCategory = (pluginId: PluginId, idx: number) => {
+		const plugin = getPlugin(pluginId);
+		if (!plugin) return;
+		setUndoStack((prev) => [...prev, { type: 'category', pluginId, index: idx, item: plugin.categories[idx] }]);
+		updatePlugin(pluginId, (p) => ({
+			...p,
+			categories: p.categories.filter((_, i) => i !== idx)
+		}));
+		// Fix active selection
+		if (catSection && catSection.pluginId === pluginId) {
+			const newLen = plugin.categories.length - 1;
+			if (catSection.catIdx === idx) {
+				if (newLen === 0) {
+					setActive(`shortcuts:${pluginId}`);
+				} else {
+					setActive(`cat:${pluginId}:${Math.min(idx, newLen - 1)}`);
+				}
+			} else if (catSection.catIdx > idx) {
+				setActive(`cat:${pluginId}:${catSection.catIdx - 1}`);
 			}
-		} else if (selectedCatIdx > idx) {
-			setActive(categorySection(selectedCatIdx - 1));
 		}
 	};
 
-	const handleReorderCategory = (fromIdx: number, toIdx: number) => {
-		const newCats = [...categories];
-		const [moved] = newCats.splice(fromIdx, 1);
-		newCats.splice(toIdx, 0, moved);
-		updateCategories(newCats);
+	const handleReorderCategory = (pluginId: PluginId, fromIdx: number, toIdx: number) => {
+		updatePlugin(pluginId, (p) => {
+			const cats = [...p.categories];
+			const [moved] = cats.splice(fromIdx, 1);
+			cats.splice(toIdx, 0, moved);
+			return { ...p, categories: cats };
+		});
 		// Follow selection
-		if (selectedCatIdx === fromIdx) {
-			setActive(categorySection(toIdx));
-		} else if (selectedCatIdx > fromIdx && selectedCatIdx <= toIdx) {
-			setActive(categorySection(selectedCatIdx - 1));
-		} else if (selectedCatIdx < fromIdx && selectedCatIdx >= toIdx) {
-			setActive(categorySection(selectedCatIdx + 1));
+		if (catSection && catSection.pluginId === pluginId) {
+			if (catSection.catIdx === fromIdx) {
+				setActive(`cat:${pluginId}:${toIdx}`);
+			} else if (catSection.catIdx > fromIdx && catSection.catIdx <= toIdx) {
+				setActive(`cat:${pluginId}:${catSection.catIdx - 1}`);
+			} else if (catSection.catIdx < fromIdx && catSection.catIdx >= toIdx) {
+				setActive(`cat:${pluginId}:${catSection.catIdx + 1}`);
+			}
 		}
 	};
 
-	const handleUpdateCategory = (idx: number, updatedCat: Category) => {
-		updateCategories(categories.map((c, i) => (i === idx ? updatedCat : c)));
+	const handleUpdateCategory = (pluginId: PluginId, idx: number, updatedCat: Category) => {
+		updatePlugin(pluginId, (p) => ({
+			...p,
+			categories: p.categories.map((c, i) => (i === idx ? updatedCat : c))
+		}));
 	};
 
 	/* ---- Save / Reset ---- */
-
 	const handleReset = async () => {
-		await resetCategories();
-		setCategories(DEFAULT_CATEGORIES);
-		savedCategoriesRef.current = JSON.stringify(DEFAULT_CATEGORIES);
-		setDirty(false);
+		const defaultTemplate = getDefaultPluginTemplate();
+
+		// Reset default plugin to template
+		const newPlugins = plugins.map((p) => (p.builtin ? { ...defaultTemplate } : p));
+		// Remove non-builtin plugins
+		const builtinOnly = newPlugins.filter((p) => p.builtin);
+		for (const p of plugins) {
+			if (!p.builtin) await deletePluginFile(p.id);
+		}
+		setPlugins(builtinOnly);
+
+		const newRegistry = [{ id: 'default', enabled: true, order: 0 }];
+		setRegistry(newRegistry);
+
+		for (const p of builtinOnly) {
+			await savePlugin(p);
+			savedPluginsRef.current.set(p.id, JSON.stringify(p));
+		}
+		await savePluginRegistry(newRegistry);
+
+		const m = mergePlugins(builtinOnly, newRegistry);
+		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		await emitEvent('shortcuts-changed');
 		await emitEvent('categories-changed');
 
-		await resetShortcuts();
-		setShortcuts(DEFAULT_SHORTCUTS);
-		savedShortcutsRef.current = JSON.stringify(DEFAULT_SHORTCUTS);
-		setShortcutsDirty(false);
 		setStopList([]);
 		setStopListDirty(false);
 		await saveStopList([]);
-		await invoke('expansion_update_shortcuts', { shortcuts: DEFAULT_SHORTCUTS });
 		await invoke('expansion_update_stoplist', { entries: [] as StopListEntry[] });
-		await emitEvent('shortcuts-changed');
 
-		setActive('shortcuts');
+		setPluginDirty(new Set());
+		setRegistryDirty(false);
+		setUndoStack([]);
+		setActive('settings');
 	};
 
+	/* ---- Plugin toggle ---- */
+	const handleTogglePlugin = (id: PluginId, enabled: boolean) => {
+		setRegistry((prev) => prev.map((r) => (r.id === id ? { ...r, enabled } : r)));
+		setRegistryDirty(true);
+	};
+
+	/* ---- Plugin management callbacks ---- */
+	const handlePluginsChanged = useCallback(async () => {
+		const reg = await loadPluginRegistry();
+		const allPlugins = await loadAllPlugins(reg);
+		setRegistry(reg);
+		setPlugins(allPlugins);
+		for (const p of allPlugins) {
+			savedPluginsRef.current.set(p.id, JSON.stringify(p));
+		}
+		setPluginDirty(new Set());
+		setRegistryDirty(false);
+	}, []);
+
 	const handleAddFromPresets = (chars: CharEntry[]) => {
-		if (!selectedCat) return;
+		if (!selectedCat || !catSection) return;
 		const existing = new Set(selectedCat.chars.map(([ch]) => ch));
 		const newChars = chars.filter(([ch]) => !existing.has(ch));
 		if (newChars.length === 0) return;
-		handleUpdateCategory(selectedCatIdx, {
+		handleUpdateCategory(catSection.pluginId, selectedCatIdx, {
 			...selectedCat,
 			chars: [...selectedCat.chars, ...newChars]
 		});
 		setShowPresets(false);
+	};
+
+	/* ---- Shortcuts handlers for current plugin ---- */
+	const handleShortcutsChange = (newShortcuts: Shortcut[]) => {
+		if (!shortcutsSection) return;
+		updatePlugin(shortcutsSection.pluginId, (p) => ({ ...p, shortcuts: newShortcuts }));
+	};
+
+	const handleShortcutDelete = (idx: number) => {
+		if (!shortcutsSection || !selectedPlugin) return;
+		setUndoStack((prev) => [
+			...prev,
+			{ type: 'shortcut', pluginId: shortcutsSection.pluginId, index: idx, item: selectedPlugin.shortcuts[idx] }
+		]);
+		updatePlugin(shortcutsSection.pluginId, (p) => ({
+			...p,
+			shortcuts: p.shortcuts.filter((_, i) => i !== idx)
+		}));
 	};
 
 	return (
@@ -354,24 +461,40 @@ const Settings = () => {
 					<HeaderRight>
 						<SearchWrap $disabled={!searchEnabled}>
 							<svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-								<path fillRule="evenodd" clipRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" />
+								<path
+									fillRule="evenodd"
+									clipRule="evenodd"
+									d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+								/>
 							</svg>
 							<SearchInput
 								type="text"
 								placeholder={t('search_placeholder') as string}
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); } }}
+								onKeyDown={(e) => {
+									if (e.key === 'Escape') {
+										setSearchQuery('');
+										e.currentTarget.blur();
+									}
+								}}
 								disabled={!searchEnabled}
 								spellCheck={false}
 								autoComplete="off"
 							/>
-							{searchQuery && searchEnabled && (
-								<SearchClear onClick={() => setSearchQuery('')}>&times;</SearchClear>
-							)}
+							{searchQuery && searchEnabled && <SearchClear onClick={() => setSearchQuery('')}>&times;</SearchClear>}
 						</SearchWrap>
 						<BtnIcon onClick={undo} disabled={undoStack.length === 0} title={t('undo') as string}>
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
 								<path d="M3 7v6h6" />
 								<path d="M3 13a9 9 0 0 1 3-7.7A9 9 0 0 1 21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.4-3.9" />
 							</svg>
@@ -387,7 +510,9 @@ const Settings = () => {
 					<SettingsSidebar
 						active={active}
 						onSelect={setActive}
-						categories={categories}
+						plugins={plugins}
+						registry={registry}
+						onTogglePlugin={handleTogglePlugin}
 						onAddCategory={handleAddCategory}
 						onDeleteCategory={handleDeleteCategory}
 						onReorderCategory={handleReorderCategory}
@@ -398,19 +523,16 @@ const Settings = () => {
 						}}
 					/>
 					<Main>
-						{active === 'shortcuts' && (
+						{active === 'plugins' && (
+							<PluginManager plugins={plugins} registry={registry} onChanged={handlePluginsChanged} />
+						)}
+
+						{shortcutsSection && selectedPlugin && (
 							<ShortcutEditor
-								shortcuts={shortcuts}
+								shortcuts={selectedPlugin.shortcuts}
 								filterQuery={sq || undefined}
-								onChange={(s) => {
-									setShortcuts(s);
-									setShortcutsDirty(true);
-								}}
-								onDelete={(idx) => {
-									setUndoStack((prev) => [...prev, { type: 'shortcut', index: idx, item: shortcuts[idx] }]);
-									setShortcuts(shortcuts.filter((_, i) => i !== idx));
-									setShortcutsDirty(true);
-								}}
+								onChange={handleShortcutsChange}
+								onDelete={handleShortcutDelete}
 							/>
 						)}
 
@@ -428,10 +550,24 @@ const Settings = () => {
 									<SettingsRow>
 										<SettingsRowLabel>{t('trigger_char_label')}</SettingsRowLabel>
 										<TriggerCharPicker
-											shortcuts={shortcuts}
+											shortcuts={merged.shortcuts}
 											onShortcutsChange={(s) => {
-												setShortcuts(s);
-												setShortcutsDirty(true);
+												// Distribute changed shortcuts back to plugins
+												// For trigger char changes, all shortcuts are remapped, update all plugins
+												let idx = 0;
+												setPlugins((prev) =>
+													prev.map((p) => {
+														const enabledEntry = registry.find((r) => r.id === p.id && r.enabled);
+														if (!enabledEntry) return p;
+														const newShortcuts = s.slice(idx, idx + p.shortcuts.length);
+														idx += p.shortcuts.length;
+														return { ...p, shortcuts: newShortcuts };
+													})
+												);
+												// Mark all enabled plugins dirty
+												for (const r of registry) {
+													if (r.enabled) markPluginDirty(r.id);
+												}
 											}}
 										/>
 									</SettingsRow>
@@ -456,19 +592,25 @@ const Settings = () => {
 							</>
 						)}
 
-						{selectedCat && !sq && (
+						{selectedCat && catSection && !sq && (
 							<CategoryEditor
 								category={selectedCat}
-								onChange={(cat) => handleUpdateCategory(selectedCatIdx, cat)}
+								onChange={(cat) => handleUpdateCategory(catSection.pluginId, selectedCatIdx, cat)}
 								onOpenPresets={() => setShowPresets(true)}
 								onAddShortcut={(char, name) => setPromptChar([char, name])}
-								existingExpansions={shortcuts.map((s) => s.expansion)}
+								existingExpansions={merged.shortcuts.map((s) => s.expansion)}
 								onDeleteChar={(charIdx) => {
 									setUndoStack((prev) => [
 										...prev,
-										{ type: 'char', categoryIndex: selectedCatIdx, charIndex: charIdx, item: selectedCat.chars[charIdx] }
+										{
+											type: 'char',
+											pluginId: catSection.pluginId,
+											categoryIndex: selectedCatIdx,
+											charIndex: charIdx,
+											item: selectedCat.chars[charIdx]
+										}
 									]);
-									handleUpdateCategory(selectedCatIdx, {
+									handleUpdateCategory(catSection.pluginId, selectedCatIdx, {
 										...selectedCat,
 										chars: selectedCat.chars.filter((_, i) => i !== charIdx)
 									});
@@ -476,8 +618,9 @@ const Settings = () => {
 							/>
 						)}
 
-						{isCategorySection(active) && sq && (
-							searchCharResults && searchCharResults.length > 0 ? (
+						{catSection &&
+							sq &&
+							(searchCharResults && searchCharResults.length > 0 ? (
 								<>
 									{searchCharResults.map((cat) => (
 										<SearchCatGroup key={cat.name}>
@@ -498,8 +641,7 @@ const Settings = () => {
 								</>
 							) : (
 								<Empty>{t('nothing_found')}</Empty>
-							)
-						)}
+							))}
 
 						{selectedStopEntry && (
 							<AppSettingsPanel
@@ -511,9 +653,11 @@ const Settings = () => {
 							/>
 						)}
 
-						{!selectedCat && !selectedStopEntry && active !== 'shortcuts' && active !== 'settings' && (
-							<Empty>{t('no_category_selected')}</Empty>
-						)}
+						{!selectedCat &&
+							!selectedStopEntry &&
+							!shortcutsSection &&
+							active !== 'settings' &&
+							active !== 'plugins' && <Empty>{t('no_category_selected')}</Empty>}
 					</Main>
 					{dragging && <DropOverlay>{t('stoplist_drop_hint')}</DropOverlay>}
 				</Body>
@@ -543,13 +687,21 @@ const Settings = () => {
 					<TriggerPrompt
 						char={promptChar[0]}
 						name={promptChar[1]}
-						existingTriggers={shortcuts.map((s) => s.trigger)}
+						existingTriggers={merged.shortcuts.map((s) => s.trigger)}
 						onAdd={(keyword) => {
 							import('../store').then(({ loadTriggerChar }) => {
 								loadTriggerChar().then((tc) => {
 									const newShortcut = { trigger: tc + keyword + tc, expansion: promptChar[0] };
-									setShortcuts((prev) => [...prev, newShortcut]);
-									setShortcutsDirty(true);
+									// Add to the plugin that owns the character
+									const ownerPlugin =
+										plugins.find((p) => p.categories.some((cat) => cat.chars.some(([ch]) => ch === promptChar[0]))) ||
+										plugins[0];
+									if (ownerPlugin) {
+										updatePlugin(ownerPlugin.id, (p) => ({
+											...p,
+											shortcuts: [...p.shortcuts, newShortcut]
+										}));
+									}
 									setPromptChar(null);
 								});
 							});

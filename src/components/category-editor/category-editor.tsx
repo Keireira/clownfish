@@ -18,7 +18,14 @@ import { useLanguage } from '../../i18n';
 import { displayChar } from '../../types';
 import type { Props } from './category-editor.d';
 
-const CategoryEditor = ({ category, onChange, onOpenPresets, onDeleteChar, onAddShortcut, existingExpansions }: Props) => {
+const CategoryEditor = ({
+	category,
+	onChange,
+	onOpenPresets,
+	onDeleteChar,
+	onAddShortcut,
+	existingExpansions
+}: Props) => {
 	const expansionSet = new Set(existingExpansions);
 	const t = useLanguage();
 	const [newChar, setNewChar] = useState('');

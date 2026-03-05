@@ -397,9 +397,10 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             let mut state = STATE.lock().unwrap();
             state.buffer.push(ch);
 
-            if state.buffer.len() > state.max_buffer {
-                let excess = state.buffer.len() - state.max_buffer;
-                state.buffer.drain(..excess);
+            if state.buffer.chars().count() > state.max_buffer {
+                let excess = state.buffer.chars().count() - state.max_buffer;
+                let byte_off = state.buffer.char_indices().nth(excess).map_or(state.buffer.len(), |(i, _)| i);
+                state.buffer.drain(..byte_off);
             }
 
             if app_expansion {
@@ -637,9 +638,10 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         let mut state = STATE.lock().unwrap();
         state.buffer.push(ch);
 
-        if state.buffer.len() > state.max_buffer {
-            let excess = state.buffer.len() - state.max_buffer;
-            state.buffer.drain(..excess);
+        if state.buffer.chars().count() > state.max_buffer {
+            let excess = state.buffer.chars().count() - state.max_buffer;
+            let byte_off = state.buffer.char_indices().nth(excess).map_or(state.buffer.len(), |(i, _)| i);
+            state.buffer.drain(..byte_off);
         }
 
         if app_expansion {

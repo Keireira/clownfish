@@ -178,12 +178,16 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 				})}
 			</Grid>
 
-			{filterQuery && shortcuts.length > 0 && !shortcuts.some((s) => {
-				const fq = filterQuery.toLowerCase();
-				return s.trigger.toLowerCase().includes(fq) ||
-					s.expansion.toLowerCase().includes(fq) ||
-					charMatchesQuery(s.expansion, '', filterQuery);
-			}) && <EmptyState>{t('nothing_found')}</EmptyState>}
+			{filterQuery &&
+				shortcuts.length > 0 &&
+				!shortcuts.some((s) => {
+					const fq = filterQuery.toLowerCase();
+					return (
+						s.trigger.toLowerCase().includes(fq) ||
+						s.expansion.toLowerCase().includes(fq) ||
+						charMatchesQuery(s.expansion, '', filterQuery)
+					);
+				}) && <EmptyState>{t('nothing_found')}</EmptyState>}
 		</Root>
 	);
 };

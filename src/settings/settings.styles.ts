@@ -192,7 +192,9 @@ export const SearchInput = styled.input`
 	font-size: 12px;
 	outline: none;
 	width: 160px;
-	transition: border-color 0.2s, opacity 0.2s;
+	transition:
+		border-color 0.2s,
+		opacity 0.2s;
 
 	&::placeholder {
 		color: var(--text-placeholder);

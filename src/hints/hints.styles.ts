@@ -55,7 +55,9 @@ export default styled.div`
 	overflow-x: auto;
 	max-width: 100vw;
 	scrollbar-width: none;
-	&::-webkit-scrollbar { display: none; }
+	&::-webkit-scrollbar {
+		display: none;
+	}
 	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
 	color: var(--text-primary);
 `;

@@ -113,7 +113,19 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_keyword_placeholder: 'keyword',
 		trigger_exists: 'This trigger already exists',
 		shortcut_added: 'Shortcut added',
-		right_click_shortcut: 'Right-click → shortcut'
+		right_click_shortcut: 'Right-click → shortcut',
+
+		// Plugins
+		section_plugins: 'Plugins',
+		plugin_create: 'Create',
+		plugin_import: 'Import',
+		plugin_export: 'Export',
+		plugin_delete: 'Delete',
+		plugin_builtin: 'Built-in plugin',
+		plugin_enabled: 'Enabled',
+		plugin_disabled: 'Disabled',
+		plugin_name_placeholder: 'New plugin name...',
+		plugin_reset: 'Reset'
 	},
 
 	ru: {
@@ -212,7 +224,18 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_keyword_placeholder: 'ключевое слово',
 		trigger_exists: 'Такой триггер уже существует',
 		shortcut_added: 'Автозамена добавлена',
-		right_click_shortcut: 'ПКМ → автозамена'
+		right_click_shortcut: 'ПКМ → автозамена',
+
+		section_plugins: 'Плагины',
+		plugin_create: 'Создать',
+		plugin_import: 'Импорт',
+		plugin_export: 'Экспорт',
+		plugin_delete: 'Удалить',
+		plugin_builtin: 'Встроенный плагин',
+		plugin_enabled: 'Включён',
+		plugin_disabled: 'Отключён',
+		plugin_name_placeholder: 'Название плагина...',
+		plugin_reset: 'Сбросить'
 	},
 
 	es: {
@@ -310,7 +333,18 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_keyword_placeholder: 'palabra clave',
 		trigger_exists: 'Este atajo ya existe',
 		shortcut_added: 'Atajo añadido',
-		right_click_shortcut: 'Clic derecho → atajo'
+		right_click_shortcut: 'Clic derecho → atajo',
+
+		section_plugins: 'Plugins',
+		plugin_create: 'Crear',
+		plugin_import: 'Importar',
+		plugin_export: 'Exportar',
+		plugin_delete: 'Eliminar',
+		plugin_builtin: 'Plugin integrado',
+		plugin_enabled: 'Activado',
+		plugin_disabled: 'Desactivado',
+		plugin_name_placeholder: 'Nombre del plugin...',
+		plugin_reset: 'Restablecer'
 	},
 
 	ja: {
@@ -408,6 +442,17 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_keyword_placeholder: 'キーワード',
 		trigger_exists: 'このトリガーは既に存在します',
 		shortcut_added: 'ショートカットを追加しました',
-		right_click_shortcut: '右クリック → ショートカット'
+		right_click_shortcut: '右クリック → ショートカット',
+
+		section_plugins: 'プラグイン',
+		plugin_create: '作成',
+		plugin_import: 'インポート',
+		plugin_export: 'エクスポート',
+		plugin_delete: '削除',
+		plugin_builtin: 'ビルトインプラグイン',
+		plugin_enabled: '有効',
+		plugin_disabled: '無効',
+		plugin_name_placeholder: 'プラグイン名...',
+		plugin_reset: 'リセット'
 	}
 };

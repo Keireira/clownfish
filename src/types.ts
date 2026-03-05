@@ -14,6 +14,27 @@ export interface Shortcut {
 	expansion: string;
 }
 
+// ---------------------------------------------------------------------------
+// Plugin system
+// ---------------------------------------------------------------------------
+
+export type PluginId = string;
+
+export interface Plugin {
+	id: PluginId;
+	name: string;
+	version: string;
+	builtin: boolean;
+	categories: Category[];
+	shortcuts: Shortcut[];
+}
+
+export interface PluginRegistryEntry {
+	id: PluginId;
+	enabled: boolean;
+	order: number;
+}
+
 export type CompassDirection = 'auto' | 'NW' | 'N' | 'NE' | 'W' | 'E' | 'SW' | 'S' | 'SE';
 
 export interface HintsOffset {
