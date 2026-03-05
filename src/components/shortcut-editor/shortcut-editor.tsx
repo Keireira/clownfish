@@ -5,14 +5,33 @@ import Root, {
 	CardChar,
 	CardTrigger,
 	CardDelete,
+	CardBadge,
 	EditRow,
+	EditTopRow,
 	EditTriggerInput,
-	EditExpansionInput,
+	EditExpansionTextarea,
 	AddRow,
 	TriggerInput,
-	ExpansionInput,
+	ExpansionTextarea,
 	SmallBtn,
-	EmptyState
+	EmptyState,
+	VarsSection,
+	VarsSectionHeader,
+	VarsSectionLabel,
+	VarRow,
+	VarKeyInput,
+	VarArrow,
+	VarValueInput,
+	VarAddBtn,
+	VarDeleteBtn,
+	VarHint,
+	HelpWrap,
+	HelpBtn,
+	HelpTooltip,
+	HelpCode,
+	HelpTitle,
+	HelpRow,
+	HelpDivider
 } from './shortcut-editor.styles';
 import { useLanguage } from '../../i18n';
 import { loadTriggerChar } from '../../store';
@@ -26,6 +45,32 @@ type Props = {
 	filterQuery?: string;
 };
 
+/** Built-in variable names resolved by the Rust engine. */
+const BUILTIN_VARS = new Set(['date', 'time']);
+const BUILTIN_RE = /^random:\d+$/;
+
+function isBuiltinVar(name: string): boolean {
+	return BUILTIN_VARS.has(name) || BUILTIN_RE.test(name);
+}
+
+/** Extract user-defined {{...}} variable names from expansion text. */
+function extractUserVarNames(expansion: string): string[] {
+	const re = /\{\{(\w[\w:]*)\}\}/g;
+	const names: string[] = [];
+	let m: RegExpExecArray | null;
+	while ((m = re.exec(expansion)) !== null) {
+		if (!isBuiltinVar(m[1]) && !names.includes(m[1])) {
+			names.push(m[1]);
+		}
+	}
+	return names;
+}
+
+/** Check if expansion text contains any {{...}} patterns. */
+function hasTemplates(expansion: string): boolean {
+	return /\{\{.+?\}\}/.test(expansion);
+}
+
 const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) => {
 	const t = useLanguage();
 	const [newTrigger, setNewTrigger] = useState('');
@@ -33,6 +78,7 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 	const [editIdx, setEditIdx] = useState<number | null>(null);
 	const [editTrigger, setEditTrigger] = useState('');
 	const [editExpansion, setEditExpansion] = useState('');
+	const [editVars, setEditVars] = useState<[string, string][]>([]);
 	const [tc, setTc] = useState(':');
 	const editRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +86,6 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 		loadTriggerChar().then(setTc);
 	}, []);
 
-	/** Strip trigger chars from both ends of a trigger string. */
 	const stripTc = (s: string) => {
 		let r = s;
 		if (r.startsWith(tc)) r = r.slice(1);
@@ -71,13 +116,15 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') handleAdd();
+		if (e.key === 'Enter' && !e.shiftKey) handleAdd();
 	};
 
 	const startEdit = (idx: number) => {
 		setEditIdx(idx);
 		setEditTrigger(stripTc(shortcuts[idx].trigger));
 		setEditExpansion(shortcuts[idx].expansion);
+		const vars = shortcuts[idx].variables ?? {};
+		setEditVars(Object.entries(vars));
 	};
 
 	const commitEdit = () => {
@@ -90,22 +137,31 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 		}
 		const trigger = tc + keyword + tc;
 
-		// Check for duplicate trigger (except self)
 		if (shortcuts.some((s, i) => i !== editIdx && s.trigger === trigger)) {
 			setEditIdx(null);
 			return;
 		}
 
-		onChange(shortcuts.map((s, i) => (i === editIdx ? { trigger, expansion } : s)));
+		const variables: Record<string, string> = {};
+		for (const [k, v] of editVars) {
+			const key = k.trim();
+			if (key) variables[key] = v;
+		}
+
+		const hasVars = Object.keys(variables).length > 0;
+		onChange(
+			shortcuts.map((s, i) =>
+				i === editIdx ? { trigger, expansion, ...(hasVars ? { variables } : {}) } : s
+			)
+		);
 		setEditIdx(null);
 	};
 
 	const handleEditKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') commitEdit();
+		if (e.key === 'Enter' && !e.shiftKey) commitEdit();
 		if (e.key === 'Escape') setEditIdx(null);
 	};
 
-	// Close edit on outside click
 	useEffect(() => {
 		if (editIdx === null) return;
 		const handler = (e: MouseEvent) => {
@@ -117,6 +173,49 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 		return () => document.removeEventListener('mousedown', handler);
 	});
 
+	/** Auto-detect {{...}} and add missing variable rows. */
+	useEffect(() => {
+		if (editIdx === null) return;
+		const needed = extractUserVarNames(editExpansion);
+		const existing = new Set(editVars.map(([k]) => k));
+		const missing = needed.filter((n) => !existing.has(n));
+		if (missing.length > 0) {
+			setEditVars((prev) => [...prev, ...missing.map((n): [string, string] => [n, ''])]);
+		}
+	}, [editExpansion]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const updateVar = (i: number, field: 0 | 1, value: string) => {
+		setEditVars((prev) =>
+			prev.map((row, j) => {
+				if (j !== i) return row;
+				const copy: [string, string] = [row[0], row[1]];
+				copy[field] = value;
+				return copy;
+			})
+		);
+	};
+
+	const removeVar = (i: number) => {
+		setEditVars((prev) => prev.filter((_, j) => j !== i));
+	};
+
+	const addVar = () => {
+		setEditVars((prev) => [...prev, ['', '']]);
+	};
+
+	/** Display-friendly expansion text for the card. */
+	const displayExpansion = (expansion: string) => {
+		const first = expansion.split('\n')[0];
+		return first.length > 8 ? first.slice(0, 8) + '\u2026' : first;
+	};
+
+	/** Whether this shortcut is a template (has variables or {{...}} patterns). */
+	const isTemplate = (s: Shortcut) =>
+		(s.variables && Object.keys(s.variables).length > 0) || hasTemplates(s.expansion);
+
+	/** Whether to show the full variables panel vs just the add button. */
+	const hasVarsContent = editVars.length > 0 || hasTemplates(editExpansion);
+
 	return (
 		<Root>
 			<AddRow>
@@ -126,13 +225,26 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 					onKeyDown={handleKeyDown}
 					placeholder={t('shortcut_trigger_placeholder') as string}
 				/>
-				<ExpansionInput
+				<ExpansionTextarea
 					value={newExpansion}
 					onChange={(e) => setNewExpansion(e.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder={t('shortcut_expansion_placeholder') as string}
+					rows={1}
 				/>
 				<SmallBtn onClick={handleAdd}>{t('add')}</SmallBtn>
+				<HelpWrap>
+					<HelpBtn>?</HelpBtn>
+					<HelpTooltip>
+						<HelpTitle>{t('var_help_title')}</HelpTitle>
+						<div>{t('var_help_body')}</div>
+						<HelpDivider />
+						<HelpRow><HelpCode>{'{{date}}'}</HelpCode> <span>{t('var_help_date')}</span></HelpRow>
+						<HelpRow><HelpCode>{'{{time}}'}</HelpCode> <span>{t('var_help_time')}</span></HelpRow>
+						<HelpRow><HelpCode>{'{{random:N}}'}</HelpCode> <span>{t('var_help_random')}</span></HelpRow>
+						<HelpRow><HelpCode>{'{{name}}'}</HelpCode> <span>{t('var_help_custom')}</span></HelpRow>
+					</HelpTooltip>
+				</HelpWrap>
 			</AddRow>
 
 			{shortcuts.length === 0 && !filterQuery && <EmptyState>{t('no_shortcuts')}</EmptyState>}
@@ -149,21 +261,55 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 					}
 					return editIdx === idx ? (
 						<EditRow key={s.trigger} ref={editRef}>
-							<EditTriggerInput
-								value={editTrigger}
-								onChange={(e) => setEditTrigger(e.target.value)}
-								onKeyDown={handleEditKeyDown}
-								autoFocus
-							/>
-							<EditExpansionInput
-								value={editExpansion}
-								onChange={(e) => setEditExpansion(e.target.value)}
-								onKeyDown={handleEditKeyDown}
-							/>
+							<EditTopRow>
+								<EditTriggerInput
+									value={editTrigger}
+									onChange={(e) => setEditTrigger(e.target.value)}
+									onKeyDown={handleEditKeyDown}
+									autoFocus
+								/>
+								<EditExpansionTextarea
+									value={editExpansion}
+									onChange={(e) => setEditExpansion(e.target.value)}
+									onKeyDown={handleEditKeyDown}
+									rows={1}
+								/>
+							</EditTopRow>
+
+							{hasVarsContent ? (
+								<VarsSection>
+									<VarsSectionHeader>
+										<VarsSectionLabel>{t('var_section')}</VarsSectionLabel>
+										<VarAddBtn onClick={addVar}>{t('var_add')}</VarAddBtn>
+									</VarsSectionHeader>
+									{editVars.map(([k, v], i) => (
+										<VarRow key={i}>
+											<VarKeyInput
+												value={k}
+												onChange={(e) => updateVar(i, 0, e.target.value)}
+												placeholder={t('var_key_placeholder') as string}
+											/>
+											<VarArrow>&rarr;</VarArrow>
+											<VarValueInput
+												value={v}
+												onChange={(e) => updateVar(i, 1, e.target.value)}
+												placeholder={t('var_value_placeholder') as string}
+											/>
+											<VarDeleteBtn onClick={() => removeVar(i)}>
+												&times;
+											</VarDeleteBtn>
+										</VarRow>
+									))}
+									<VarHint>{t('var_builtin_hint')}</VarHint>
+								</VarsSection>
+							) : (
+								<VarAddBtn onClick={addVar}>{t('var_add')}</VarAddBtn>
+							)}
 						</EditRow>
 					) : (
 						<Card key={s.trigger} onClick={() => startEdit(idx)}>
-							<CardChar>{s.expansion}</CardChar>
+							{isTemplate(s) && <CardBadge />}
+							<CardChar>{displayExpansion(s.expansion)}</CardChar>
 							<CardTrigger>{s.trigger}</CardTrigger>
 							<CardDelete
 								onClick={(e) => {

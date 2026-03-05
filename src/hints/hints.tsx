@@ -46,8 +46,11 @@ const Hints = () => {
 		};
 	}, []);
 
-	const handleApply = (expansion: string) => {
-		invoke('expansion_apply_hint', { expansion }).catch(() => {});
+	const handleApply = (hint: Shortcut) => {
+		invoke('expansion_apply_hint', {
+			expansion: hint.expansion,
+			variables: hint.variables ?? null
+		}).catch(() => {});
 	};
 
 	if (!hints.length) {
@@ -60,7 +63,7 @@ const Hints = () => {
 
 			<Root>
 				{hints.map((h, i) => (
-					<HintCell key={h.trigger} hint={h} selected={i === selected} onApply={() => handleApply(h.expansion)} />
+					<HintCell key={h.trigger} hint={h} selected={i === selected} onApply={() => handleApply(h)} />
 				))}
 			</Root>
 		</>

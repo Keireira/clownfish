@@ -12,6 +12,7 @@ export type LanguageChoice = 'auto' | 'en' | 'ru' | 'es' | 'ja';
 export interface Shortcut {
 	trigger: string;
 	expansion: string;
+	variables?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------

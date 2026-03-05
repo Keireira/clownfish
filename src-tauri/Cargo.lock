@@ -355,6 +355,7 @@ name = "clownfish"
 version = "1.2.0"
 dependencies = [
  "arboard",
+ "chrono",
  "objc2",
  "objc2-foundation",
  "objc2-service-management",

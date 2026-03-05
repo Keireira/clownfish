@@ -23,6 +23,8 @@ use tauri::{AppHandle, Emitter, Manager};
 pub struct Shortcut {
     pub trigger: String,
     pub expansion: String,
+    #[serde(default)]
+    pub variables: HashMap<String, String>,
 }
 
 /// Per-app pixel offsets for hints positioning.
@@ -74,6 +76,13 @@ struct AppConfig {
     offset: HintsOffset,
 }
 
+/// Data stored per-shortcut in the internal lookup map.
+#[derive(Clone, Debug)]
+struct ShortcutData {
+    expansion: String,
+    variables: HashMap<String, String>,
+}
+
 /// Internal state shared between the listener thread and Tauri commands.
 struct ExpanderState {
     /// Ring buffer of recently typed characters.
@@ -81,7 +90,7 @@ struct ExpanderState {
     /// Maximum buffer capacity.
     max_buffer: usize,
     /// Active shortcuts keyed by trigger for fast lookup.
-    shortcuts: HashMap<String, String>,
+    shortcuts: HashMap<String, ShortcutData>,
 }
 
 // ---------------------------------------------------------------------------
@@ -166,7 +175,13 @@ pub fn update_shortcuts(shortcuts: Vec<Shortcut>) {
     let mut state = STATE.lock().unwrap();
     state.shortcuts.clear();
     for s in shortcuts {
-        state.shortcuts.insert(s.trigger, s.expansion);
+        state.shortcuts.insert(
+            s.trigger,
+            ShortcutData {
+                expansion: s.expansion,
+                variables: s.variables,
+            },
+        );
     }
 }
 
@@ -260,7 +275,7 @@ pub fn expansion_resolve_exe(path: String) -> Option<String> {
 
 /// Applies a hint: deletes the partial prefix from the buffer and inserts the expansion.
 #[tauri::command]
-pub fn expansion_apply_hint(expansion: String) {
+pub fn expansion_apply_hint(expansion: String, variables: Option<HashMap<String, String>>) {
     let mut state = STATE.lock().unwrap();
     // Find the partial prefix length (e.g. `:xxx` without closing `:`).
     let tc = trigger_char();
@@ -278,9 +293,11 @@ pub fn expansion_apply_hint(expansion: String) {
 
     clear_hints();
 
+    let vars = variables.unwrap_or_default();
+    let resolved = resolve_expansion(&expansion, &vars);
     SUPPRESSING.store(true, Ordering::SeqCst);
     std::thread::spawn(move || {
-        perform_replacement(prefix_len, &expansion);
+        perform_replacement(prefix_len, &resolved);
         SUPPRESSING.store(false, Ordering::SeqCst);
     });
 }
@@ -341,7 +358,7 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                     if sel >= 0 {
                         let hints = ACTIVE_HINTS.lock().unwrap();
                         if let Some(hint) = hints.get(sel as usize) {
-                            let expansion = hint.expansion.clone();
+                            let resolved = resolve_expansion(&hint.expansion, &hint.variables);
                             drop(hints);
                             let tc = trigger_char();
                             let mut state = STATE.lock().unwrap();
@@ -356,7 +373,7 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                             if prefix_len > 0 {
                                 SUPPRESSING.store(true, Ordering::SeqCst);
                                 std::thread::spawn(move || {
-                                    perform_replacement(prefix_len, &expansion);
+                                    perform_replacement(prefix_len, &resolved);
                                     SUPPRESSING.store(false, Ordering::SeqCst);
                                 });
                             }
@@ -404,15 +421,15 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             }
 
             if app_expansion {
-                if let Some((trigger_len, expansion)) = find_match(&state) {
-                    let expansion = expansion.clone();
+                if let Some((trigger_len, data)) = find_match(&state) {
+                    let resolved = resolve_expansion(&data.expansion, &data.variables);
                     state.buffer.clear();
                     drop(state);
                     clear_hints();
 
                     SUPPRESSING.store(true, Ordering::SeqCst);
                     std::thread::spawn(move || {
-                        perform_replacement(trigger_len, &expansion);
+                        perform_replacement(trigger_len, &resolved);
                         SUPPRESSING.store(false, Ordering::SeqCst);
                     });
                     return Some(event);
@@ -467,14 +484,82 @@ fn is_buffer_reset_key(key: Key) -> bool {
     )
 }
 
+/// Resolves `{{...}}` template variables in an expansion string.
+///
+/// - `{{name}}` → looked up in `variables` map
+/// - `{{date}}` → current date (YYYY-MM-DD)
+/// - `{{time}}` → current time (HH:MM)
+/// - `{{random:N}}` → N random alphanumeric characters
+/// - Unknown `{{...}}` with no matching variable → left as-is
+fn resolve_expansion(expansion: &str, variables: &HashMap<String, String>) -> String {
+    // Fast path: no templates at all.
+    if !expansion.contains("{{") {
+        return expansion.to_string();
+    }
+
+    let mut result = String::with_capacity(expansion.len());
+    let mut rest = expansion;
+
+    while let Some(start) = rest.find("{{") {
+        result.push_str(&rest[..start]);
+        let after_open = &rest[start + 2..];
+        if let Some(end) = after_open.find("}}") {
+            let key = &after_open[..end];
+            let replacement = resolve_variable(key, variables);
+            result.push_str(&replacement);
+            rest = &after_open[end + 2..];
+        } else {
+            // No closing `}}` — push the rest as-is.
+            result.push_str(&rest[start..]);
+            rest = "";
+            break;
+        }
+    }
+    result.push_str(rest);
+    result
+}
+
+/// Resolves a single template variable name to its value.
+fn resolve_variable(key: &str, variables: &HashMap<String, String>) -> String {
+    match key {
+        "date" => chrono::Local::now().format("%Y-%m-%d").to_string(),
+        "time" => chrono::Local::now().format("%H:%M").to_string(),
+        _ if key.starts_with("random:") => {
+            let n: usize = key[7..].parse().unwrap_or(6);
+            let n = n.min(64); // cap at 64 chars
+            use std::collections::hash_map::RandomState;
+            use std::hash::{BuildHasher, Hasher};
+            let chars: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
+            let rs = RandomState::new();
+            let mut out = String::with_capacity(n);
+            for i in 0..n {
+                let mut hasher = rs.build_hasher();
+                hasher.write_usize(i);
+                let idx = (hasher.finish() as usize) % chars.len();
+                out.push(chars[idx] as char);
+            }
+            out
+        }
+        _ => {
+            // User-defined variable lookup.
+            if let Some(val) = variables.get(key) {
+                val.clone()
+            } else {
+                // Unknown — leave as-is.
+                format!("{{{{{}}}}}", key)
+            }
+        }
+    }
+}
+
 /// Returns `(trigger_char_count, expansion)` if the buffer ends with a trigger.
-fn find_match(state: &ExpanderState) -> Option<(usize, &String)> {
+fn find_match(state: &ExpanderState) -> Option<(usize, &ShortcutData)> {
     if state.buffer.len() < 3 {
         return None;
     }
-    for (trigger, expansion) in &state.shortcuts {
+    for (trigger, data) in &state.shortcuts {
         if state.buffer.ends_with(trigger) {
-            return Some((trigger.chars().count(), expansion));
+            return Some((trigger.chars().count(), data));
         }
     }
     None
@@ -571,7 +656,7 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                 if sel >= 0 {
                     let hints = ACTIVE_HINTS.lock().unwrap();
                     if let Some(hint) = hints.get(sel as usize) {
-                        let expansion = hint.expansion.clone();
+                        let resolved = resolve_expansion(&hint.expansion, &hint.variables);
                         drop(hints);
                         let tc = trigger_char();
                         let mut state = STATE.lock().unwrap();
@@ -586,7 +671,7 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                         if prefix_len > 0 {
                             SUPPRESSING.store(true, Ordering::SeqCst);
                             std::thread::spawn(move || {
-                                perform_replacement(prefix_len, &expansion);
+                                perform_replacement(prefix_len, &resolved);
                                 SUPPRESSING.store(false, Ordering::SeqCst);
                             });
                         }
@@ -645,14 +730,14 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         }
 
         if app_expansion {
-            if let Some((trigger_len, expansion)) = find_match(&state) {
-                let expansion = expansion.clone();
+            if let Some((trigger_len, data)) = find_match(&state) {
+                let resolved = resolve_expansion(&data.expansion, &data.variables);
                 state.buffer.clear();
                 drop(state);
                 clear_hints();
                 SUPPRESSING.store(true, Ordering::SeqCst);
                 std::thread::spawn(move || {
-                    perform_replacement(trigger_len, &expansion);
+                    perform_replacement(trigger_len, &resolved);
                     SUPPRESSING.store(false, Ordering::SeqCst);
                 });
                 return false; // don't consume the triggering character
@@ -799,6 +884,7 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                             hints.push(Shortcut {
                                 trigger: format!("\\u{}", code_str),
                                 expansion: ch.to_string(),
+                                variables: HashMap::new(),
                             });
                         }
                     }
@@ -813,6 +899,7 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                         hints.push(Shortcut {
                             trigger: format!("\\u{}", rest.to_ascii_uppercase()),
                             expansion: ch.to_string(),
+                            variables: HashMap::new(),
                         });
                     }
                 }
@@ -826,6 +913,7 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                             hints.push(Shortcut {
                                 trigger: format!("\\u{}", code_str.to_ascii_uppercase()),
                                 expansion: ch.to_string(),
+                                variables: HashMap::new(),
                             });
                         }
                     }
@@ -840,6 +928,7 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                         hints.push(Shortcut {
                             trigger: format!("\\u{}", rest.to_ascii_uppercase()),
                             expansion: ch.to_string(),
+                            variables: HashMap::new(),
                         });
                     }
                 }
@@ -874,9 +963,10 @@ fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
         .iter()
         .filter(|(trigger, _)| trigger.starts_with(prefix))
         .take(6)
-        .map(|(trigger, expansion)| Shortcut {
+        .map(|(trigger, data)| Shortcut {
             trigger: trigger.clone(),
-            expansion: expansion.clone(),
+            expansion: data.expansion.clone(),
+            variables: data.variables.clone(),
         })
         .collect();
     hints.sort_by(|a, b| a.trigger.len().cmp(&b.trigger.len()));
