@@ -148,7 +148,18 @@ export const translations: Record<string, TranslationRecord> = {
 		// Export / Import
 		data_label: 'Data',
 		export_settings: 'Export',
-		import_settings: 'Import'
+		import_settings: 'Import',
+
+		// Stats
+		section_stats: 'Stats',
+		stats_top_chars: 'Top Characters',
+		stats_top_expansions: 'Top Expansions',
+		stats_total_copies: 'Total copies',
+		stats_total_expansions: 'Total expansions',
+		stats_active_days: 'Active days',
+		stats_reset: 'Reset Stats',
+		stats_no_data: 'No usage data yet',
+		stats_uses: 'uses'
 	},
 
 	ru: {
@@ -279,7 +290,17 @@ export const translations: Record<string, TranslationRecord> = {
 
 		data_label: 'Данные',
 		export_settings: 'Экспорт',
-		import_settings: 'Импорт'
+		import_settings: 'Импорт',
+
+		section_stats: 'Статистика',
+		stats_top_chars: 'Популярные символы',
+		stats_top_expansions: 'Популярные замены',
+		stats_total_copies: 'Всего копирований',
+		stats_total_expansions: 'Всего замен',
+		stats_active_days: 'Активных дней',
+		stats_reset: 'Сбросить',
+		stats_no_data: 'Нет данных',
+		stats_uses: 'исп.'
 	},
 
 	es: {
@@ -409,7 +430,17 @@ export const translations: Record<string, TranslationRecord> = {
 
 		data_label: 'Datos',
 		export_settings: 'Exportar',
-		import_settings: 'Importar'
+		import_settings: 'Importar',
+
+		section_stats: 'Estadísticas',
+		stats_top_chars: 'Caracteres populares',
+		stats_top_expansions: 'Expansiones populares',
+		stats_total_copies: 'Total de copias',
+		stats_total_expansions: 'Total de expansiones',
+		stats_active_days: 'Días activos',
+		stats_reset: 'Restablecer',
+		stats_no_data: 'Sin datos aún',
+		stats_uses: 'usos'
 	},
 
 	ja: {
@@ -539,6 +570,16 @@ export const translations: Record<string, TranslationRecord> = {
 
 		data_label: 'データ',
 		export_settings: 'エクスポート',
-		import_settings: 'インポート'
+		import_settings: 'インポート',
+
+		section_stats: '統計',
+		stats_top_chars: 'よく使う文字',
+		stats_top_expansions: 'よく使う展開',
+		stats_total_copies: 'コピー合計',
+		stats_total_expansions: '展開合計',
+		stats_active_days: 'アクティブ日数',
+		stats_reset: 'リセット',
+		stats_no_data: 'データなし',
+		stats_uses: '回'
 	}
 };

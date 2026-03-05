@@ -316,6 +316,9 @@ const SettingsSidebar = ({
 				<SectionItem $active={active === 'settings'} onClick={() => onSelect('settings')}>
 					<SectionLabel>{t('section_settings')}</SectionLabel>
 				</SectionItem>
+				<SectionItem $active={active === 'stats'} onClick={() => onSelect('stats')}>
+					<SectionLabel>{t('section_stats')}</SectionLabel>
+				</SectionItem>
 			</SectionItems>
 
 			{sortedPlugins.map((plugin) => {

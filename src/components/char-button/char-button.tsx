@@ -15,6 +15,7 @@ const CharButton = ({ char, name, onCopy, onAddShortcut }: Props) => {
 	const handleClick = async () => {
 		try {
 			await writeText(char);
+			import('../../stats-store').then(({ recordCharCopy }) => recordCharCopy(char));
 			setCopied(true);
 			onCopy(t('copied_char', char));
 			if (timer.current) clearTimeout(timer.current);

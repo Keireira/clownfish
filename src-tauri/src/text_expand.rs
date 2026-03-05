@@ -293,6 +293,11 @@ pub fn expansion_apply_hint(expansion: String, variables: Option<HashMap<String,
 
     clear_hints();
 
+    record_expansion_stat(expansion.clone());
+    if let Some(app) = APP_HANDLE.get() {
+        let _ = app.emit("expansion-used", &expansion);
+    }
+
     let vars = variables.unwrap_or_default();
     let resolved = resolve_expansion(&expansion, &vars);
     SUPPRESSING.store(true, Ordering::SeqCst);
@@ -422,10 +427,16 @@ fn on_rdev_event(event: Event) -> Option<Event> {
 
             if app_expansion {
                 if let Some((trigger_len, data)) = find_match(&state) {
+                    let expansion_str = data.expansion.clone();
                     let resolved = resolve_expansion(&data.expansion, &data.variables);
                     state.buffer.clear();
                     drop(state);
                     clear_hints();
+
+                    record_expansion_stat(expansion_str.clone());
+                    if let Some(app) = APP_HANDLE.get() {
+                        let _ = app.emit("expansion-used", &expansion_str);
+                    }
 
                     SUPPRESSING.store(true, Ordering::SeqCst);
                     std::thread::spawn(move || {
@@ -656,6 +667,7 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                 if sel >= 0 {
                     let hints = ACTIVE_HINTS.lock().unwrap();
                     if let Some(hint) = hints.get(sel as usize) {
+                        let expansion_str = hint.expansion.clone();
                         let resolved = resolve_expansion(&hint.expansion, &hint.variables);
                         drop(hints);
                         let tc = trigger_char();
@@ -669,6 +681,10 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                         drop(state);
                         clear_hints();
                         if prefix_len > 0 {
+                            record_expansion_stat(expansion_str.clone());
+                            if let Some(app) = APP_HANDLE.get() {
+                                let _ = app.emit("expansion-used", &expansion_str);
+                            }
                             SUPPRESSING.store(true, Ordering::SeqCst);
                             std::thread::spawn(move || {
                                 perform_replacement(prefix_len, &resolved);
@@ -731,10 +747,17 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
 
         if app_expansion {
             if let Some((trigger_len, data)) = find_match(&state) {
+                let expansion_str = data.expansion.clone();
                 let resolved = resolve_expansion(&data.expansion, &data.variables);
                 state.buffer.clear();
                 drop(state);
                 clear_hints();
+
+                record_expansion_stat(expansion_str.clone());
+                if let Some(app) = APP_HANDLE.get() {
+                    let _ = app.emit("expansion-used", &expansion_str);
+                }
+
                 SUPPRESSING.store(true, Ordering::SeqCst);
                 std::thread::spawn(move || {
                     perform_replacement(trigger_len, &resolved);
@@ -982,6 +1005,102 @@ fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
 }
 
 /// Payload emitted to the hints frontend.
+// ---------------------------------------------------------------------------
+// Usage statistics — plain JSON file, no store plugin dependency.
+// ---------------------------------------------------------------------------
+
+#[derive(Default, Clone, Serialize, Deserialize)]
+pub struct StatsData {
+    #[serde(default)]
+    pub char_usage: HashMap<String, u64>,
+    #[serde(default)]
+    pub expansion_usage: HashMap<String, u64>,
+    #[serde(default)]
+    pub daily: HashMap<String, DayStats>,
+}
+
+#[derive(Default, Clone, Serialize, Deserialize)]
+pub struct DayStats {
+    #[serde(default)]
+    pub copies: u64,
+    #[serde(default)]
+    pub expansions: u64,
+}
+
+static STATS_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+fn stats_path() -> Option<std::path::PathBuf> {
+    APP_HANDLE.get().and_then(|app| {
+        app.path().app_data_dir().ok().map(|d| d.join("stats.json"))
+    })
+}
+
+fn read_stats(path: &std::path::Path) -> StatsData {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default()
+}
+
+fn write_stats(path: &std::path::Path, stats: &StatsData) {
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if let Ok(json) = serde_json::to_string(stats) {
+        let _ = std::fs::write(path, json);
+    }
+}
+
+fn today_key() -> String {
+    chrono::Local::now().format("%Y-%m-%d").to_string()
+}
+
+/// Records an expansion stat (spawns a background thread).
+fn record_expansion_stat(expansion: String) {
+    std::thread::spawn(move || {
+        let Some(path) = stats_path() else { return };
+        let _guard = STATS_LOCK.lock().unwrap();
+        let mut stats = read_stats(&path);
+        *stats.expansion_usage.entry(expansion).or_default() += 1;
+        stats.daily.entry(today_key()).or_default().expansions += 1;
+        write_stats(&path, &stats);
+    });
+}
+
+#[tauri::command]
+pub fn stats_record_char(app: AppHandle, ch: String) {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return;
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    let mut stats = read_stats(&path);
+    *stats.char_usage.entry(ch).or_default() += 1;
+    stats.daily.entry(today_key()).or_default().copies += 1;
+    write_stats(&path, &stats);
+}
+
+#[tauri::command]
+pub fn stats_load(app: AppHandle) -> StatsData {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return StatsData::default();
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    read_stats(&path)
+}
+
+#[tauri::command]
+pub fn stats_reset(app: AppHandle) {
+    let Ok(path) = app.path().app_data_dir().map(|d| d.join("stats.json")) else {
+        return;
+    };
+    let _guard = STATS_LOCK.lock().unwrap();
+    let _ = std::fs::remove_file(path);
+}
+
+// ---------------------------------------------------------------------------
+// Hints
+// ---------------------------------------------------------------------------
+
 #[derive(Clone, Serialize)]
 struct HintsPayload {
     hints: Vec<Shortcut>,

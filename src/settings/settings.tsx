@@ -54,6 +54,7 @@ import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
 import PluginManager from '../components/plugin-manager';
+import StatsPanel from '../components/stats-panel';
 import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
 import { charMatchesQuery } from '../utils/char-match';
@@ -574,6 +575,8 @@ const Settings = () => {
 							<PluginManager plugins={plugins} registry={registry} onChanged={handlePluginsChanged} />
 						)}
 
+						{active === 'stats' && <StatsPanel />}
+
 						{shortcutsSection && selectedPlugin && (
 							<ShortcutEditor
 								shortcuts={selectedPlugin.shortcuts}
@@ -717,7 +720,8 @@ const Settings = () => {
 							!selectedStopEntry &&
 							!shortcutsSection &&
 							active !== 'settings' &&
-							active !== 'plugins' && <Empty>{t('no_category_selected')}</Empty>}
+							active !== 'plugins' &&
+							active !== 'stats' && <Empty>{t('no_category_selected')}</Empty>}
 					</Main>
 					{dragging && <DropOverlay>{t('stoplist_drop_hint')}</DropOverlay>}
 				</Body>
