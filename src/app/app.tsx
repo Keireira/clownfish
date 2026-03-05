@@ -463,7 +463,7 @@ export default function App() {
 					}
 				/>
 				<Toast message={toast} />
-				<CharPreview />
+				<CharPreview onCopy={showToast} />
 				{promptChar && (
 					<TriggerPrompt
 						char={promptChar[0]}

@@ -12,13 +12,6 @@ export const Name = styled.span`
 	white-space: nowrap;
 `;
 
-export const Hint = styled.span`
-	font-size: 9px;
-	color: var(--text-faint);
-	white-space: nowrap;
-	opacity: 0.7;
-`;
-
 export default styled.div<{ $x: number; $y: number }>`
 	position: fixed;
 	left: ${(p) => p.$x}px;

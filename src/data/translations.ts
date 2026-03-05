@@ -135,6 +135,11 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_exists: 'This trigger already exists',
 		shortcut_added: 'Shortcut added',
 		right_click_shortcut: 'Right-click → shortcut',
+		inspector_copied: (v: unknown) => `Copied ${v}`,
+		help_title: 'Tips',
+		help_click: 'copy character',
+		help_rclick: 'add shortcut',
+		help_alt: 'character details',
 
 		// Plugins
 		section_plugins: 'Plugins',
@@ -291,6 +296,11 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_exists: 'Такой триггер уже существует',
 		shortcut_added: 'Автозамена добавлена',
 		right_click_shortcut: 'ПКМ → автозамена',
+		inspector_copied: (v: unknown) => `Скопировано: ${v}`,
+		help_title: 'Подсказки',
+		help_click: 'копировать символ',
+		help_rclick: 'добавить автозамену',
+		help_alt: 'подробности о символе',
 
 		section_plugins: 'Плагины',
 		plugin_create: 'Создать',
@@ -442,6 +452,11 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_exists: 'Este atajo ya existe',
 		shortcut_added: 'Atajo añadido',
 		right_click_shortcut: 'Clic derecho → atajo',
+		inspector_copied: (v: unknown) => `Copiado: ${v}`,
+		help_title: 'Consejos',
+		help_click: 'copiar carácter',
+		help_rclick: 'añadir atajo',
+		help_alt: 'detalles del carácter',
 
 		section_plugins: 'Plugins',
 		plugin_create: 'Crear',
@@ -593,6 +608,11 @@ export const translations: Record<string, TranslationRecord> = {
 		trigger_exists: 'このトリガーは既に存在します',
 		shortcut_added: 'ショートカットを追加しました',
 		right_click_shortcut: '右クリック → ショートカット',
+		inspector_copied: (v: unknown) => `${v} をコピー`,
+		help_title: 'ヒント',
+		help_click: '文字をコピー',
+		help_rclick: 'ショートカット追加',
+		help_alt: '文字の詳細',
 
 		section_plugins: 'プラグイン',
 		plugin_create: '作成',
