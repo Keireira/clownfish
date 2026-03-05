@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import Root from './char-button.styles';
 import { useCharPreview } from '../char-preview';
@@ -7,10 +7,17 @@ import { t } from '../../i18n';
 import { displayChar } from '../../types';
 import type { Props } from './char-button.d';
 
-const CharButton = ({ char, name, onCopy, onAddShortcut }: Props) => {
+const CharButton = ({ char, name, onCopy, onAddShortcut, focused }: Props) => {
 	const [copied, setCopied] = useState(false);
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const ref = useRef<HTMLButtonElement>(null);
 	const { show, hide } = useCharPreview();
+
+	useEffect(() => {
+		if (focused && ref.current) {
+			ref.current.scrollIntoView({ block: 'nearest' });
+		}
+	}, [focused]);
 
 	const handleClick = async () => {
 		try {
@@ -47,7 +54,9 @@ const CharButton = ({ char, name, onCopy, onAddShortcut }: Props) => {
 
 	return (
 		<Root
+			ref={ref}
 			$copied={copied}
+			$focused={focused}
 			onClick={handleClick}
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}

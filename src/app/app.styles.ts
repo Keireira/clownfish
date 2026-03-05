@@ -47,13 +47,13 @@ export const NoResults = styled.div`
 	font-size: 13px;
 `;
 
-export const SettingsBtn = styled.button`
+export const SettingsBtn = styled.button<{ $focused?: boolean }>`
 	display: flex;
 	align-items: center;
 	gap: 5px;
-	background: none;
+	background: ${(p) => (p.$focused ? 'var(--fill)' : 'none')};
 	border: none;
-	color: var(--text-faint);
+	color: ${(p) => (p.$focused ? 'var(--text-bright)' : 'var(--text-faint)')};
 	font-size: 11px;
 	cursor: pointer;
 	padding: 4px 8px;
@@ -61,6 +61,12 @@ export const SettingsBtn = styled.button`
 	transition:
 		color 0.15s,
 		background 0.15s;
+	${(p) =>
+		p.$focused &&
+		`
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+	`}
 
 	&:hover {
 		color: var(--text-bright);

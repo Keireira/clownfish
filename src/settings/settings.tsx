@@ -67,6 +67,27 @@ type UndoEntry =
 	| { type: 'category'; pluginId: PluginId; index: number; item: Category }
 	| { type: 'char'; pluginId: PluginId; categoryIndex: number; charIndex: number; item: CharEntry };
 
+/* ---- Zone navigation ---- */
+const ZONES = ['header', 'sidebar', 'content', 'footer'] as const;
+type Zone = typeof ZONES[number];
+const FOCUSABLE_SELECTOR =
+	'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]';
+
+/** Filter out elements that can't actually receive focus (hidden, collapsed, etc). */
+const isVisibleFocusable = (el: HTMLElement): boolean => {
+	const style = getComputedStyle(el);
+	if (style.display === 'none' || style.visibility === 'hidden') return false;
+	let parent = el.parentElement;
+	while (parent) {
+		if (parent.hasAttribute('data-zone')) break;
+		const ps = getComputedStyle(parent);
+		if (ps.display === 'none') return false;
+		if (ps.overflow === 'hidden' && parent.clientHeight === 0) return false;
+		parent = parent.parentElement;
+	}
+	return true;
+};
+
 const Settings = () => {
 	const t = useLanguage();
 	const [active, setActive] = useState<ActiveSection>('settings');
@@ -83,12 +104,22 @@ const Settings = () => {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [settingsKey, setSettingsKey] = useState(0);
 
+	// Zone navigation state
+	const [activeZone, setActiveZone] = useState<Zone | null>(null);
+	const [drilled, setDrilled] = useState(false);
+	const [zoneVisual, setZoneVisual] = useState(false);
+
 	const savedPluginsRef = useRef<Map<PluginId, string>>(new Map());
+	const modalOpenRef = useRef(false);
 
 	const stopListRef = useRef(stopList);
 	useEffect(() => {
 		stopListRef.current = stopList;
 	}, [stopList]);
+
+	useEffect(() => {
+		modalOpenRef.current = showPresets || !!promptChar;
+	}, [showPresets, promptChar]);
 
 	// Derived merged data
 	const merged = useMemo(() => mergePlugins(plugins, registry), [plugins, registry]);
@@ -268,21 +299,107 @@ const Settings = () => {
 		setRegistryDirty(false);
 	}, [pluginDirty, plugins, registry, registryDirty, stopListDirty, stopList]);
 
+	/* ---- Keyboard: Ctrl combos + zone navigation ---- */
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
-			if (!(e.ctrlKey || e.metaKey)) return;
-			if (e.code === 'KeyZ' && !e.shiftKey) {
-				e.preventDefault();
-				undo();
+			// Ctrl/Meta combos always pass through
+			if (e.ctrlKey || e.metaKey) {
+				if (e.code === 'KeyZ' && !e.shiftKey) {
+					e.preventDefault();
+					undo();
+				}
+				if (e.code === 'KeyS') {
+					e.preventDefault();
+					handleSave();
+				}
+				return;
 			}
-			if (e.code === 'KeyS') {
+
+			// Skip zone navigation when modal is open
+			if (modalOpenRef.current) return;
+
+			const target = e.target as HTMLElement;
+			const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+
+			if (drilled) {
+				// Inside a zone
+				if (e.key === 'Escape') {
+					// Let inputs handle Escape first (clear, blur, close dropdown)
+					if (isInput) return;
+					e.preventDefault();
+					setDrilled(false);
+					(document.activeElement as HTMLElement)?.blur();
+					return;
+				}
+				if (e.key === 'Tab') {
+					// Trap Tab within the active zone
+					const zone = document.querySelector(`[data-zone="${activeZone}"]`);
+					if (!zone) return;
+					const focusables = Array.from(zone.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(isVisibleFocusable);
+					if (focusables.length === 0) return;
+					e.preventDefault();
+					const idx = focusables.indexOf(document.activeElement as HTMLElement);
+					const next = e.shiftKey
+						? (idx <= 0 ? focusables.length - 1 : idx - 1)
+						: (idx >= focusables.length - 1 ? 0 : idx + 1);
+					focusables[next].focus();
+					return;
+				}
+				return;
+			}
+
+			// Zone-level navigation — don't interfere with inputs
+			if (isInput) return;
+
+			if (e.key === 'Tab') {
 				e.preventDefault();
-				handleSave();
+				setZoneVisual(true);
+				const currentIdx = activeZone ? ZONES.indexOf(activeZone) : -1;
+				const next = e.shiftKey
+					? (currentIdx <= 0 ? ZONES.length - 1 : currentIdx - 1)
+					: (currentIdx >= ZONES.length - 1 ? 0 : currentIdx + 1);
+				setActiveZone(ZONES[next]);
+			} else if (e.key === 'Enter' && activeZone) {
+				e.preventDefault();
+				setDrilled(true);
+				setZoneVisual(true);
+				// Focus first visible focusable in the zone
+				const zone = document.querySelector(`[data-zone="${activeZone}"]`);
+				if (zone) {
+					const focusable = Array.from(zone.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).find(isVisibleFocusable);
+					focusable?.focus();
+				}
+			} else if (e.key === 'Escape' && activeZone) {
+				e.preventDefault();
+				setActiveZone(null);
 			}
 		};
 		document.addEventListener('keydown', handler);
 		return () => document.removeEventListener('keydown', handler);
-	}, [undo, handleSave]);
+	}, [undo, handleSave, activeZone, drilled]);
+
+	// Track zone from mouse interaction (silent — no visual)
+	useEffect(() => {
+		const handler = (e: MouseEvent) => {
+			if (modalOpenRef.current) return;
+			const target = e.target as HTMLElement;
+			const zoneEl = target.closest<HTMLElement>('[data-zone]');
+			if (zoneEl) {
+				const zone = zoneEl.dataset.zone as Zone;
+				if ((ZONES as readonly string[]).includes(zone)) {
+					setActiveZone(zone);
+					setDrilled(false);
+					setZoneVisual(false);
+					return;
+				}
+			}
+			setActiveZone(null);
+			setDrilled(false);
+			setZoneVisual(false);
+		};
+		document.addEventListener('mousedown', handler);
+		return () => document.removeEventListener('mousedown', handler);
+	}, []);
 
 	/* ---- Derived state ---- */
 	const catSection = parseCategorySection(active);
@@ -309,6 +426,12 @@ const Settings = () => {
 				}))
 				.filter((cat) => cat.chars.length > 0)
 		: null;
+
+	/* ---- Zone state helper ---- */
+	const zoneState = (zone: Zone) => {
+		if (activeZone !== zone || !zoneVisual) return undefined;
+		return drilled ? 'drilled' as const : 'focused' as const;
+	};
 
 	/* ---- Category handlers ---- */
 	const handleAddCategory = (pluginId: PluginId) => {
@@ -504,7 +627,7 @@ const Settings = () => {
 			<SettingsGlobalStyle />
 			<GlassOverrides />
 			<Root>
-				<Header data-tauri-drag-region>
+				<Header data-tauri-drag-region data-zone="header" data-zone-state={zoneState('header')}>
 					<h1>{t('settings_title')}</h1>
 					<HeaderRight>
 						<SearchWrap $disabled={!searchEnabled}>
@@ -556,6 +679,7 @@ const Settings = () => {
 
 				<Body style={{ position: 'relative' }}>
 					<SettingsSidebar
+						zoneState={zoneState('sidebar')}
 						active={active}
 						onSelect={setActive}
 						plugins={plugins}
@@ -570,7 +694,7 @@ const Settings = () => {
 							setStopListDirty(true);
 						}}
 					/>
-					<Main>
+					<Main data-zone="content" data-zone-state={zoneState('content')}>
 						{active === 'plugins' && (
 							<PluginManager plugins={plugins} registry={registry} onChanged={handlePluginsChanged} />
 						)}
@@ -726,7 +850,7 @@ const Settings = () => {
 					{dragging && <DropOverlay>{t('stoplist_drop_hint')}</DropOverlay>}
 				</Body>
 
-				<Footer>
+				<Footer data-zone="footer" data-zone-state={zoneState('footer')}>
 					<BottomBar
 						right={
 							<Copyright onClick={() => openUrl('https://github.com/keireira')}>

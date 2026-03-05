@@ -52,8 +52,21 @@ export const CharItem = styled.div`
 	border-radius: 8px;
 	background: var(--fill);
 	font-size: 18px;
+	cursor: pointer;
+	transition: transform 0.1s;
 
 	&:hover button {
+		display: flex;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+		background: var(--fill-active);
+		transform: scale(1.08);
+	}
+
+	&:focus-visible button {
 		display: flex;
 	}
 `;

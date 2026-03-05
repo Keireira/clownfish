@@ -5,4 +5,6 @@ export type Props = {
 	onCopy: (message: string) => void;
 	onAddShortcut?: (char: string, name: string) => void;
 	existingExpansions?: string[];
+	focusedStart?: number;
+	focusedIndex?: number;
 };

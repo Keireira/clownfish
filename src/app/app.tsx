@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import Root, { AppGlobalStyle, GridArea, NoResults, SettingsBtn } from './app.styles';
 import { CATEGORIES as DEFAULT_CATEGORIES } from '../data/characters';
 import SearchBar from '../components/search-bar';
@@ -22,8 +23,10 @@ export default function App() {
 	const [promptChar, setPromptChar] = useState<[string, string] | null>(null);
 	const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
 	const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [focusedIndex, setFocusedIndex] = useState(-1);
 	const appRef = useRef<HTMLDivElement>(null);
 	const lastHeight = useRef(0);
+	const gridColsRef = useRef(8);
 
 	// Load categories + shortcuts from plugin system on mount and on focus
 	useEffect(() => {
@@ -138,19 +141,6 @@ export default function App() {
 		[promptChar, showToast, t]
 	);
 
-	// Close the popup on Escape
-	useEffect(() => {
-		const handler = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') {
-				import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-					getCurrentWindow().hide();
-				});
-			}
-		};
-		document.addEventListener('keydown', handler);
-		return () => document.removeEventListener('keydown', handler);
-	}, []);
-
 	// Resize the Tauri window to fit content
 	useEffect(() => {
 		const el = appRef.current;
@@ -191,6 +181,22 @@ export default function App() {
 		})
 		.filter((cat) => cat.chars.length > 0);
 
+	const flatChars = useMemo(() => filtered.flatMap((cat) => cat.chars), [filtered]);
+
+	const categoryOffsets = useMemo(() => {
+		let offset = 0;
+		return filtered.map((cat) => {
+			const start = offset;
+			offset += cat.chars.length;
+			return start;
+		});
+	}, [filtered]);
+
+	// Reset focus when query changes
+	useEffect(() => {
+		setFocusedIndex(-1);
+	}, [q]);
+
 	const openSettings = () => {
 		import('@tauri-apps/api/core')
 			.then(({ invoke }) => {
@@ -199,17 +205,147 @@ export default function App() {
 			.catch((e) => console.error('Failed to open settings:', e));
 	};
 
+	const measureCols = useCallback(() => {
+		const grid = document.querySelector<HTMLElement>('[data-category-grid]');
+		if (grid) {
+			gridColsRef.current = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+		}
+	}, []);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent | KeyboardEvent) => {
+			const max = flatChars.length;
+			if (max === 0 && e.key !== 'Escape' && e.key !== 'Tab') return;
+
+			switch (e.key) {
+				case 'ArrowDown': {
+					e.preventDefault();
+					measureCols();
+					const cols = gridColsRef.current;
+					if (focusedIndex < 0) {
+						setFocusedIndex(0);
+					} else {
+						setFocusedIndex(Math.min(focusedIndex + cols, max - 1));
+					}
+					break;
+				}
+				case 'ArrowUp': {
+					e.preventDefault();
+					measureCols();
+					const cols = gridColsRef.current;
+					if (focusedIndex === max) {
+						// From settings → last char row
+						setFocusedIndex(max - 1);
+					} else if (focusedIndex - cols < 0) {
+						setFocusedIndex(-1);
+						const input = document.querySelector<HTMLInputElement>('[data-search-input]');
+						input?.focus();
+					} else {
+						setFocusedIndex(focusedIndex - cols);
+					}
+					break;
+				}
+				case 'ArrowRight': {
+					e.preventDefault();
+					if (focusedIndex < max - 1) {
+						setFocusedIndex(focusedIndex + 1);
+					}
+					break;
+				}
+				case 'ArrowLeft': {
+					e.preventDefault();
+					if (focusedIndex <= 0) {
+						setFocusedIndex(-1);
+						const input = document.querySelector<HTMLInputElement>('[data-search-input]');
+						input?.focus();
+					} else {
+						setFocusedIndex(focusedIndex - 1);
+					}
+					break;
+				}
+				case 'Enter': {
+					if (focusedIndex === max) {
+						e.preventDefault();
+						openSettings();
+					} else if (focusedIndex >= 0 && focusedIndex < max) {
+						e.preventDefault();
+						const [char] = flatChars[focusedIndex];
+						writeText(char).then(() => {
+							import('../stats-store').then(({ recordCharCopy }) => recordCharCopy(char));
+							showToast(t('copied_char', char));
+							import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().hide());
+						});
+					}
+					break;
+				}
+				case 'Tab': {
+					e.preventDefault();
+					if (e.shiftKey) {
+						if (focusedIndex === max) {
+							// From settings → last category
+							if (categoryOffsets.length > 0) {
+								setFocusedIndex(categoryOffsets[categoryOffsets.length - 1]);
+							} else {
+								setFocusedIndex(-1);
+								const input = document.querySelector<HTMLInputElement>('[data-search-input]');
+								input?.focus();
+							}
+						} else {
+							// Jump to previous category
+							for (let i = categoryOffsets.length - 1; i >= 0; i--) {
+								if (categoryOffsets[i] < focusedIndex) {
+									setFocusedIndex(categoryOffsets[i]);
+									return;
+								}
+							}
+							setFocusedIndex(-1);
+							const input = document.querySelector<HTMLInputElement>('[data-search-input]');
+							input?.focus();
+						}
+					} else {
+						// Jump to next category, then settings
+						for (let i = 0; i < categoryOffsets.length; i++) {
+							if (categoryOffsets[i] > focusedIndex) {
+								setFocusedIndex(categoryOffsets[i]);
+								return;
+							}
+						}
+						// Past last category → settings
+						if (focusedIndex < max) {
+							setFocusedIndex(max);
+						}
+					}
+					break;
+				}
+				case 'Escape': {
+					e.preventDefault();
+					if (query) {
+						setQuery('');
+					} else {
+						import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().hide());
+					}
+					break;
+				}
+			}
+		},
+		[focusedIndex, flatChars, categoryOffsets, measureCols, showToast, t, query, openSettings]
+	);
+
+	const settingsFocused = focusedIndex === flatChars.length;
+
 	return (
 		<CharPreviewProvider>
 			<AppGlobalStyle />
-			<Root ref={appRef}>
-				<SearchBar value={query} onChange={setQuery} />
+			<Root ref={appRef} onKeyDown={handleKeyDown}>
+				<SearchBar value={query} onChange={setQuery} onKeyDown={handleKeyDown} />
 				<GridArea>
 					{filtered.length > 0 ? (
-						filtered.map((cat) => (
+						filtered.map((cat, ci) => (
 							<Category
 								key={cat.name}
 								category={cat}
+								focusedStart={categoryOffsets[ci]}
+								focusedIndex={focusedIndex}
 								onCopy={showToast}
 								onAddShortcut={handleAddShortcut}
 								existingExpansions={shortcuts.map((s) => s.expansion)}
@@ -221,7 +357,7 @@ export default function App() {
 				</GridArea>
 				<BottomBar
 					right={
-						<SettingsBtn onClick={openSettings}>
+						<SettingsBtn $focused={settingsFocused} onClick={openSettings}>
 							<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
 								<path
 									fillRule="evenodd"

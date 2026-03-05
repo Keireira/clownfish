@@ -203,6 +203,30 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 		setEditVars((prev) => [...prev, ['', '']]);
 	};
 
+	const handleCardKeyDown = (e: React.KeyboardEvent, dataIdx: number) => {
+		const grid = (e.currentTarget as HTMLElement).parentElement;
+		if (!grid) return;
+
+		if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+			e.preventDefault();
+			const items = Array.from(grid.querySelectorAll<HTMLElement>('[tabindex="0"]'));
+			const domIdx = items.indexOf(e.currentTarget as HTMLElement);
+			const cols = Math.max(1, Math.floor((grid.clientWidth + 4) / (76 + 4)));
+			let next = domIdx;
+			if (e.key === 'ArrowRight') next = Math.min(domIdx + 1, items.length - 1);
+			else if (e.key === 'ArrowLeft') next = Math.max(domIdx - 1, 0);
+			else if (e.key === 'ArrowDown') next = Math.min(domIdx + cols, items.length - 1);
+			else if (e.key === 'ArrowUp') next = Math.max(domIdx - cols, 0);
+			items[next]?.focus();
+		} else if (e.key === 'Delete' || e.key === 'Backspace') {
+			e.preventDefault();
+			handleDelete(dataIdx);
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			startEdit(dataIdx);
+		}
+	};
+
 	/** Display-friendly expansion text for the card. */
 	const displayExpansion = (expansion: string) => {
 		const first = expansion.split('\n')[0];
@@ -307,7 +331,7 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 							)}
 						</EditRow>
 					) : (
-						<Card key={s.trigger} onClick={() => startEdit(idx)}>
+						<Card key={s.trigger} tabIndex={0} onKeyDown={(e) => handleCardKeyDown(e, idx)} onClick={() => startEdit(idx)}>
 							{isTemplate(s) && <CardBadge />}
 							<CardChar>{displayExpansion(s.expansion)}</CardChar>
 							<CardTrigger>{s.trigger}</CardTrigger>

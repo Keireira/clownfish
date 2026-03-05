@@ -60,6 +60,29 @@ const CategoryEditor = ({
 		}
 	};
 
+	const handleCharGridKeyDown = (e: React.KeyboardEvent, idx: number, char: string, name: string) => {
+		const grid = (e.currentTarget as HTMLElement).parentElement;
+		if (!grid) return;
+
+		if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+			e.preventDefault();
+			const items = Array.from(grid.querySelectorAll<HTMLElement>('[tabindex="0"]'));
+			const cols = Math.max(1, Math.floor((grid.clientWidth + 4) / (42 + 4)));
+			let next = idx;
+			if (e.key === 'ArrowRight') next = Math.min(idx + 1, items.length - 1);
+			else if (e.key === 'ArrowLeft') next = Math.max(idx - 1, 0);
+			else if (e.key === 'ArrowDown') next = Math.min(idx + cols, items.length - 1);
+			else if (e.key === 'ArrowUp') next = Math.max(idx - cols, 0);
+			items[next]?.focus();
+		} else if (e.key === 'Delete' || e.key === 'Backspace') {
+			e.preventDefault();
+			handleDeleteChar(idx);
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			if (onAddShortcut && !expansionSet.has(char)) onAddShortcut(char, name);
+		}
+	};
+
 	return (
 		<Root>
 			<div>
@@ -87,6 +110,8 @@ const CategoryEditor = ({
 							<CharItem
 								key={idx}
 								title={name}
+								tabIndex={0}
+								onKeyDown={(e) => handleCharGridKeyDown(e, idx, char, name)}
 								onContextMenu={(e) => {
 									if (!onAddShortcut || alreadyShortcut) return;
 									e.preventDefault();

@@ -16,8 +16,19 @@ export const Card = styled.div`
 	border-radius: 10px;
 	background: var(--fill);
 	cursor: pointer;
+	transition: transform 0.1s;
 
 	&:hover button {
+		display: flex;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+		transform: scale(1.05);
+	}
+
+	&:focus-visible button {
 		display: flex;
 	}
 `;

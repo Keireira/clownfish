@@ -3,4 +3,5 @@ export type Props = {
 	name: string;
 	onCopy: (message: string) => void;
 	onAddShortcut?: (char: string, name: string) => void;
+	focused?: boolean;
 };

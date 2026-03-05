@@ -33,6 +33,18 @@ export const SettingsGlobalStyle = createGlobalStyle`
 		background: var(--scrollbar-thumb);
 		border-radius: 3px;
 	}
+
+	[data-zone-state="focused"] {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+		border-radius: 4px;
+	}
+
+	[data-zone-state="drilled"] {
+		outline: 1px dashed var(--accent-border);
+		outline-offset: -1px;
+		border-radius: 4px;
+	}
 `;
 
 export const GlassOverrides = createGlobalStyle`

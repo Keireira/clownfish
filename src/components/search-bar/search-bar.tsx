@@ -3,7 +3,7 @@ import { useLanguage } from '../../i18n';
 
 import type { Props } from './search-bar.d';
 
-const SearchBar = ({ value, onChange }: Props) => {
+const SearchBar = ({ value, onChange, onKeyDown }: Props) => {
 	const t = useLanguage();
 
 	return (
@@ -22,6 +22,11 @@ const SearchBar = ({ value, onChange }: Props) => {
 				data-search-input
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				onKeyDown={(e) => {
+					if (['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) {
+						onKeyDown?.(e);
+					}
+				}}
 			/>
 		</Root>
 	);

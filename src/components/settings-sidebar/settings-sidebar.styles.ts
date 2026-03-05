@@ -1,4 +1,11 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+
+const focusVisible = css`
+	&:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: -2px;
+	}
+`;
 
 export default styled.div`
 	width: 200px;
@@ -49,6 +56,8 @@ export const SectionItem = styled.div<{ $active: boolean }>`
 		color: var(--text-bright);
 		background: ${(p) => (p.$active ? 'transparent' : 'var(--fill-subtle)')};
 	}
+
+	${focusVisible}
 `;
 
 export const SectionLabel = styled.span`
@@ -85,10 +94,13 @@ export const GroupHeader = styled.button<{ $open?: boolean }>`
 	cursor: pointer;
 	user-select: none;
 	transition: color 0.15s;
+	border-radius: 6px;
 
 	&:hover {
 		color: var(--text-muted);
 	}
+
+	${focusVisible}
 `;
 
 export const Collapsible = styled.div<{ $open: boolean }>`
@@ -143,6 +155,8 @@ export const CatItem = styled.div<{ $active: boolean; $dragging: boolean }>`
 		color: var(--text-bright);
 		background: ${(p) => (p.$active ? 'transparent' : 'var(--fill-subtle)')};
 	}
+
+	${focusVisible}
 `;
 
 export const CatGrip = styled.span`
@@ -260,6 +274,8 @@ export const AppItem = styled.div<{ $active: boolean }>`
 		color: var(--text-bright);
 		background: ${(p) => (p.$active ? 'transparent' : 'var(--fill-subtle)')};
 	}
+
+	${focusVisible}
 `;
 
 export const AppDeleteBtn = styled.button`
@@ -306,6 +322,8 @@ export const AddBtn = styled.button`
 		color: var(--text-bright);
 		border-color: var(--border-medium);
 	}
+
+	${focusVisible}
 `;
 
 export const DropdownWrap = styled.div`
@@ -423,6 +441,8 @@ export const ShortcutsItem = styled.div<{ $active: boolean }>`
 		color: var(--text-bright);
 		background: ${(p) => (p.$active ? 'transparent' : 'var(--fill-subtle)')};
 	}
+
+	${focusVisible}
 `;
 
 export const ShortcutsIcon = styled.span`
@@ -470,10 +490,13 @@ export const PluginGroupName = styled.button`
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	border-radius: 4px;
 
 	&:hover {
 		color: var(--text-muted);
 	}
+
+	${focusVisible}
 `;
 
 export const PluginGroupRight = styled.div`
@@ -516,4 +539,6 @@ export const PluginToggle = styled.input`
 		transform: translateX(12px);
 		background: #fff;
 	}
+
+	${focusVisible}
 `;

@@ -91,6 +91,15 @@ type Props = {
 	// Apps
 	stopList: StopListEntry[];
 	onStopListChange: (entries: StopListEntry[]) => void;
+	// Zone
+	zoneState?: 'focused' | 'drilled';
+};
+
+const enterKey = (action: () => void) => (e: React.KeyboardEvent) => {
+	if (e.key === 'Enter' || e.key === ' ') {
+		e.preventDefault();
+		action();
+	}
 };
 
 const SettingsSidebar = ({
@@ -103,7 +112,8 @@ const SettingsSidebar = ({
 	onDeleteCategory,
 	onReorderCategory,
 	stopList,
-	onStopListChange
+	onStopListChange,
+	zoneState
 }: Props) => {
 	const t = useLanguage();
 
@@ -308,15 +318,30 @@ const SettingsSidebar = ({
 	});
 
 	return (
-		<SidebarRoot>
+		<SidebarRoot data-zone="sidebar" data-zone-state={zoneState}>
 			<SectionItems>
-				<SectionItem $active={active === 'plugins'} onClick={() => onSelect('plugins')}>
+				<SectionItem
+					$active={active === 'plugins'}
+					onClick={() => onSelect('plugins')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('plugins'))}
+				>
 					<SectionLabel>{t('section_plugins')}</SectionLabel>
 				</SectionItem>
-				<SectionItem $active={active === 'settings'} onClick={() => onSelect('settings')}>
+				<SectionItem
+					$active={active === 'settings'}
+					onClick={() => onSelect('settings')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('settings'))}
+				>
 					<SectionLabel>{t('section_settings')}</SectionLabel>
 				</SectionItem>
-				<SectionItem $active={active === 'stats'} onClick={() => onSelect('stats')}>
+				<SectionItem
+					$active={active === 'stats'}
+					onClick={() => onSelect('stats')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('stats'))}
+				>
 					<SectionLabel>{t('section_stats')}</SectionLabel>
 				</SectionItem>
 			</SectionItems>
@@ -343,6 +368,8 @@ const SettingsSidebar = ({
 							$active={active === categorySection(plugin.id, idx)}
 							$dragging={isDragPlugin && idx === dragIdx}
 							onMouseDown={(e) => handleCatMouseDown(e, plugin.id, idx, plugin.categories.length)}
+							tabIndex={0}
+							onKeyDown={enterKey(() => onSelect(categorySection(plugin.id, idx)))}
 						>
 							<CatGrip>&#x2807;</CatGrip>
 							<CatName>{translateCategoryName(cat.name)}</CatName>
@@ -390,6 +417,8 @@ const SettingsSidebar = ({
 									<ShortcutsItem
 										$active={active === shortcutsSection(plugin.id)}
 										onClick={() => onSelect(shortcutsSection(plugin.id))}
+										tabIndex={0}
+										onKeyDown={enterKey(() => onSelect(shortcutsSection(plugin.id)))}
 									>
 										<ShortcutsIcon>&#x26A1;</ShortcutsIcon>
 										<CatName>{t('section_shortcuts')}</CatName>
@@ -415,7 +444,13 @@ const SettingsSidebar = ({
 					<GroupItems>
 						{stopList.length === 0 && <EmptyApps>{t('stoplist_empty')}</EmptyApps>}
 						{stopList.map((entry, idx) => (
-							<AppItem key={entry.exe} $active={entry.exe === active} onClick={() => onSelect(entry.exe)}>
+							<AppItem
+								key={entry.exe}
+								$active={entry.exe === active}
+								onClick={() => onSelect(entry.exe)}
+								tabIndex={0}
+								onKeyDown={enterKey(() => onSelect(entry.exe))}
+							>
 								<span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
 									{entry.exe}
 								</span>
