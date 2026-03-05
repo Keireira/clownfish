@@ -56,6 +56,7 @@ import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
 import AppSettingsPanel from '../components/stoplist-editor';
 import PluginManager from '../components/plugin-manager';
+import PacksPanel from '../components/packs-panel';
 import StatsPanel from '../components/stats-panel';
 import BottomBar, { openUrl } from '../components/bottom-bar';
 import { useLanguage } from '../i18n';
@@ -713,6 +714,10 @@ const Settings = () => {
 
 						{active === 'stats' && <StatsPanel />}
 
+					{active === 'packs' && (
+						<PacksPanel plugins={plugins} registry={registry} onChanged={handlePluginsChanged} />
+					)}
+
 						{autocorrectSec && selectedPlugin && (
 							<AutocorrectPanel
 								rules={selectedPlugin.autocorrect ?? []}
@@ -878,7 +883,8 @@ const Settings = () => {
 							!autocorrectSec &&
 							active !== 'settings' &&
 							active !== 'plugins' &&
-							active !== 'stats' && <Empty>{t('no_category_selected')}</Empty>}
+							active !== 'stats' &&
+							active !== 'packs' && <Empty>{t('no_category_selected')}</Empty>}
 					</Main>
 					{dragging && <DropOverlay>{t('stoplist_drop_hint')}</DropOverlay>}
 				</Body>

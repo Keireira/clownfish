@@ -179,7 +179,12 @@ export const translations: Record<string, TranslationRecord> = {
 		stats_active_days: 'Active days',
 		stats_reset: 'Reset Stats',
 		stats_no_data: 'No usage data yet',
-		stats_uses: 'uses'
+		stats_uses: 'uses',
+
+		// Packs
+		section_packs: 'Packs',
+		pack_install: 'Install',
+		pack_uninstall: 'Uninstall'
 	},
 
 	ru: {
@@ -339,7 +344,11 @@ export const translations: Record<string, TranslationRecord> = {
 		stats_active_days: 'Активных дней',
 		stats_reset: 'Сбросить',
 		stats_no_data: 'Нет данных',
-		stats_uses: 'исп.'
+		stats_uses: 'исп.',
+
+		section_packs: 'Наборы',
+		pack_install: 'Установить',
+		pack_uninstall: 'Удалить'
 	},
 
 	es: {
@@ -498,7 +507,11 @@ export const translations: Record<string, TranslationRecord> = {
 		stats_active_days: 'Días activos',
 		stats_reset: 'Restablecer',
 		stats_no_data: 'Sin datos aún',
-		stats_uses: 'usos'
+		stats_uses: 'usos',
+
+		section_packs: 'Paquetes',
+		pack_install: 'Instalar',
+		pack_uninstall: 'Desinstalar'
 	},
 
 	ja: {
@@ -657,6 +670,10 @@ export const translations: Record<string, TranslationRecord> = {
 		stats_active_days: 'アクティブ日数',
 		stats_reset: 'リセット',
 		stats_no_data: 'データなし',
-		stats_uses: '回'
+		stats_uses: '回',
+
+		section_packs: 'パック',
+		pack_install: 'インストール',
+		pack_uninstall: 'アンインストール'
 	}
 };

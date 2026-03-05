@@ -355,6 +355,14 @@ const SettingsSidebar = ({
 				>
 					<SectionLabel>{t('section_stats')}</SectionLabel>
 				</SectionItem>
+				<SectionItem
+					$active={active === 'packs'}
+					onClick={() => onSelect('packs')}
+					tabIndex={0}
+					onKeyDown={enterKey(() => onSelect('packs'))}
+				>
+					<SectionLabel>{t('section_packs')}</SectionLabel>
+				</SectionItem>
 			</SectionItems>
 
 			{sortedPlugins.map((plugin) => {
