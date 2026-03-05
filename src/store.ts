@@ -131,6 +131,26 @@ export async function saveUnicodeHints(enabled: boolean): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Autocorrect
+// ---------------------------------------------------------------------------
+
+export async function loadAutocorrectEnabled(): Promise<boolean> {
+	try {
+		const store = await getStore();
+		const val = await store.get<boolean>('autocorrect_enabled');
+		return val ?? false;
+	} catch {
+		return false;
+	}
+}
+
+export async function saveAutocorrectEnabled(enabled: boolean): Promise<void> {
+	const store = await getStore();
+	await store.set('autocorrect_enabled', enabled);
+	await store.save();
+}
+
+// ---------------------------------------------------------------------------
 // Trigger character
 // ---------------------------------------------------------------------------
 
@@ -206,6 +226,7 @@ const SCALAR_KEYS = [
 	'hints_position',
 	'trigger_char',
 	'unicode_hints',
+	'autocorrect_enabled',
 	'global_hotkey',
 	'theme',
 	'language'
@@ -310,6 +331,9 @@ export async function importAllSettings(): Promise<BackupData | null> {
 		}
 		if (s.unicode_hints != null) {
 			await invoke('expansion_set_unicode_hints', { enabled: s.unicode_hints });
+		}
+		if (s.autocorrect_enabled != null) {
+			await invoke('autocorrect_set_enabled', { enabled: s.autocorrect_enabled });
 		}
 		// Re-register global hotkey (or clear it)
 		await invoke('set_global_hotkey', { shortcut: s.global_hotkey ?? null });

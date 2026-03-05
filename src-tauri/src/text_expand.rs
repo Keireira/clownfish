@@ -27,6 +27,13 @@ pub struct Shortcut {
     pub variables: HashMap<String, String>,
 }
 
+/// A single autocorrect rule: pattern → replacement.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AutoCorrectRule {
+    pub pattern: String,
+    pub replacement: String,
+}
+
 /// Per-app pixel offsets for hints positioning.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct HintsOffset {
@@ -56,6 +63,16 @@ pub struct StopListEntry {
     /// Custom pixel offsets from the computed position.
     #[serde(default)]
     pub offset: HintsOffset,
+    /// Whether autocorrect is active for this app (default true).
+    #[serde(default = "default_true")]
+    pub autocorrect: bool,
+    /// Extra per-app autocorrect rules (added on top of global rules).
+    #[serde(default)]
+    pub autocorrect_rules: Vec<AutoCorrectRule>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 /// Screen-space caret rectangle in physical pixels.
@@ -74,6 +91,8 @@ struct AppConfig {
     hints: bool,
     direction: String,
     offset: HintsOffset,
+    autocorrect: bool,
+    autocorrect_rules: Vec<(String, String)>,
 }
 
 /// Data stored per-shortcut in the internal lookup map.
@@ -129,6 +148,13 @@ static STATE: LazyLock<Mutex<ExpanderState>> = LazyLock::new(|| {
 
 /// Configurable trigger character (default `:`).
 static TRIGGER_CHAR: LazyLock<Mutex<char>> = LazyLock::new(|| Mutex::new(':'));
+
+/// Whether autocorrect is globally enabled.
+static AUTOCORRECT_ENABLED: AtomicBool = AtomicBool::new(false);
+
+/// Active autocorrect rules: (pattern, replacement).
+static AUTOCORRECT_RULES: LazyLock<Mutex<Vec<(String, String)>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
 
 /// Returns the current trigger character.
 fn trigger_char() -> char {
@@ -240,6 +266,11 @@ pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
     let mut map = STOP_LIST.lock().unwrap();
     map.clear();
     for e in entries {
+        let app_rules: Vec<(String, String)> = e
+            .autocorrect_rules
+            .iter()
+            .map(|r| (r.pattern.clone(), r.replacement.clone()))
+            .collect();
         map.insert(
             e.exe.to_lowercase(),
             AppConfig {
@@ -247,6 +278,8 @@ pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
                 hints: e.hints,
                 direction: e.direction,
                 offset: e.offset,
+                autocorrect: e.autocorrect,
+                autocorrect_rules: app_rules,
             },
         );
     }
@@ -325,7 +358,8 @@ fn on_rdev_event(event: Event) -> Option<Event> {
     // Check per-app stop-list.
     let app_cfg = get_app_config();
     let (app_expansion, app_hints) = (app_cfg.expansion, app_cfg.hints);
-    if !app_expansion && !app_hints {
+    let app_autocorrect = app_cfg.autocorrect && AUTOCORRECT_ENABLED.load(Ordering::Relaxed);
+    if !app_expansion && !app_hints && !app_autocorrect {
         return Some(event);
     }
 
@@ -441,6 +475,20 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                     SUPPRESSING.store(true, Ordering::SeqCst);
                     std::thread::spawn(move || {
                         perform_replacement(trigger_len, &resolved);
+                        SUPPRESSING.store(false, Ordering::SeqCst);
+                    });
+                    return Some(event);
+                }
+            }
+
+            if app_autocorrect {
+                if let Some((trigger_len, replacement)) = find_autocorrect(&state, &app_cfg.autocorrect_rules) {
+                    state.buffer.clear();
+                    drop(state);
+                    clear_hints();
+                    SUPPRESSING.store(true, Ordering::SeqCst);
+                    std::thread::spawn(move || {
+                        perform_replacement(trigger_len, &replacement);
                         SUPPRESSING.store(false, Ordering::SeqCst);
                     });
                     return Some(event);
@@ -576,6 +624,28 @@ fn find_match(state: &ExpanderState) -> Option<(usize, &ShortcutData)> {
     None
 }
 
+/// Returns `(pattern_char_count, replacement)` if the buffer ends with an autocorrect pattern.
+/// Checks per-app rules first, then global rules.
+fn find_autocorrect(
+    state: &ExpanderState,
+    extra_rules: &[(String, String)],
+) -> Option<(usize, String)> {
+    // Per-app rules take priority.
+    for (pattern, replacement) in extra_rules {
+        if state.buffer.ends_with(pattern.as_str()) {
+            return Some((pattern.chars().count(), replacement.clone()));
+        }
+    }
+    // Global rules.
+    let rules = AUTOCORRECT_RULES.lock().unwrap();
+    for (pattern, replacement) in rules.iter() {
+        if state.buffer.ends_with(pattern.as_str()) {
+            return Some((pattern.chars().count(), replacement.clone()));
+        }
+    }
+    None
+}
+
 // ---------------------------------------------------------------------------
 // Windows: custom WH_KEYBOARD_LL hook (replaces rdev to avoid ToUnicode corruption)
 // ---------------------------------------------------------------------------
@@ -633,7 +703,8 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
 
     let app_cfg = get_app_config();
     let (app_expansion, app_hints) = (app_cfg.expansion, app_cfg.hints);
-    if !app_expansion && !app_hints {
+    let app_autocorrect = app_cfg.autocorrect && AUTOCORRECT_ENABLED.load(Ordering::Relaxed);
+    if !app_expansion && !app_hints && !app_autocorrect {
         return false;
     }
 
@@ -764,6 +835,20 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                     SUPPRESSING.store(false, Ordering::SeqCst);
                 });
                 return false; // don't consume the triggering character
+            }
+        }
+
+        if app_autocorrect {
+            if let Some((trigger_len, replacement)) = find_autocorrect(&state, &app_cfg.autocorrect_rules) {
+                state.buffer.clear();
+                drop(state);
+                clear_hints();
+                SUPPRESSING.store(true, Ordering::SeqCst);
+                std::thread::spawn(move || {
+                    perform_replacement(trigger_len, &replacement);
+                    SUPPRESSING.store(false, Ordering::SeqCst);
+                });
+                return false;
             }
         }
 
@@ -1065,6 +1150,29 @@ fn record_expansion_stat(expansion: String) {
         stats.daily.entry(today_key()).or_default().expansions += 1;
         write_stats(&path, &stats);
     });
+}
+
+// ---------------------------------------------------------------------------
+// Autocorrect commands
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn autocorrect_set_enabled(enabled: bool) {
+    AUTOCORRECT_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
+#[tauri::command]
+pub fn autocorrect_is_enabled() -> bool {
+    AUTOCORRECT_ENABLED.load(Ordering::Relaxed)
+}
+
+#[tauri::command]
+pub fn autocorrect_update_rules(rules: Vec<AutoCorrectRule>) {
+    let mut list = AUTOCORRECT_RULES.lock().unwrap();
+    list.clear();
+    for r in rules {
+        list.push((r.pattern, r.replacement));
+    }
 }
 
 #[tauri::command]
@@ -1574,6 +1682,8 @@ fn get_app_config() -> AppConfig {
         hints: true,
         direction: "auto".to_string(),
         offset: HintsOffset::default(),
+        autocorrect: true,
+        autocorrect_rules: Vec::new(),
     }
 }
 

@@ -25,6 +25,7 @@ import Root, {
 	Copyright
 } from './settings.styles';
 import { loadStopList, saveStopList, exportAllSettings, importAllSettings } from '../store';
+import AutocorrectPanel from '../components/autocorrect-panel';
 import {
 	loadPluginRegistry,
 	savePluginRegistry,
@@ -39,7 +40,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import SettingsSidebar from '../components/settings-sidebar';
 import type { ActiveSection } from '../components/settings-sidebar';
-import { parseCategorySection, parseShortcutsSection } from '../components/settings-sidebar';
+import { parseCategorySection, parseShortcutsSection, parseAutocorrectSection } from '../components/settings-sidebar';
 import CategoryEditor from '../components/category-editor';
 import PresetPicker from '../components/preset-picker';
 import TriggerPrompt from '../components/trigger-prompt';
@@ -49,6 +50,7 @@ import AutostartToggle from '../components/autostart-toggle';
 import ExpansionToggle from '../components/expansion-toggle';
 import HintsPositionPicker from '../components/hints-position';
 import UnicodeHintsToggle from '../components/unicode-hints-toggle/unicode-hints-toggle';
+import AutocorrectToggle from '../components/autocorrect-toggle';
 import HotkeyPicker from '../components/hotkey-picker';
 import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
@@ -179,6 +181,8 @@ const Settings = () => {
 				exe: lower,
 				expansion: true,
 				hints: true,
+				autocorrect: true,
+				autocorrect_rules: [],
 				direction: 'auto' as const,
 				offset: { top: 0, bottom: 0, left: 0, right: 0 }
 			}
@@ -295,6 +299,10 @@ const Settings = () => {
 			setStopListDirty(false);
 		}
 
+		// Sync autocorrect rules to Rust
+		const m2 = mergePlugins(plugins, registry);
+		await invoke('autocorrect_update_rules', { rules: m2.autocorrect });
+
 		setPluginDirty(new Set());
 		setRegistryDirty(false);
 	}, [pluginDirty, plugins, registry, registryDirty, stopListDirty, stopList]);
@@ -404,11 +412,14 @@ const Settings = () => {
 	/* ---- Derived state ---- */
 	const catSection = parseCategorySection(active);
 	const shortcutsSection = parseShortcutsSection(active);
+	const autocorrectSec = parseAutocorrectSection(active);
 	const selectedPlugin = catSection
 		? getPlugin(catSection.pluginId)
 		: shortcutsSection
 			? getPlugin(shortcutsSection.pluginId)
-			: null;
+			: autocorrectSec
+				? getPlugin(autocorrectSec.pluginId)
+				: null;
 	const selectedCatIdx = catSection ? catSection.catIdx : -1;
 	const selectedCat =
 		selectedPlugin && selectedCatIdx >= 0 ? (selectedPlugin.categories[selectedCatIdx] ?? null) : null;
@@ -549,9 +560,10 @@ const Settings = () => {
 		setRegistryDirty(false);
 		setStopListDirty(false);
 
-		// Sync shortcuts to Rust + notify other windows
+		// Sync shortcuts + autocorrect to Rust + notify other windows
 		const m = mergePlugins(allPlugins, reg);
 		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		await invoke('autocorrect_update_rules', { rules: m.autocorrect });
 		await invoke('expansion_update_stoplist', { entries: backup.stop_list });
 		await emitEvent('shortcuts-changed');
 		await emitEvent('categories-changed');
@@ -701,6 +713,22 @@ const Settings = () => {
 
 						{active === 'stats' && <StatsPanel />}
 
+						{autocorrectSec && selectedPlugin && (
+							<AutocorrectPanel
+								rules={selectedPlugin.autocorrect ?? []}
+								onChange={(rules) => {
+									updatePlugin(autocorrectSec.pluginId, (p) => ({ ...p, autocorrect: rules }));
+								}}
+								onDelete={(idx) => {
+									if (!selectedPlugin) return;
+									updatePlugin(autocorrectSec.pluginId, (p) => ({
+										...p,
+										autocorrect: (p.autocorrect ?? []).filter((_, i) => i !== idx)
+									}));
+								}}
+							/>
+						)}
+
 						{shortcutsSection && selectedPlugin && (
 							<ShortcutEditor
 								shortcuts={selectedPlugin.shortcuts}
@@ -748,6 +776,10 @@ const Settings = () => {
 									<SettingsRow>
 										<SettingsRowLabel>{t('unicode_hints_label')}</SettingsRowLabel>
 										<UnicodeHintsToggle />
+									</SettingsRow>
+									<SettingsRow>
+										<SettingsRowLabel>{t('autocorrect_enabled_label')}</SettingsRowLabel>
+										<AutocorrectToggle />
 									</SettingsRow>
 									<SettingsRow>
 										<SettingsRowLabel>{t('hotkey_label')}</SettingsRowLabel>
@@ -843,6 +875,7 @@ const Settings = () => {
 						{!selectedCat &&
 							!selectedStopEntry &&
 							!shortcutsSection &&
+							!autocorrectSec &&
 							active !== 'settings' &&
 							active !== 'plugins' &&
 							active !== 'stats' && <Empty>{t('no_category_selected')}</Empty>}

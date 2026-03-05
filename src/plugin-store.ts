@@ -1,7 +1,8 @@
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { CATEGORIES as DEFAULT_CATEGORIES } from './data/characters';
 import { DEFAULT_SHORTCUTS } from './data/shortcuts';
-import type { Category, Plugin, PluginId, PluginRegistryEntry, Shortcut } from './types';
+import { DEFAULT_AUTOCORRECT_RULES } from './data/autocorrect-rules';
+import type { AutoCorrectRule, Category, Plugin, PluginId, PluginRegistryEntry, Shortcut } from './types';
 
 // ---------------------------------------------------------------------------
 // Main settings store (shared instance from store.ts)
@@ -101,28 +102,30 @@ export async function loadAllPlugins(registry: PluginRegistryEntry[]): Promise<P
 export function mergePlugins(
 	plugins: Plugin[],
 	registry: PluginRegistryEntry[]
-): { categories: Category[]; shortcuts: Shortcut[] } {
+): { categories: Category[]; shortcuts: Shortcut[]; autocorrect: AutoCorrectRule[] } {
 	const enabledIds = new Set(registry.filter((r) => r.enabled).map((r) => r.id));
 	const sorted = [...registry].filter((r) => enabledIds.has(r.id)).sort((a, b) => a.order - b.order);
 
 	const categories: Category[] = [];
 	const shortcuts: Shortcut[] = [];
+	const autocorrect: AutoCorrectRule[] = [];
 
 	for (const entry of sorted) {
 		const plugin = plugins.find((p) => p.id === entry.id);
 		if (!plugin) continue;
 		categories.push(...plugin.categories);
 		shortcuts.push(...plugin.shortcuts);
+		if (plugin.autocorrect) autocorrect.push(...plugin.autocorrect);
 	}
 
-	return { categories, shortcuts };
+	return { categories, shortcuts, autocorrect };
 }
 
 /**
  * High-level: load registry + all plugins → merge enabled → flat data.
  * Used by main window and startup sync.
  */
-export async function loadMergedData(): Promise<{ categories: Category[]; shortcuts: Shortcut[] }> {
+export async function loadMergedData(): Promise<{ categories: Category[]; shortcuts: Shortcut[]; autocorrect: AutoCorrectRule[] }> {
 	const registry = await loadPluginRegistry();
 
 	// Not yet migrated — fall back to legacy behaviour
@@ -130,7 +133,8 @@ export async function loadMergedData(): Promise<{ categories: Category[]; shortc
 		const { loadCategories, loadShortcuts } = await import('./store');
 		return {
 			categories: await loadCategories(),
-			shortcuts: await loadShortcuts()
+			shortcuts: await loadShortcuts(),
+			autocorrect: []
 		};
 	}
 
@@ -149,7 +153,8 @@ export function getDefaultPluginTemplate(): Plugin {
 		version: '1.0.0',
 		builtin: true,
 		categories: DEFAULT_CATEGORIES,
-		shortcuts: DEFAULT_SHORTCUTS
+		shortcuts: DEFAULT_SHORTCUTS,
+		autocorrect: DEFAULT_AUTOCORRECT_RULES
 	};
 }
 
@@ -176,7 +181,8 @@ export async function migrateToPluginSystem(): Promise<void> {
 		version: '1.0.0',
 		builtin: true,
 		categories: hasCustomCategories ? categories : DEFAULT_CATEGORIES,
-		shortcuts: hasCustomShortcuts ? shortcuts : DEFAULT_SHORTCUTS
+		shortcuts: hasCustomShortcuts ? shortcuts : DEFAULT_SHORTCUTS,
+		autocorrect: DEFAULT_AUTOCORRECT_RULES
 	};
 
 	// Save plugin file

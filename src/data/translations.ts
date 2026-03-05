@@ -153,6 +153,15 @@ export const translations: Record<string, TranslationRecord> = {
 		export_settings: 'Export',
 		import_settings: 'Import',
 
+		// Auto-Correction
+		section_autocorrect: 'Auto-Correction',
+		autocorrect_enabled_label: 'Auto-Correction',
+		autocorrect_pattern_placeholder: 'pattern',
+		autocorrect_replacement_placeholder: 'replacement',
+		autocorrect_empty: 'No autocorrect rules. Add one to get started.',
+		stoplist_autocorrect: 'Auto-Correction',
+		stoplist_autocorrect_rules: 'Per-app rules',
+
 		// Stats
 		section_stats: 'Stats',
 		stats_top_chars: 'Top Characters',
@@ -298,6 +307,14 @@ export const translations: Record<string, TranslationRecord> = {
 		export_settings: 'Экспорт',
 		import_settings: 'Импорт',
 
+		section_autocorrect: 'Автокоррекция',
+		autocorrect_enabled_label: 'Автокоррекция',
+		autocorrect_pattern_placeholder: 'паттерн',
+		autocorrect_replacement_placeholder: 'замена',
+		autocorrect_empty: 'Нет правил автокоррекции. Добавьте первое.',
+		stoplist_autocorrect: 'Автокоррекция',
+		stoplist_autocorrect_rules: 'Правила для приложения',
+
 		section_stats: 'Статистика',
 		stats_top_chars: 'Популярные символы',
 		stats_top_expansions: 'Популярные замены',
@@ -441,6 +458,14 @@ export const translations: Record<string, TranslationRecord> = {
 		export_settings: 'Exportar',
 		import_settings: 'Importar',
 
+		section_autocorrect: 'Autocorrección',
+		autocorrect_enabled_label: 'Autocorrección',
+		autocorrect_pattern_placeholder: 'patrón',
+		autocorrect_replacement_placeholder: 'reemplazo',
+		autocorrect_empty: 'Sin reglas de autocorrección. Añade una.',
+		stoplist_autocorrect: 'Autocorrección',
+		stoplist_autocorrect_rules: 'Reglas por app',
+
 		section_stats: 'Estadísticas',
 		stats_top_chars: 'Caracteres populares',
 		stats_top_expansions: 'Expansiones populares',
@@ -583,6 +608,14 @@ export const translations: Record<string, TranslationRecord> = {
 		data_label: 'データ',
 		export_settings: 'エクスポート',
 		import_settings: 'インポート',
+
+		section_autocorrect: 'オートコレクト',
+		autocorrect_enabled_label: 'オートコレクト',
+		autocorrect_pattern_placeholder: 'パターン',
+		autocorrect_replacement_placeholder: '置換',
+		autocorrect_empty: 'オートコレクトルールがありません。追加してください。',
+		stoplist_autocorrect: 'オートコレクト',
+		stoplist_autocorrect_rules: 'アプリ別ルール',
 
 		section_stats: '統計',
 		stats_top_chars: 'よく使う文字',

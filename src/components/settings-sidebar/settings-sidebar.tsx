@@ -45,6 +45,8 @@ type RunningApp = { exe: string; title: string };
 const DEFAULT_ENTRY: Omit<StopListEntry, 'exe'> = {
 	expansion: true,
 	hints: true,
+	autocorrect: true,
+	autocorrect_rules: [],
 	direction: 'auto',
 	offset: { top: 0, bottom: 0, left: 0, right: 0 }
 };
@@ -69,12 +71,21 @@ export function parseShortcutsSection(s: string): { pluginId: PluginId } | null 
 	return { pluginId: s.slice(10) };
 }
 
+export function parseAutocorrectSection(s: string): { pluginId: PluginId } | null {
+	if (!s.startsWith('autocorrect:')) return null;
+	return { pluginId: s.slice(12) };
+}
+
 export function categorySection(pluginId: PluginId, idx: number): string {
 	return `cat:${pluginId}:${idx}`;
 }
 
 export function shortcutsSection(pluginId: PluginId): string {
 	return `shortcuts:${pluginId}`;
+}
+
+export function autocorrectSection(pluginId: PluginId): string {
+	return `autocorrect:${pluginId}`;
 }
 
 type Props = {
@@ -423,6 +434,16 @@ const SettingsSidebar = ({
 										<ShortcutsIcon>&#x26A1;</ShortcutsIcon>
 										<CatName>{t('section_shortcuts')}</CatName>
 										<CatCount>{plugin.shortcuts.length}</CatCount>
+									</ShortcutsItem>
+									<ShortcutsItem
+										$active={active === autocorrectSection(plugin.id)}
+										onClick={() => onSelect(autocorrectSection(plugin.id))}
+										tabIndex={0}
+										onKeyDown={enterKey(() => onSelect(autocorrectSection(plugin.id)))}
+									>
+										<ShortcutsIcon>&#x2713;</ShortcutsIcon>
+										<CatName>{t('section_autocorrect')}</CatName>
+										<CatCount>{(plugin.autocorrect ?? []).length}</CatCount>
 									</ShortcutsItem>
 								</GroupItems>
 								{plugin.categories.length > 0 && <CatSubLabel>{t('tab_categories')}</CatSubLabel>}

@@ -21,6 +21,11 @@ export interface Shortcut {
 
 export type PluginId = string;
 
+export interface AutoCorrectRule {
+	pattern: string;
+	replacement: string;
+}
+
 export interface Plugin {
 	id: PluginId;
 	name: string;
@@ -28,6 +33,7 @@ export interface Plugin {
 	builtin: boolean;
 	categories: Category[];
 	shortcuts: Shortcut[];
+	autocorrect?: AutoCorrectRule[];
 }
 
 export interface PluginRegistryEntry {
@@ -51,6 +57,8 @@ export interface StopListEntry {
 	hints: boolean;
 	direction: CompassDirection;
 	offset: HintsOffset;
+	autocorrect?: boolean;
+	autocorrect_rules?: AutoCorrectRule[];
 }
 
 const DISPLAY_MAP: Record<string, string> = {
