@@ -35,5 +35,7 @@ export const DEFAULT_SHORTCUTS: Shortcut[] = [
 	{ trigger: ':delta:', expansion: 'δ' },
 	{ trigger: ':lambda:', expansion: 'λ' },
 	{ trigger: ':omega:', expansion: 'ω' },
-	{ trigger: ':om:', expansion: 'Ω' }
+	{ trigger: ':om:', expansion: 'Ω' },
+
+	{ trigger: ':чуров:', expansion: '146%' }
 ];

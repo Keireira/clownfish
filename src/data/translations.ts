@@ -143,6 +143,14 @@ export const translations: Record<string, TranslationRecord> = {
 		cat_lines_boxes: 'Lines & Boxes',
 		cat_latin_ext: 'Latin Extended',
 
+		cat_kaomoji_happy: 'Happy',
+		cat_kaomoji_sad: 'Sad',
+		cat_kaomoji_angry: 'Angry',
+		cat_kaomoji_love: 'Love',
+		cat_kaomoji_surprise: 'Surprise',
+		cat_kaomoji_animals: 'Animals',
+		cat_kaomoji_actions: 'Actions',
+
 		// TriggerPrompt
 		enter_trigger: 'Add Shortcut',
 		trigger_keyword_placeholder: 'keyword',
@@ -325,6 +333,14 @@ export const translations: Record<string, TranslationRecord> = {
 		cat_lines_boxes: 'Линии и рамки',
 		cat_latin_ext: 'Латиница расш.',
 
+		cat_kaomoji_happy: 'Радость',
+		cat_kaomoji_sad: 'Грусть',
+		cat_kaomoji_angry: 'Злость',
+		cat_kaomoji_love: 'Любовь',
+		cat_kaomoji_surprise: 'Удивление',
+		cat_kaomoji_animals: 'Животные',
+		cat_kaomoji_actions: 'Действия',
+
 		enter_trigger: 'Новая автозамена',
 		trigger_keyword_placeholder: 'ключевое слово',
 		trigger_exists: 'Такой триггер уже существует',
@@ -500,6 +516,14 @@ export const translations: Record<string, TranslationRecord> = {
 		cat_lines_boxes: 'Líneas y marcos',
 		cat_latin_ext: 'Latín extendido',
 
+		cat_kaomoji_happy: 'Feliz',
+		cat_kaomoji_sad: 'Triste',
+		cat_kaomoji_angry: 'Enojado',
+		cat_kaomoji_love: 'Amor',
+		cat_kaomoji_surprise: 'Sorpresa',
+		cat_kaomoji_animals: 'Animales',
+		cat_kaomoji_actions: 'Acciones',
+
 		enter_trigger: 'Añadir atajo',
 		trigger_keyword_placeholder: 'palabra clave',
 		trigger_exists: 'Este atajo ya existe',
@@ -674,6 +698,14 @@ export const translations: Record<string, TranslationRecord> = {
 		cat_sub_super: '上付き・下付き',
 		cat_lines_boxes: '罫線・囲み',
 		cat_latin_ext: 'ラテン拡張',
+
+		cat_kaomoji_happy: '嬉しい',
+		cat_kaomoji_sad: '悲しい',
+		cat_kaomoji_angry: '怒り',
+		cat_kaomoji_love: '愛',
+		cat_kaomoji_surprise: '驚き',
+		cat_kaomoji_animals: '動物',
+		cat_kaomoji_actions: 'アクション',
 
 		enter_trigger: 'ショートカット追加',
 		trigger_keyword_placeholder: 'キーワード',

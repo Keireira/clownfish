@@ -44,8 +44,10 @@ export const CharGrid = styled.div`
 
 export const CharItem = styled.div`
 	position: relative;
-	width: 42px;
-	height: 42px;
+	min-width: 42px;
+	min-height: 42px;
+	max-width: 100%;
+	padding: 4px 6px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -54,6 +56,14 @@ export const CharItem = styled.div`
 	font-size: 18px;
 	cursor: pointer;
 	transition: transform 0.1s;
+
+	& > span {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
+	}
 
 	&:hover button {
 		display: flex;

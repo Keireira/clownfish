@@ -185,6 +185,105 @@ export const PACKS: Plugin[] = [
 		shortcuts: []
 	},
 	{
+		id: 'kaomoji',
+		name: 'Kaomoji',
+		version: '1.0.0',
+		builtin: false,
+		categories: [
+			{
+				name: 'Happy',
+				chars: [
+					['(◕‿◕)', 'Smile'],
+					['╰(*°▽°*)╯', 'Excited'],
+					['(≧▽≦)', 'Joy'],
+					['(ﾉ◕ヮ◕)ﾉ*:・ﾟ✧', 'Sparkle'],
+					['(•‿•)', 'Simple Smile'],
+					['(◠‿◠)', 'Soft Smile'],
+					['ヽ(>∀<☆)ノ', 'Cheering'],
+					['(⌒‿⌒)', 'Content'],
+					['٩(◕‿◕｡)۶', 'Celebrate']
+				]
+			},
+			{
+				name: 'Sad',
+				chars: [
+					['(╥_╥)', 'Crying'],
+					['(T_T)', 'Tears'],
+					['(;´д`)', 'Distressed'],
+					['(っ˘̩╭╮˘̩)っ', 'Comfort'],
+					['(ノ_<。)', 'Sobbing'],
+					['(´;ω;`)', 'Weeping'],
+					['(｡•́︿•̀｡)', 'Pouting'],
+					['(⌯˃̶᷄ ﹏ ˂̶᷄⌯)', 'Heartbroken']
+				]
+			},
+			{
+				name: 'Angry',
+				chars: [
+					['(╯°□°)╯︵ ┻━┻', 'Table Flip'],
+					['┬─┬ノ( º _ ºノ)', 'Table Unflip'],
+					['(ﾉಥ益ಥ)ﾉ', 'Rage'],
+					['(凸ಠ益ಠ)凸', 'Furious'],
+					['щ(ﾟДﾟщ)', 'Why'],
+					['(ノ°Д°）ノ︵ ┻━┻', 'Angry Flip'],
+					['(⊙_⊙)', 'Stunned']
+				]
+			},
+			{
+				name: 'Love',
+				chars: [
+					['(♥‿♥)', 'Heart Eyes'],
+					['(づ｡◕‿‿◕｡)づ', 'Hug'],
+					['(◕‿◕)♡', 'Love Smile'],
+					['♡(ŐωŐ人)', 'Adore'],
+					['(灬♥ω♥灬)', 'Lovestruck'],
+					['(✿ ♥‿♥)', 'Flower Love'],
+					['(♡μ_μ)', 'Shy Love'],
+					['(*♡∀♡)', 'Smitten']
+				]
+			},
+			{
+				name: 'Surprise',
+				chars: [
+					['(⊙_⊙)', 'Shocked'],
+					['Σ(°△°|||)', 'Alarmed'],
+					['(°ロ°)', 'Gasp'],
+					['w(°o°)w', 'Wow'],
+					['(O_O)', 'Wide Eyes'],
+					['(゜▽゜;)', 'Startled'],
+					['Σ(ﾟДﾟ)', 'Surprised']
+				]
+			},
+			{
+				name: 'Animals',
+				chars: [
+					['(=^・^=)', 'Cat'],
+					['(=^‥^=)', 'Kitty'],
+					['ʕ•ᴥ•ʔ', 'Bear'],
+					['(・⊝・)', 'Penguin'],
+					['🐧(°□°)', 'Penguin Shock'],
+					['(≧◡≦)♡', 'Cute'],
+					['ᕕ( ᐛ )ᕗ', 'Happy Walk'],
+					['( ͡° ᴥ ͡°)', 'Dog']
+				]
+			},
+			{
+				name: 'Actions',
+				chars: [
+					['¯\\_(ツ)_/¯', 'Shrug'],
+					['(☞ﾟヮﾟ)☞', 'Pointing Right'],
+					['☜(ﾟヮﾟ☜)', 'Pointing Left'],
+					['ᕦ(ò_óˇ)ᕤ', 'Flex'],
+					['(つ﹏⊂)', 'Hiding'],
+					['⊂(◉‿◉)つ', 'Reaching'],
+					['(ง\'̀-\'́)ง', 'Fighting'],
+					['(•_•) ( •_•)>⌐■-■ (⌐■_■)', 'Deal With It']
+				]
+			}
+		],
+		shortcuts: []
+	},
+	{
 		id: 'pack-braille',
 		name: 'Braille',
 		version: '1.0.0',

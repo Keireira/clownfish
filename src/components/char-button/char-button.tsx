@@ -80,7 +80,7 @@ const CharButton = ({ char, name, onCopy, onAddShortcut, focused, selected, onMo
 			onContextMenu={handleContextMenu}
 			onDragStart={handleDragStart}
 		>
-			{displayChar(char)}
+			<span>{displayChar(char)}</span>
 		</Root>
 	);
 };

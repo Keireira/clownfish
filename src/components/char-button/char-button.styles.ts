@@ -1,8 +1,10 @@
 import styled from 'styled-components';
 
 export default styled.button<{ $copied?: boolean; $focused?: boolean; $selected?: boolean }>`
-	width: 40px;
-	height: 40px;
+	min-width: 40px;
+	min-height: 40px;
+	max-width: 100%;
+	padding: 4px 6px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -16,6 +18,15 @@ export default styled.button<{ $copied?: boolean; $focused?: boolean; $selected?
 		background 0.15s,
 		transform 0.1s;
 	position: relative;
+
+	& > span {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
+	}
+
 	${(p) =>
 		p.$selected &&
 		!p.$copied &&
