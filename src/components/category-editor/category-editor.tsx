@@ -16,7 +16,7 @@ import { useLanguage } from '../../i18n';
 import { displayChar } from '../../types';
 import type { Props } from './category-editor.d';
 
-const CategoryEditor = ({ category, onChange, onOpenPresets }: Props) => {
+const CategoryEditor = ({ category, onChange, onOpenPresets, onDeleteChar }: Props) => {
 	const t = useLanguage();
 	const [newChar, setNewChar] = useState('');
 	const [newName, setNewName] = useState('');
@@ -40,10 +40,14 @@ const CategoryEditor = ({ category, onChange, onOpenPresets }: Props) => {
 	};
 
 	const handleDeleteChar = (charIdx: number) => {
-		onChange({
-			...category,
-			chars: category.chars.filter((_, i) => i !== charIdx)
-		});
+		if (onDeleteChar) {
+			onDeleteChar(charIdx);
+		} else {
+			onChange({
+				...category,
+				chars: category.chars.filter((_, i) => i !== charIdx)
+			});
+		}
 	};
 
 	return (

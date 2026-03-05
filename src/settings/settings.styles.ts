@@ -130,6 +130,31 @@ export const BtnSecondary = styled(Btn)`
 	}
 `;
 
+export const BtnIcon = styled.button`
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: none;
+	border-radius: 8px;
+	background: var(--fill);
+	color: var(--text-tertiary);
+	cursor: pointer;
+	transition:
+		background 0.15s,
+		opacity 0.15s;
+
+	&:hover:not(:disabled) {
+		background: var(--fill-hover);
+	}
+
+	&:disabled {
+		opacity: 0.35;
+		cursor: default;
+	}
+`;
+
 export const SettingsGroup = styled.div`
 	background: var(--card-bg);
 	border: 1px solid var(--border);

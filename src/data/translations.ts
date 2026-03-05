@@ -15,6 +15,7 @@ export const translations: Record<string, TranslationRecord> = {
 		reset_to_default: 'Reset to Default',
 		save_changes: 'Save Changes',
 		saved: 'Saved',
+		undo: 'Undo',
 
 		// Settings tabs
 		tab_categories: 'Categories',
@@ -67,7 +68,7 @@ export const translations: Record<string, TranslationRecord> = {
 		// Text Expansion
 		tab_shortcuts: 'Shortcuts',
 		expansion_enabled_label: 'Text Expansion',
-		shortcut_trigger_placeholder: ':trigger:',
+		shortcut_trigger_placeholder: 'trigger',
 		shortcut_expansion_placeholder: 'Expansion text',
 		shortcuts_count: (n: unknown) => `Shortcuts (${n})`,
 		no_shortcuts: 'No shortcuts yet. Add one to get started.',
@@ -115,6 +116,7 @@ export const translations: Record<string, TranslationRecord> = {
 		reset_to_default: 'Сбросить',
 		save_changes: 'Сохранить',
 		saved: 'Сохранено',
+		undo: 'Отменить',
 
 		tab_categories: 'Категории',
 		tab_appearance: 'Оформление',
@@ -157,7 +159,7 @@ export const translations: Record<string, TranslationRecord> = {
 
 		tab_shortcuts: 'Автозамена',
 		expansion_enabled_label: 'Автозамена текста',
-		shortcut_trigger_placeholder: ':триггер:',
+		shortcut_trigger_placeholder: 'триггер',
 		shortcut_expansion_placeholder: 'Текст замены',
 		shortcuts_count: (n: unknown) => `Замены (${n})`,
 		no_shortcuts: 'Нет замен. Добавьте первую.',
@@ -246,7 +248,7 @@ export const translations: Record<string, TranslationRecord> = {
 
 		tab_shortcuts: 'Atajos',
 		expansion_enabled_label: 'Expansión de texto',
-		shortcut_trigger_placeholder: ':atajo:',
+		shortcut_trigger_placeholder: 'atajo',
 		shortcut_expansion_placeholder: 'Texto de expansión',
 		shortcuts_count: (n: unknown) => `Atajos (${n})`,
 		no_shortcuts: 'No hay atajos. Añade uno para empezar.',
@@ -335,7 +337,7 @@ export const translations: Record<string, TranslationRecord> = {
 
 		tab_shortcuts: 'ショートカット',
 		expansion_enabled_label: 'テキスト展開',
-		shortcut_trigger_placeholder: ':トリガー:',
+		shortcut_trigger_placeholder: 'トリガー',
 		shortcut_expansion_placeholder: '展開テキスト',
 		shortcuts_count: (n: unknown) => `ショートカット (${n})`,
 		no_shortcuts: 'ショートカットがありません。追加してください。',

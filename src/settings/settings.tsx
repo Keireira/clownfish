@@ -9,6 +9,7 @@ import Root, {
 	Empty,
 	BtnPrimary,
 	BtnSecondary,
+	BtnIcon,
 	SettingsGroup,
 	SettingsRow,
 	SettingsRowLabel,
@@ -47,6 +48,11 @@ import { useLanguage } from '../i18n';
 import { DropOverlay } from '../components/stoplist-editor/stoplist-editor.styles';
 import type { Category, CharEntry, Shortcut, StopListEntry } from '../types';
 
+type UndoEntry =
+	| { type: 'shortcut'; index: number; item: Shortcut }
+	| { type: 'category'; index: number; item: Category }
+	| { type: 'char'; categoryIndex: number; charIndex: number; item: CharEntry };
+
 const Settings = () => {
 	const t = useLanguage();
 	const [active, setActive] = useState<ActiveSection>('settings');
@@ -58,6 +64,10 @@ const Settings = () => {
 	const [stopList, setStopList] = useState<StopListEntry[]>([]);
 	const [stopListDirty, setStopListDirty] = useState(false);
 	const [dragging, setDragging] = useState(false);
+	const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+
+	const savedCategoriesRef = useRef('[]');
+	const savedShortcutsRef = useRef('[]');
 
 	const stopListRef = useRef(stopList);
 	useEffect(() => {
@@ -65,8 +75,14 @@ const Settings = () => {
 	}, [stopList]);
 
 	useEffect(() => {
-		loadCategories().then(setCategories);
-		loadShortcuts().then(setShortcuts);
+		loadCategories().then((c) => {
+			setCategories(c);
+			savedCategoriesRef.current = JSON.stringify(c);
+		});
+		loadShortcuts().then((s) => {
+			setShortcuts(s);
+			savedShortcutsRef.current = JSON.stringify(s);
+		});
 		loadStopList().then(setStopList);
 
 		let unlisten: (() => void) | undefined;
@@ -128,6 +144,80 @@ const Settings = () => {
 		};
 	}, [addExe]);
 
+	/* ---- Undo ---- */
+	const undo = useCallback(() => {
+		setUndoStack((prev) => {
+			if (prev.length === 0) return prev;
+			const entry = prev[prev.length - 1];
+			switch (entry.type) {
+				case 'shortcut':
+					setShortcuts((s) => {
+						const next = [...s];
+						next.splice(entry.index, 0, entry.item);
+						setShortcutsDirty(JSON.stringify(next) !== savedShortcutsRef.current);
+						return next;
+					});
+					break;
+				case 'category':
+					setCategories((cats) => {
+						const next = [...cats];
+						next.splice(entry.index, 0, entry.item);
+						setDirty(JSON.stringify(next) !== savedCategoriesRef.current);
+						return next;
+					});
+					break;
+				case 'char':
+					setCategories((cats) => {
+						const next = cats.map((cat, i) => {
+							if (i !== entry.categoryIndex) return cat;
+							const chars = [...cat.chars];
+							chars.splice(entry.charIndex, 0, entry.item);
+							return { ...cat, chars };
+						});
+						setDirty(JSON.stringify(next) !== savedCategoriesRef.current);
+						return next;
+					});
+					break;
+			}
+			return prev.slice(0, -1);
+		});
+	}, []);
+
+	const handleSave = useCallback(async () => {
+		if (dirty) {
+			await saveCategories(categories);
+			savedCategoriesRef.current = JSON.stringify(categories);
+			setDirty(false);
+			await emitEvent('categories-changed');
+		}
+		if (shortcutsDirty || stopListDirty) {
+			await saveShortcuts(shortcuts);
+			savedShortcutsRef.current = JSON.stringify(shortcuts);
+			await saveStopList(stopList);
+			setShortcutsDirty(false);
+			setStopListDirty(false);
+			await invoke('expansion_update_shortcuts', { shortcuts });
+			await invoke('expansion_update_stoplist', { entries: stopList });
+			await emitEvent('shortcuts-changed');
+		}
+	}, [dirty, categories, shortcutsDirty, stopListDirty, shortcuts, stopList]);
+
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if (!(e.ctrlKey || e.metaKey)) return;
+			if (e.code === 'KeyZ' && !e.shiftKey) {
+				e.preventDefault();
+				undo();
+			}
+			if (e.code === 'KeyS') {
+				e.preventDefault();
+				handleSave();
+			}
+		};
+		document.addEventListener('keydown', handler);
+		return () => document.removeEventListener('keydown', handler);
+	}, [undo, handleSave]);
+
 	/* ---- Derived state ---- */
 	const selectedCatIdx = isCategorySection(active) ? categoryIdx(active) : -1;
 	const selectedCat = categories[selectedCatIdx] ?? null;
@@ -149,6 +239,7 @@ const Settings = () => {
 	};
 
 	const handleDeleteCategory = (idx: number) => {
+		setUndoStack((prev) => [...prev, { type: 'category', index: idx, item: categories[idx] }]);
 		const newCats = categories.filter((_, i) => i !== idx);
 		updateCategories(newCats);
 		// If deleted category was active, select adjacent
@@ -183,31 +274,17 @@ const Settings = () => {
 	};
 
 	/* ---- Save / Reset ---- */
-	const handleSave = async () => {
-		if (dirty) {
-			await saveCategories(categories);
-			setDirty(false);
-			await emitEvent('categories-changed');
-		}
-		if (shortcutsDirty || stopListDirty) {
-			await saveShortcuts(shortcuts);
-			await saveStopList(stopList);
-			setShortcutsDirty(false);
-			setStopListDirty(false);
-			await invoke('expansion_update_shortcuts', { shortcuts });
-			await invoke('expansion_update_stoplist', { entries: stopList });
-			await emitEvent('shortcuts-changed');
-		}
-	};
 
 	const handleReset = async () => {
 		await resetCategories();
 		setCategories(DEFAULT_CATEGORIES);
+		savedCategoriesRef.current = JSON.stringify(DEFAULT_CATEGORIES);
 		setDirty(false);
 		await emitEvent('categories-changed');
 
 		await resetShortcuts();
 		setShortcuts(DEFAULT_SHORTCUTS);
+		savedShortcutsRef.current = JSON.stringify(DEFAULT_SHORTCUTS);
 		setShortcutsDirty(false);
 		setStopList([]);
 		setStopListDirty(false);
@@ -239,6 +316,12 @@ const Settings = () => {
 				<Header data-tauri-drag-region>
 					<h1>{t('settings_title')}</h1>
 					<HeaderRight>
+						<BtnIcon onClick={undo} disabled={undoStack.length === 0} title={t('undo') as string}>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+								<path d="M3 7v6h6" />
+								<path d="M3 13a9 9 0 0 1 3-7.7A9 9 0 0 1 21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.4-3.9" />
+							</svg>
+						</BtnIcon>
 						<BtnSecondary onClick={handleReset}>{t('reset_to_default')}</BtnSecondary>
 						<BtnPrimary onClick={handleSave} disabled={!anyDirty}>
 							{anyDirty ? t('save_changes') : t('saved')}
@@ -266,6 +349,11 @@ const Settings = () => {
 								shortcuts={shortcuts}
 								onChange={(s) => {
 									setShortcuts(s);
+									setShortcutsDirty(true);
+								}}
+								onDelete={(idx) => {
+									setUndoStack((prev) => [...prev, { type: 'shortcut', index: idx, item: shortcuts[idx] }]);
+									setShortcuts(shortcuts.filter((_, i) => i !== idx));
 									setShortcutsDirty(true);
 								}}
 							/>
@@ -314,6 +402,16 @@ const Settings = () => {
 								category={selectedCat}
 								onChange={(cat) => handleUpdateCategory(selectedCatIdx, cat)}
 								onOpenPresets={() => setShowPresets(true)}
+								onDeleteChar={(charIdx) => {
+									setUndoStack((prev) => [
+										...prev,
+										{ type: 'char', categoryIndex: selectedCatIdx, charIndex: charIdx, item: selectedCat.chars[charIdx] }
+									]);
+									handleUpdateCategory(selectedCatIdx, {
+										...selectedCat,
+										chars: selectedCat.chars.filter((_, i) => i !== charIdx)
+									});
+								}}
 							/>
 						)}
 

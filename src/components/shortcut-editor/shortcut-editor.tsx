@@ -21,9 +21,10 @@ import type { Shortcut } from '../../types';
 type Props = {
 	shortcuts: Shortcut[];
 	onChange: (shortcuts: Shortcut[]) => void;
+	onDelete?: (idx: number) => void;
 };
 
-const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
+const ShortcutEditor = ({ shortcuts, onChange, onDelete }: Props) => {
 	const t = useLanguage();
 	const [newTrigger, setNewTrigger] = useState('');
 	const [newExpansion, setNewExpansion] = useState('');
@@ -37,14 +38,20 @@ const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
 		loadTriggerChar().then(setTc);
 	}, []);
 
+	/** Strip trigger chars from both ends of a trigger string. */
+	const stripTc = (s: string) => {
+		let r = s;
+		if (r.startsWith(tc)) r = r.slice(1);
+		if (r.endsWith(tc)) r = r.slice(0, -1);
+		return r;
+	};
+
 	const handleAdd = () => {
-		let trigger = newTrigger.trim();
+		const keyword = newTrigger.trim().replace(new RegExp(`^\\${tc}|\\${tc}$`, 'g'), '');
 		const expansion = newExpansion.trim();
-		if (!trigger || !expansion) return;
+		if (!keyword || !expansion) return;
 
-		if (!trigger.startsWith(tc)) trigger = tc + trigger;
-		if (!trigger.endsWith(tc)) trigger = trigger + tc;
-
+		const trigger = tc + keyword + tc;
 		if (shortcuts.some((s) => s.trigger === trigger)) return;
 
 		onChange([...shortcuts, { trigger, expansion }]);
@@ -54,7 +61,11 @@ const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
 
 	const handleDelete = (idx: number) => {
 		if (editIdx === idx) setEditIdx(null);
-		onChange(shortcuts.filter((_, i) => i !== idx));
+		if (onDelete) {
+			onDelete(idx);
+		} else {
+			onChange(shortcuts.filter((_, i) => i !== idx));
+		}
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -63,20 +74,19 @@ const ShortcutEditor = ({ shortcuts, onChange }: Props) => {
 
 	const startEdit = (idx: number) => {
 		setEditIdx(idx);
-		setEditTrigger(shortcuts[idx].trigger);
+		setEditTrigger(stripTc(shortcuts[idx].trigger));
 		setEditExpansion(shortcuts[idx].expansion);
 	};
 
 	const commitEdit = () => {
 		if (editIdx === null) return;
-		let trigger = editTrigger.trim();
+		const keyword = editTrigger.trim().replace(new RegExp(`^\\${tc}|\\${tc}$`, 'g'), '');
 		const expansion = editExpansion.trim();
-		if (!trigger || !expansion) {
+		if (!keyword || !expansion) {
 			setEditIdx(null);
 			return;
 		}
-		if (!trigger.startsWith(tc)) trigger = tc + trigger;
-		if (!trigger.endsWith(tc)) trigger = trigger + tc;
+		const trigger = tc + keyword + tc;
 
 		// Check for duplicate trigger (except self)
 		if (shortcuts.some((s, i) => i !== editIdx && s.trigger === trigger)) {
