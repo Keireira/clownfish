@@ -1,7 +1,7 @@
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { CATEGORIES as DEFAULT_CATEGORIES } from './data/characters';
 import { DEFAULT_SHORTCUTS } from './data/shortcuts';
-import type { Category, Shortcut, StopListEntry } from './types';
+import type { Category, Plugin, PluginRegistryEntry, Shortcut, StopListEntry } from './types';
 
 const STORE_FILE = 'settings.json';
 let storeInstance: Promise<Store> | null = null;
@@ -195,6 +195,135 @@ export async function saveHotkey(shortcut: string | null): Promise<void> {
 		await store.delete('global_hotkey');
 	}
 	await store.save();
+}
+
+// ---------------------------------------------------------------------------
+// Export / Import all settings
+// ---------------------------------------------------------------------------
+
+const SCALAR_KEYS = [
+	'expansion_enabled',
+	'hints_position',
+	'trigger_char',
+	'unicode_hints',
+	'global_hotkey',
+	'theme',
+	'language'
+] as const;
+
+export async function exportAllSettings(
+	plugins: Plugin[],
+	registry: PluginRegistryEntry[],
+	stopList: StopListEntry[]
+): Promise<boolean> {
+	try {
+		const { save } = await import('@tauri-apps/plugin-dialog');
+		const { invoke } = await import('@tauri-apps/api/core');
+		const path = await save({
+			defaultPath: 'clownfish-settings.json',
+			filters: [{ name: 'JSON', extensions: ['json'] }]
+		});
+		if (!path) return false;
+
+		const store = await getStore();
+		const settings: Record<string, unknown> = {};
+		for (const key of SCALAR_KEYS) {
+			settings[key] = (await store.get(key)) ?? null;
+		}
+
+		const backup = {
+			clownfish_backup: 1,
+			settings,
+			plugins,
+			plugin_registry: registry,
+			stop_list: stopList
+		};
+		await invoke('backup_write_file', { path, contents: JSON.stringify(backup, null, 2) });
+		return true;
+	} catch (e) {
+		console.error('Export failed:', e);
+		return false;
+	}
+}
+
+export interface BackupData {
+	settings: Record<string, unknown>;
+	plugins: Plugin[];
+	plugin_registry: PluginRegistryEntry[];
+	stop_list: StopListEntry[];
+}
+
+export async function importAllSettings(): Promise<BackupData | null> {
+	try {
+		const { open: openDialog } = await import('@tauri-apps/plugin-dialog');
+		const { invoke } = await import('@tauri-apps/api/core');
+		const path = await openDialog({
+			filters: [{ name: 'JSON', extensions: ['json'] }],
+			multiple: false
+		});
+		if (!path) return null;
+
+		const content = await invoke<string>('backup_read_file', { path });
+		const data = JSON.parse(content);
+		if (!data || !data.clownfish_backup) return null;
+
+		const store = await getStore();
+		const s = data.settings ?? {};
+
+		// Restore scalar settings
+		for (const key of SCALAR_KEYS) {
+			if (key in s) {
+				if (s[key] != null) {
+					await store.set(key, s[key]);
+				} else {
+					await store.delete(key);
+				}
+			}
+		}
+		await store.save();
+
+		// Restore plugins
+		const { savePlugin, savePluginRegistry } = await import('./plugin-store');
+		if (Array.isArray(data.plugins)) {
+			for (const p of data.plugins) {
+				await savePlugin(p);
+			}
+		}
+		if (Array.isArray(data.plugin_registry)) {
+			await savePluginRegistry(data.plugin_registry);
+		}
+
+		// Restore stop list
+		if (Array.isArray(data.stop_list)) {
+			await saveStopList(data.stop_list);
+		}
+
+		// Sync Rust-side runtime state
+		if (s.expansion_enabled != null) {
+			await invoke('expansion_set_enabled', { enabled: s.expansion_enabled });
+		}
+		if (s.hints_position != null) {
+			await invoke('expansion_set_hints_mode', { mode: s.hints_position });
+		}
+		if (s.trigger_char != null) {
+			await invoke('expansion_set_trigger_char', { ch: s.trigger_char });
+		}
+		if (s.unicode_hints != null) {
+			await invoke('expansion_set_unicode_hints', { enabled: s.unicode_hints });
+		}
+		// Re-register global hotkey (or clear it)
+		await invoke('set_global_hotkey', { shortcut: s.global_hotkey ?? null });
+
+		return {
+			settings: s,
+			plugins: data.plugins ?? [],
+			plugin_registry: data.plugin_registry ?? [],
+			stop_list: data.stop_list ?? []
+		};
+	} catch (e) {
+		console.error('Import failed:', e);
+		return null;
+	}
 }
 
 export { DEFAULT_CATEGORIES, DEFAULT_SHORTCUTS };

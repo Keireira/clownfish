@@ -143,7 +143,12 @@ export const translations: Record<string, TranslationRecord> = {
 		plugin_enabled: 'Enabled',
 		plugin_disabled: 'Disabled',
 		plugin_name_placeholder: 'New plugin name...',
-		plugin_reset: 'Reset'
+		plugin_reset: 'Reset',
+
+		// Export / Import
+		data_label: 'Data',
+		export_settings: 'Export',
+		import_settings: 'Import'
 	},
 
 	ru: {
@@ -270,7 +275,11 @@ export const translations: Record<string, TranslationRecord> = {
 		plugin_enabled: 'Включён',
 		plugin_disabled: 'Отключён',
 		plugin_name_placeholder: 'Название плагина...',
-		plugin_reset: 'Сбросить'
+		plugin_reset: 'Сбросить',
+
+		data_label: 'Данные',
+		export_settings: 'Экспорт',
+		import_settings: 'Импорт'
 	},
 
 	es: {
@@ -396,7 +405,11 @@ export const translations: Record<string, TranslationRecord> = {
 		plugin_enabled: 'Activado',
 		plugin_disabled: 'Desactivado',
 		plugin_name_placeholder: 'Nombre del plugin...',
-		plugin_reset: 'Restablecer'
+		plugin_reset: 'Restablecer',
+
+		data_label: 'Datos',
+		export_settings: 'Exportar',
+		import_settings: 'Importar'
 	},
 
 	ja: {
@@ -522,6 +535,10 @@ export const translations: Record<string, TranslationRecord> = {
 		plugin_enabled: '有効',
 		plugin_disabled: '無効',
 		plugin_name_placeholder: 'プラグイン名...',
-		plugin_reset: 'リセット'
+		plugin_reset: 'リセット',
+
+		data_label: 'データ',
+		export_settings: 'エクスポート',
+		import_settings: 'インポート'
 	}
 };

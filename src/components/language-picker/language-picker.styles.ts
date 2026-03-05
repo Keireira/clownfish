@@ -28,4 +28,9 @@ export default styled.select`
 		outline: none;
 		border-color: var(--accent-border);
 	}
+
+	color-scheme: dark;
+	[data-theme='light'] & {
+		color-scheme: light;
+	}
 `;

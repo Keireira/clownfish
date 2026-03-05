@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Root, {
 	SettingsGlobalStyle,
 	GlassOverrides,
@@ -13,6 +13,7 @@ import Root, {
 	SettingsGroup,
 	SettingsRow,
 	SettingsRowLabel,
+	DataBtnRow,
 	SearchInput,
 	SearchClear,
 	SearchWrap,
@@ -23,7 +24,7 @@ import Root, {
 	Footer,
 	Copyright
 } from './settings.styles';
-import { loadStopList, saveStopList } from '../store';
+import { loadStopList, saveStopList, exportAllSettings, importAllSettings } from '../store';
 import {
 	loadPluginRegistry,
 	savePluginRegistry,
@@ -79,6 +80,7 @@ const Settings = () => {
 	const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
 	const [promptChar, setPromptChar] = useState<[string, string] | null>(null);
 	const [searchQuery, setSearchQuery] = useState('');
+	const [settingsKey, setSettingsKey] = useState(0);
 
 	const savedPluginsRef = useRef<Map<PluginId, string>>(new Map());
 
@@ -403,6 +405,50 @@ const Settings = () => {
 		setActive('settings');
 	};
 
+	/* ---- Export / Import ---- */
+	const handleExport = async () => {
+		await exportAllSettings(plugins, registry, stopList);
+	};
+
+	const handleImport = async () => {
+		const backup = await importAllSettings();
+		if (!backup) return;
+		const reg = await loadPluginRegistry();
+		const allPlugins = await loadAllPlugins(reg);
+		setRegistry(reg);
+		setPlugins(allPlugins);
+		for (const p of allPlugins) {
+			savedPluginsRef.current.set(p.id, JSON.stringify(p));
+		}
+		loadStopList().then(setStopList);
+		setPluginDirty(new Set());
+		setRegistryDirty(false);
+		setStopListDirty(false);
+
+		// Sync shortcuts to Rust + notify other windows
+		const m = mergePlugins(allPlugins, reg);
+		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		await invoke('expansion_update_stoplist', { entries: backup.stop_list });
+		await emitEvent('shortcuts-changed');
+		await emitEvent('categories-changed');
+
+		// Apply theme & language in current window + notify others
+		const { applyTheme } = await import('../theme');
+		const { applyLanguage } = await import('../i18n');
+		const s = backup.settings;
+		const themeVal = (s.theme as string) ?? 'auto';
+		const langVal = (s.language as string) ?? 'auto';
+		localStorage.setItem('theme', themeVal);
+		applyTheme(themeVal as 'auto' | 'light' | 'dark');
+		await emitEvent('theme-changed', themeVal);
+		localStorage.setItem('language', langVal);
+		applyLanguage(langVal);
+		await emitEvent('language-changed', langVal);
+
+		// Force settings components to remount and re-read from store
+		setSettingsKey((k) => k + 1);
+	};
+
 	/* ---- Plugin toggle ---- */
 	const handleTogglePlugin = (id: PluginId, enabled: boolean) => {
 		setRegistry((prev) => prev.map((r) => (r.id === id ? { ...r, enabled } : r)));
@@ -538,7 +584,7 @@ const Settings = () => {
 						)}
 
 						{active === 'settings' && (
-							<>
+							<React.Fragment key={settingsKey}>
 								<SettingsGroup>
 									<SettingsRow>
 										<SettingsRowLabel>{t('expansion_enabled_label')}</SettingsRowLabel>
@@ -594,7 +640,16 @@ const Settings = () => {
 										<AutostartToggle />
 									</SettingsRow>
 								</SettingsGroup>
-							</>
+								<SettingsGroup>
+									<SettingsRow>
+										<SettingsRowLabel>{t('data_label')}</SettingsRowLabel>
+										<DataBtnRow>
+											<BtnSecondary onClick={handleExport}>{t('export_settings')}</BtnSecondary>
+											<BtnSecondary onClick={handleImport}>{t('import_settings')}</BtnSecondary>
+										</DataBtnRow>
+									</SettingsRow>
+								</SettingsGroup>
+							</React.Fragment>
 						)}
 
 						{selectedCat && catSection && !sq && (

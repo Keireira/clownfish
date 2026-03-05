@@ -308,6 +308,11 @@ export const Copyright = styled.button`
 	}
 `;
 
+export const DataBtnRow = styled.div`
+	display: flex;
+	gap: 8px;
+`;
+
 export default styled.div`
 	background: var(--bg-solid);
 	color: var(--text-secondary);

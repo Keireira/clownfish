@@ -4,6 +4,7 @@
 //! window management, clipboard access, and platform-specific autostart.
 
 mod autostart;
+mod backup;
 mod hotkey;
 mod text_expand;
 mod tray;
@@ -40,6 +41,8 @@ pub fn run() {
             text_expand::expansion_is_unicode_hints,
             hotkey::set_global_hotkey,
             hotkey::get_global_hotkey,
+            backup::backup_write_file,
+            backup::backup_read_file,
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
