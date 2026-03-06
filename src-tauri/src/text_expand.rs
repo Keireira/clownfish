@@ -1561,6 +1561,15 @@ fn resolve_exe_path(path: &str) -> Option<String> {
         return resolve_lnk(path);
     }
 
+    // macOS .app bundle: /Applications/Safari.app → "safari"
+    #[cfg(target_os = "macos")]
+    if ext == "app" {
+        return p
+            .file_stem()
+            .and_then(|n| n.to_str())
+            .map(|s| s.to_lowercase());
+    }
+
     None
 }
 
@@ -1675,7 +1684,54 @@ fn list_running_apps() -> Vec<RunningApp> {
         .collect()
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
+fn list_running_apps() -> Vec<RunningApp> {
+    use objc2::rc::Retained;
+    use objc2::runtime::AnyObject;
+    use objc2::{class, msg_send, msg_send_id};
+    use objc2_foundation::NSString;
+    use std::collections::HashSet;
+
+    unsafe {
+        let ws: Retained<AnyObject> = msg_send_id![class!(NSWorkspace), sharedWorkspace];
+        let apps: Retained<AnyObject> = msg_send_id![&*ws, runningApplications];
+        let count: usize = msg_send![&*apps, count];
+        let own_pid = std::process::id() as i32;
+        let mut seen = HashSet::new();
+        let mut results = Vec::new();
+
+        for i in 0..count {
+            let app: Retained<AnyObject> = msg_send_id![&*apps, objectAtIndex: i];
+
+            // NSApplicationActivationPolicy::Regular = 0 (GUI apps only)
+            let policy: isize = msg_send![&*app, activationPolicy];
+            if policy != 0 {
+                continue;
+            }
+
+            let pid: i32 = msg_send![&*app, processIdentifier];
+            if pid == own_pid {
+                continue;
+            }
+
+            let name: Option<Retained<NSString>> = msg_send_id![&*app, localizedName];
+            let Some(name) = name else { continue };
+            let name_str = name.to_string();
+            let name_lower = name_str.to_lowercase();
+
+            if seen.insert(name_lower.clone()) {
+                results.push(RunningApp {
+                    exe: name_lower,
+                    title: name_str,
+                });
+            }
+        }
+
+        results
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 fn list_running_apps() -> Vec<RunningApp> {
     vec![]
 }
@@ -1741,7 +1797,24 @@ fn get_foreground_exe() -> Option<String> {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
+fn get_foreground_exe() -> Option<String> {
+    use objc2::rc::Retained;
+    use objc2::runtime::AnyObject;
+    use objc2::{class, msg_send_id};
+    use objc2_foundation::NSString;
+
+    unsafe {
+        let ws: Retained<AnyObject> = msg_send_id![class!(NSWorkspace), sharedWorkspace];
+        let app: Option<Retained<AnyObject>> = msg_send_id![&*ws, frontmostApplication];
+        let app = app?;
+        let name: Option<Retained<NSString>> = msg_send_id![&*app, localizedName];
+        let name = name?;
+        Some(name.to_string().to_lowercase())
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 fn get_foreground_exe() -> Option<String> {
     None
 }
@@ -1901,7 +1974,177 @@ unsafe fn parse_safearray_rect(
     })
 }
 
-#[cfg(not(target_os = "windows"))]
+/// macOS: uses the Accessibility API to get the caret position.
+///
+/// Tries two strategies:
+/// 1. **AXSelectedTextRange + AXBoundsForRange** — precise caret rect, works in
+///    most text editors, browsers, and accessibility-aware apps.
+/// 2. **AXPosition + AXSize of the focused element** — coarser fallback.
+///
+/// Requires the user to grant Accessibility permission (System Settings →
+/// Privacy & Security → Accessibility), which is already needed for `rdev::grab`.
+#[cfg(target_os = "macos")]
+pub fn get_caret_position() -> Option<CaretRect> {
+    use std::ffi::c_void;
+
+    type AXUIElementRef = *const c_void;
+    type AXValueRef = *const c_void;
+    type CFTypeRef = *const c_void;
+    type CFStringRef = *const c_void;
+
+    #[repr(C)]
+    #[derive(Default, Copy, Clone)]
+    struct CGPoint {
+        x: f64,
+        y: f64,
+    }
+    #[repr(C)]
+    #[derive(Default, Copy, Clone)]
+    struct CGSize {
+        width: f64,
+        height: f64,
+    }
+    #[repr(C)]
+    #[derive(Default, Copy, Clone)]
+    struct CGRect {
+        origin: CGPoint,
+        size: CGSize,
+    }
+
+    const AX_VALUE_TYPE_CG_POINT: i32 = 1;
+    const AX_VALUE_TYPE_CG_SIZE: i32 = 2;
+    const AX_VALUE_TYPE_CG_RECT: i32 = 3;
+
+    #[link(name = "ApplicationServices", kind = "framework")]
+    extern "C" {
+        fn AXUIElementCreateSystemWide() -> AXUIElementRef;
+        fn AXUIElementCopyAttributeValue(
+            element: AXUIElementRef,
+            attribute: CFStringRef,
+            value: *mut CFTypeRef,
+        ) -> i32;
+        fn AXUIElementCopyParameterizedAttributeValue(
+            element: AXUIElementRef,
+            attr: CFStringRef,
+            param: CFTypeRef,
+            value: *mut CFTypeRef,
+        ) -> i32;
+        fn AXValueGetValue(value: AXValueRef, type_: i32, value_ptr: *mut c_void) -> bool;
+
+        static kAXFocusedUIElementAttribute: CFStringRef;
+        static kAXSelectedTextRangeAttribute: CFStringRef;
+        static kAXBoundsForRangeParameterizedAttribute: CFStringRef;
+        static kAXPositionAttribute: CFStringRef;
+        static kAXSizeAttribute: CFStringRef;
+    }
+
+    #[link(name = "CoreFoundation", kind = "framework")]
+    extern "C" {
+        fn CFRelease(cf: *const c_void);
+    }
+
+    unsafe {
+        let system_wide = AXUIElementCreateSystemWide();
+        if system_wide.is_null() {
+            return None;
+        }
+
+        // 1. Get the focused UI element.
+        let mut focused: CFTypeRef = std::ptr::null();
+        let err = AXUIElementCopyAttributeValue(
+            system_wide,
+            kAXFocusedUIElementAttribute,
+            &mut focused,
+        );
+        CFRelease(system_wide);
+        if err != 0 || focused.is_null() {
+            return None;
+        }
+
+        // 2. Try AXSelectedTextRange + AXBoundsForRange (precise caret rect).
+        let mut range_val: CFTypeRef = std::ptr::null();
+        let range_err = AXUIElementCopyAttributeValue(
+            focused,
+            kAXSelectedTextRangeAttribute,
+            &mut range_val,
+        );
+        if range_err == 0 && !range_val.is_null() {
+            let mut bounds_val: CFTypeRef = std::ptr::null();
+            let bounds_err = AXUIElementCopyParameterizedAttributeValue(
+                focused,
+                kAXBoundsForRangeParameterizedAttribute,
+                range_val,
+                &mut bounds_val,
+            );
+            CFRelease(range_val);
+            if bounds_err == 0 && !bounds_val.is_null() {
+                let mut rect = CGRect::default();
+                if AXValueGetValue(
+                    bounds_val,
+                    AX_VALUE_TYPE_CG_RECT,
+                    &mut rect as *mut _ as *mut c_void,
+                ) {
+                    CFRelease(bounds_val);
+                    CFRelease(focused);
+                    return Some(CaretRect {
+                        left: rect.origin.x as i32,
+                        top: rect.origin.y as i32,
+                        right: (rect.origin.x + rect.size.width) as i32,
+                        bottom: (rect.origin.y + rect.size.height) as i32,
+                    });
+                }
+                CFRelease(bounds_val);
+            }
+        } else if !range_val.is_null() {
+            CFRelease(range_val);
+        }
+
+        // 3. Fallback: focused element AXPosition + AXSize (coarse).
+        let mut pos_val: CFTypeRef = std::ptr::null();
+        let mut size_val: CFTypeRef = std::ptr::null();
+        let pos_err =
+            AXUIElementCopyAttributeValue(focused, kAXPositionAttribute, &mut pos_val);
+        let size_err =
+            AXUIElementCopyAttributeValue(focused, kAXSizeAttribute, &mut size_val);
+        CFRelease(focused);
+
+        if pos_err == 0 && size_err == 0 && !pos_val.is_null() && !size_val.is_null() {
+            let mut pos = CGPoint::default();
+            let mut size = CGSize::default();
+            let pos_ok = AXValueGetValue(
+                pos_val,
+                AX_VALUE_TYPE_CG_POINT,
+                &mut pos as *mut _ as *mut c_void,
+            );
+            let size_ok = AXValueGetValue(
+                size_val,
+                AX_VALUE_TYPE_CG_SIZE,
+                &mut size as *mut _ as *mut c_void,
+            );
+            CFRelease(pos_val);
+            CFRelease(size_val);
+            if pos_ok && size_ok {
+                return Some(CaretRect {
+                    left: pos.x as i32,
+                    top: pos.y as i32,
+                    right: (pos.x + size.width) as i32,
+                    bottom: (pos.y + size.height) as i32,
+                });
+            }
+        } else {
+            if !pos_val.is_null() {
+                CFRelease(pos_val);
+            }
+            if !size_val.is_null() {
+                CFRelease(size_val);
+            }
+        }
+
+        None
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn get_caret_position() -> Option<CaretRect> {
     None
 }

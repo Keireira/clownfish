@@ -8,7 +8,9 @@ const DETAIL_CARDS = [
 	{ icon: '⚡', title: 'extra_light_title', desc: 'extra_light_desc', delay: 'delay-4' },
 	{ icon: '🔒', title: 'extra_private_title', desc: 'extra_private_desc', delay: 'delay-5' },
 	{ icon: '🚀', title: 'extra_login_title', desc: 'extra_login_desc', delay: 'delay-6' },
-	{ icon: '🎛️', title: 'extra_perapp_title', desc: 'extra_perapp_desc', delay: 'delay-1' }
+	{ icon: '🎛️', title: 'extra_perapp_title', desc: 'extra_perapp_desc', delay: 'delay-1' },
+	{ icon: '🖱️', title: 'extra_dnd_title', desc: 'extra_dnd_desc', delay: 'delay-2' },
+	{ icon: '✏️', title: 'extra_autocorrect_title', desc: 'extra_autocorrect_desc', delay: 'delay-3' }
 ] as const;
 
 const EXPANSION_PREVIEW = [
@@ -124,6 +126,59 @@ const Features = () => {
 						</div>
 						<h3 className="mb-1.5 text-base font-semibold">{t('feat_custom_title')}</h3>
 						<p className="text-sm leading-relaxed text-text-secondary">{t('feat_custom_desc')}</p>
+					</div>
+				</Reveal>
+				{/* Symbol packs card */}
+				<Reveal delay="delay-5">
+					<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
+						<div className="mb-5 flex flex-wrap gap-1.5">
+							{[
+								{ name: 'Music', icon: '♪' },
+								{ name: 'Chess', icon: '♔' },
+								{ name: 'Chemistry', icon: '⇌' },
+								{ name: 'Kaomoji', icon: '(◕‿◕)' },
+								{ name: 'Astronomy', icon: '☉' },
+								{ name: 'IPA', icon: 'ə' }
+							].map((pack) => (
+								<span
+									key={pack.name}
+									className="symbol-hover flex items-center gap-1.5 rounded-lg border border-border bg-white/[0.03] px-2.5 py-1.5 text-[11px]"
+								>
+									<span>{pack.icon}</span>
+									<span className="text-text-muted">{pack.name}</span>
+								</span>
+							))}
+						</div>
+						<h3 className="mb-1.5 text-base font-semibold">{t('feat_packs_title')}</h3>
+						<p className="text-sm leading-relaxed text-text-secondary">{t('feat_packs_desc')}</p>
+					</div>
+				</Reveal>
+
+				{/* Compose mode card */}
+				<Reveal delay="delay-6">
+					<div className="card-hover flex h-full flex-col rounded-2xl border border-border bg-bg-card p-6">
+						<div className="mb-5 flex items-center gap-3">
+							<span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white/[0.03] text-lg">
+								a
+							</span>
+							<span className="text-text-muted text-xs">+</span>
+							<div className="flex gap-1">
+								{['\u0301', '\u0308', '\u0303'].map((mark, i) => (
+									<span
+										key={i}
+										className="flex h-8 w-8 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-sm"
+									>
+										{`◌${mark}`}
+									</span>
+								))}
+							</div>
+							<span className="text-text-muted text-xs">=</span>
+							<span className="flex h-10 w-10 items-center justify-center rounded-lg border border-green/30 bg-green/10 text-lg text-text-primary">
+								ä
+							</span>
+						</div>
+						<h3 className="mb-1.5 text-base font-semibold">{t('feat_compose_title')}</h3>
+						<p className="text-sm leading-relaxed text-text-secondary">{t('feat_compose_desc')}</p>
 					</div>
 				</Reveal>
 			</div>

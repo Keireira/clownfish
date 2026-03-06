@@ -25,7 +25,7 @@ const EXPANSION_DEMO = [
 const Hero = ({ userOS, setDlOverride }: Props) => {
 	const { t } = useTranslation();
 	const [mockupQuery, setMockupQuery] = useState('');
-	const [mockupTab, setMockupTab] = useState<'expand' | 'symbols'>('expand');
+	const [mockupTab, setMockupTab] = useState<'expand' | 'symbols' | 'compose'>('expand');
 
 	const mockupFiltered = useMemo(() => {
 		const q = mockupQuery.toLowerCase().trim();
@@ -85,26 +85,52 @@ const Hero = ({ userOS, setDlOverride }: Props) => {
 							<span className="h-2.5 w-2.5 rounded-full bg-[#28c840]/60" />
 						</div>
 						<div className="flex gap-1 rounded-lg border border-border bg-white/[0.03] p-0.5">
-							<button
-								onClick={() => setMockupTab('expand')}
-								className={`rounded-md px-2.5 py-1 text-[10px] font-medium transition ${
-									mockupTab === 'expand' ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text-secondary'
-								}`}
-							>
-								Expansion
-							</button>
-							<button
-								onClick={() => setMockupTab('symbols')}
-								className={`rounded-md px-2.5 py-1 text-[10px] font-medium transition ${
-									mockupTab === 'symbols' ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text-secondary'
-								}`}
-							>
-								Symbols
-							</button>
+							{(['expand', 'symbols', 'compose'] as const).map((tab) => (
+								<button
+									key={tab}
+									onClick={() => setMockupTab(tab)}
+									className={`rounded-md px-2 py-1 text-[10px] font-medium transition ${
+										mockupTab === tab ? 'bg-accent/20 text-accent' : 'text-text-muted hover:text-text-secondary'
+									}`}
+								>
+									{tab === 'expand' ? 'Expansion' : tab === 'symbols' ? 'Symbols' : 'Compose'}
+								</button>
+							))}
 						</div>
 					</div>
 
-					{mockupTab === 'expand' ? (
+					{mockupTab === 'compose' ? (
+						<div className="space-y-3">
+							<div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Base character</div>
+							<div className="flex items-center gap-2">
+								<span className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-lg">
+									e
+								</span>
+								<span className="text-text-muted text-xs">+</span>
+								<div className="flex gap-1">
+									{['\u0301', '\u0300', '\u0302', '\u0308'].map((mark, i) => (
+										<span
+											key={i}
+											className={`flex h-8 w-8 items-center justify-center rounded-md border text-sm ${
+												i === 0
+													? 'border-accent/30 bg-accent/10 text-text-primary'
+													: 'border-border bg-white/[0.03] text-text-muted'
+											}`}
+										>
+											{`◌${mark}`}
+										</span>
+									))}
+								</div>
+							</div>
+							<div className="flex items-center gap-2 rounded-lg border border-green/30 bg-green/10 px-3 py-2.5">
+								<span className="text-[10px] text-text-muted">Result:</span>
+								<span className="text-lg text-text-primary">é</span>
+								<span className="ml-auto rounded-md border border-green/30 bg-green/20 px-2 py-0.5 text-[9px] text-green">
+									copied!
+								</span>
+							</div>
+						</div>
+					) : mockupTab === 'expand' ? (
 						<div className="space-y-2">
 							{EXPANSION_DEMO.map((row) => (
 								<div

@@ -112,19 +112,25 @@ const HowItWorks = () => {
 							</div>
 						</div>
 						<div className="pl-10">
-							<div className="inline-flex items-center gap-2.5 rounded-xl border border-border bg-bg-card px-4 py-2.5">
-								{['→', '←', '↑', '↓'].map((s) => (
-									<span
-										key={s}
-										className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-sm"
-									>
-										{s}
+							<div className="space-y-2">
+								<div className="inline-flex items-center gap-2.5 rounded-xl border border-border bg-bg-card px-4 py-2.5">
+									{['→', '←', '↑', '↓'].map((s) => (
+										<span
+											key={s}
+											className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/30 bg-accent/10 text-sm"
+										>
+											{s}
+										</span>
+									))}
+									<span className="text-text-muted text-xs">→</span>
+									<span className="rounded-md border border-green/30 bg-green/10 px-2.5 py-1 text-xs text-green">
+										copied!
 									</span>
-								))}
-								<span className="text-text-muted text-xs">→</span>
-								<span className="rounded-md border border-green/30 bg-green/10 px-2.5 py-1 text-xs text-green">
-									copied!
-								</span>
+								</div>
+								<div className="flex items-center gap-2 text-[10px] text-text-muted">
+									<span className="rounded-md border border-border bg-white/[0.03] px-2 py-1">drag</span>
+									<span>→ drop into any app</span>
+								</div>
 							</div>
 						</div>
 					</div>
