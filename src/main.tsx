@@ -11,8 +11,9 @@ initLanguage();
 // Migrate to plugin system (idempotent) then sync to Rust backend
 (async () => {
 	try {
-		const { migrateToPluginSystem, loadMergedData } = await import('./plugin-store');
+		const { migrateToPluginSystem, ensureBuiltinPlugins, loadMergedData } = await import('./plugin-store');
 		await migrateToPluginSystem();
+		await ensureBuiltinPlugins();
 
 		const { invoke } = await import('@tauri-apps/api/core');
 		const { loadExpansionEnabled, loadHintsPosition, loadStopList, loadUnicodeHints, loadAutocorrectEnabled } = await import('./store');

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLanguage } from '../../i18n';
-import { savePlugin, savePluginRegistry, deletePluginFile, getDefaultPluginTemplate } from '../../plugin-store';
+import { savePlugin, savePluginRegistry, deletePluginFile, getBuiltinPluginTemplate } from '../../plugin-store';
 import type { Plugin, PluginId, PluginRegistryEntry } from '../../types';
 import {
 	Wrapper,
@@ -81,11 +81,11 @@ const PluginManager = ({ plugins, registry, onChanged }: Props) => {
 		await onChanged();
 	};
 
-	const handleResetBuiltin = async () => {
+	const handleResetBuiltin = async (id: string) => {
 		if (busy) return;
 		setBusy(true);
 		try {
-			const template = getDefaultPluginTemplate();
+			const template = getBuiltinPluginTemplate(id);
 			await savePlugin(template);
 			await onChanged();
 		} finally {
@@ -187,7 +187,7 @@ const PluginManager = ({ plugins, registry, onChanged }: Props) => {
 							/>
 							<ActionBtn onClick={() => handleExport(plugin)}>{t('plugin_export')}</ActionBtn>
 							{plugin.builtin ? (
-								<ActionBtn onClick={handleResetBuiltin}>{t('reset_to_default')}</ActionBtn>
+								<ActionBtn onClick={() => handleResetBuiltin(plugin.id)}>{t('reset_to_default')}</ActionBtn>
 							) : (
 								<DeleteBtn onClick={() => handleDelete(plugin.id)} disabled={busy}>
 									{t('plugin_delete')}

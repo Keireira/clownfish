@@ -2,6 +2,7 @@ import { load, type Store } from '@tauri-apps/plugin-store';
 import { CATEGORIES as DEFAULT_CATEGORIES } from './data/characters';
 import { DEFAULT_SHORTCUTS } from './data/shortcuts';
 import { DEFAULT_AUTOCORRECT_RULES } from './data/autocorrect-rules';
+import { GITMOJI_SHORTCUTS } from './data/gitmoji';
 import type { AutoCorrectRule, Category, Plugin, PluginId, PluginRegistryEntry, Shortcut } from './types';
 
 // ---------------------------------------------------------------------------
@@ -158,6 +159,27 @@ export function getDefaultPluginTemplate(): Plugin {
 	};
 }
 
+export function getGitmojiPluginTemplate(): Plugin {
+	return {
+		id: 'gitmoji',
+		name: 'Gitmoji',
+		version: '1.0.0',
+		builtin: true,
+		categories: [],
+		shortcuts: GITMOJI_SHORTCUTS,
+		autocorrect: []
+	};
+}
+
+export function getBuiltinPluginTemplate(id: PluginId): Plugin {
+	switch (id) {
+		case 'gitmoji':
+			return getGitmojiPluginTemplate();
+		default:
+			return getDefaultPluginTemplate();
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Migration: flat settings → plugin system (idempotent)
 // ---------------------------------------------------------------------------
@@ -185,11 +207,15 @@ export async function migrateToPluginSystem(): Promise<void> {
 		autocorrect: DEFAULT_AUTOCORRECT_RULES
 	};
 
-	// Save plugin file
+	// Save plugin files
 	await savePlugin(defaultPlugin);
+	await savePlugin(getGitmojiPluginTemplate());
 
 	// Save registry
-	await savePluginRegistry([{ id: 'default', enabled: true, order: 0 }]);
+	await savePluginRegistry([
+		{ id: 'default', enabled: true, order: 0 },
+		{ id: 'gitmoji', enabled: true, order: 1 }
+	]);
 
 	// Clean up old keys
 	try {
@@ -199,5 +225,35 @@ export async function migrateToPluginSystem(): Promise<void> {
 		await store.save();
 	} catch {
 		// non-critical
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Ensure built-in plugins exist (for existing users who already migrated)
+// ---------------------------------------------------------------------------
+
+const BUILTIN_PLUGINS: { id: PluginId; order: number; template: () => Plugin }[] = [
+	{ id: 'default', order: 0, template: getDefaultPluginTemplate },
+	{ id: 'gitmoji', order: 1, template: getGitmojiPluginTemplate }
+];
+
+export async function ensureBuiltinPlugins(): Promise<void> {
+	const registry = await loadPluginRegistry();
+	if (registry.length === 0) return; // not yet migrated — migration will handle it
+
+	let changed = false;
+	const newRegistry = [...registry];
+	const maxOrder = registry.reduce((max, r) => Math.max(max, r.order), -1);
+
+	for (const bp of BUILTIN_PLUGINS) {
+		if (registry.some((r) => r.id === bp.id)) continue;
+		// Plugin missing — add it
+		await savePlugin(bp.template());
+		newRegistry.push({ id: bp.id, enabled: true, order: maxOrder + 1 + bp.order });
+		changed = true;
+	}
+
+	if (changed) {
+		await savePluginRegistry(newRegistry);
 	}
 }
