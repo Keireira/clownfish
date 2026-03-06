@@ -780,8 +780,9 @@ fn resolve_date(key: &str) -> String {
     use chrono::{Datelike, Local, NaiveDate};
 
     let (base, user_fmt) = split_format(key, "date");
+    // In date context, mm (minutes) doesn't make sense — treat as MM (month)
     let fmt = match user_fmt {
-        Some(f) => moment_to_strftime(f),
+        Some(f) => moment_to_strftime(&f.replace("mm", "MM")),
         None => "%Y-%m-%d".to_string(),
     };
 
@@ -830,8 +831,9 @@ fn resolve_time(key: &str) -> String {
     use chrono::Local;
 
     let (base, user_fmt) = split_format(key, "time");
+    // In time context, MM (month) doesn't make sense — treat as mm (minutes)
     let fmt = match user_fmt {
-        Some(f) => moment_to_strftime(f),
+        Some(f) => moment_to_strftime(&f.replace("MM", "mm")),
         None => "%H:%M".to_string(),
     };
 

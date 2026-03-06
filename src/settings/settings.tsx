@@ -35,7 +35,8 @@ import {
 	mergePlugins,
 	mergeAllShortcuts,
 	getDisabledPluginIds,
-	getDefaultPluginTemplate
+	getDefaultPluginTemplate,
+	getBuiltinPluginTemplate
 } from '../plugin-store';
 import { emitEvent } from '../events';
 import { invoke } from '@tauri-apps/api/core';
@@ -508,18 +509,20 @@ const Settings = () => {
 
 	/* ---- Save / Reset ---- */
 	const handleReset = async () => {
-		const defaultTemplate = getDefaultPluginTemplate();
-
-		// Reset default plugin to template
-		const newPlugins = plugins.map((p) => (p.builtin ? { ...defaultTemplate } : p));
-		// Remove non-builtin plugins
-		const builtinOnly = newPlugins.filter((p) => p.builtin);
+		// Reset each builtin plugin to its own template, drop non-builtin
+		const builtinOnly = plugins
+			.filter((p) => p.builtin)
+			.map((p) => getBuiltinPluginTemplate(p.id));
+		// Ensure gitmoji is present even if it was missing from the list
+		if (!builtinOnly.some((p) => p.id === 'gitmoji')) {
+			builtinOnly.push(getBuiltinPluginTemplate('gitmoji'));
+		}
 		for (const p of plugins) {
 			if (!p.builtin) await deletePluginFile(p.id);
 		}
 		setPlugins(builtinOnly);
 
-		const newRegistry = [{ id: 'default', enabled: true, order: 0 }];
+		const newRegistry = builtinOnly.map((p, i) => ({ id: p.id, enabled: p.id !== 'gitmoji', order: i }));
 		setRegistry(newRegistry);
 
 		for (const p of builtinOnly) {

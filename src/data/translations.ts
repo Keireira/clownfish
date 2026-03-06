@@ -129,6 +129,8 @@ export const translations: Record<string, TranslationRecord> = {
 		var_help_date: 'Current date ({{date:DD.MM.YYYY}})',
 		var_help_time: 'Current time',
 		var_help_random: 'Random characters',
+		ctrl_enter_hint: 'Ctrl+Enter to save',
+		insert_var: 'Insert variable',
 
 		// Category names (defaults)
 		cat_arrows: 'Arrows',
@@ -322,6 +324,8 @@ export const translations: Record<string, TranslationRecord> = {
 		var_help_date: 'Текущая дата ({{date:DD.MM.YYYY}})',
 		var_help_time: 'Текущее время',
 		var_help_random: 'Случайные символы',
+		ctrl_enter_hint: 'Ctrl+Enter для сохранения',
+		insert_var: 'Вставить переменную',
 
 		cat_arrows: 'Стрелки',
 		cat_math: 'Математика',
@@ -507,6 +511,8 @@ export const translations: Record<string, TranslationRecord> = {
 		var_help_date: 'Fecha actual ({{date:DD.MM.YYYY}})',
 		var_help_time: 'Hora actual',
 		var_help_random: 'Caracteres aleatorios',
+		ctrl_enter_hint: 'Ctrl+Enter para guardar',
+		insert_var: 'Insertar variable',
 
 		cat_arrows: 'Flechas',
 		cat_math: 'Matemáticas',
@@ -692,6 +698,8 @@ export const translations: Record<string, TranslationRecord> = {
 		var_help_date: '現在の日付 ({{date:DD.MM.YYYY}})',
 		var_help_time: '現在の時刻',
 		var_help_random: 'ランダム文字',
+		ctrl_enter_hint: 'Ctrl+Enterで保存',
+		insert_var: '変数を挿入',
 
 		cat_arrows: '矢印',
 		cat_math: '数学',

@@ -239,7 +239,7 @@ export async function migrateToPluginSystem(): Promise<void> {
 	// Save registry
 	await savePluginRegistry([
 		{ id: 'default', enabled: true, order: 0 },
-		{ id: 'gitmoji', enabled: true, order: 1 }
+		{ id: 'gitmoji', enabled: false, order: 1 }
 	]);
 
 	// Clean up old keys
@@ -274,7 +274,7 @@ export async function ensureBuiltinPlugins(): Promise<void> {
 		if (registry.some((r) => r.id === bp.id)) continue;
 		// Plugin missing — add it
 		await savePlugin(bp.template());
-		newRegistry.push({ id: bp.id, enabled: true, order: maxOrder + 1 + bp.order });
+		newRegistry.push({ id: bp.id, enabled: bp.id !== 'gitmoji', order: maxOrder + 1 + bp.order });
 		changed = true;
 	}
 
