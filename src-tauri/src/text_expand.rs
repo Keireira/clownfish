@@ -455,7 +455,11 @@ fn on_rdev_event(event: Event) -> Option<Event> {
 
             if state.buffer.chars().count() > state.max_buffer {
                 let excess = state.buffer.chars().count() - state.max_buffer;
-                let byte_off = state.buffer.char_indices().nth(excess).map_or(state.buffer.len(), |(i, _)| i);
+                let byte_off = state
+                    .buffer
+                    .char_indices()
+                    .nth(excess)
+                    .map_or(state.buffer.len(), |(i, _)| i);
                 state.buffer.drain(..byte_off);
             }
 
@@ -482,7 +486,9 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             }
 
             if app_autocorrect {
-                if let Some((trigger_len, replacement)) = find_autocorrect(&state, &app_cfg.autocorrect_rules) {
+                if let Some((trigger_len, replacement)) =
+                    find_autocorrect(&state, &app_cfg.autocorrect_rules)
+                {
                     state.buffer.clear();
                     drop(state);
                     clear_hints();
@@ -812,7 +818,11 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
 
         if state.buffer.chars().count() > state.max_buffer {
             let excess = state.buffer.chars().count() - state.max_buffer;
-            let byte_off = state.buffer.char_indices().nth(excess).map_or(state.buffer.len(), |(i, _)| i);
+            let byte_off = state
+                .buffer
+                .char_indices()
+                .nth(excess)
+                .map_or(state.buffer.len(), |(i, _)| i);
             state.buffer.drain(..byte_off);
         }
 
@@ -839,7 +849,9 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         }
 
         if app_autocorrect {
-            if let Some((trigger_len, replacement)) = find_autocorrect(&state, &app_cfg.autocorrect_rules) {
+            if let Some((trigger_len, replacement)) =
+                find_autocorrect(&state, &app_cfg.autocorrect_rules)
+            {
                 state.buffer.clear();
                 drop(state);
                 clear_hints();
@@ -979,7 +991,9 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
     }
 
     let mut hints = Vec::new();
-    let hex_digits = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'];
+    let hex_digits = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
+    ];
 
     match rest.len() {
         3 => {
@@ -1119,9 +1133,9 @@ pub struct DayStats {
 static STATS_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 fn stats_path() -> Option<std::path::PathBuf> {
-    APP_HANDLE.get().and_then(|app| {
-        app.path().app_data_dir().ok().map(|d| d.join("stats.json"))
-    })
+    APP_HANDLE
+        .get()
+        .and_then(|app| app.path().app_data_dir().ok().map(|d| d.join("stats.json")))
 }
 
 fn read_stats(path: &std::path::Path) -> StatsData {
@@ -1688,20 +1702,20 @@ fn list_running_apps() -> Vec<RunningApp> {
 fn list_running_apps() -> Vec<RunningApp> {
     use objc2::rc::Retained;
     use objc2::runtime::AnyObject;
-    use objc2::{class, msg_send, msg_send_id};
+    use objc2::{class, msg_send};
     use objc2_foundation::NSString;
     use std::collections::HashSet;
 
     unsafe {
-        let ws: Retained<AnyObject> = msg_send_id![class!(NSWorkspace), sharedWorkspace];
-        let apps: Retained<AnyObject> = msg_send_id![&*ws, runningApplications];
+        let ws: Retained<AnyObject> = msg_send![class!(NSWorkspace), sharedWorkspace];
+        let apps: Retained<AnyObject> = msg_send![&*ws, runningApplications];
         let count: usize = msg_send![&*apps, count];
         let own_pid = std::process::id() as i32;
         let mut seen = HashSet::new();
         let mut results = Vec::new();
 
         for i in 0..count {
-            let app: Retained<AnyObject> = msg_send_id![&*apps, objectAtIndex: i];
+            let app: Retained<AnyObject> = msg_send![&*apps, objectAtIndex: i];
 
             // NSApplicationActivationPolicy::Regular = 0 (GUI apps only)
             let policy: isize = msg_send![&*app, activationPolicy];
@@ -1714,7 +1728,7 @@ fn list_running_apps() -> Vec<RunningApp> {
                 continue;
             }
 
-            let name: Option<Retained<NSString>> = msg_send_id![&*app, localizedName];
+            let name: Option<Retained<NSString>> = msg_send![&*app, localizedName];
             let Some(name) = name else { continue };
             let name_str = name.to_string();
             let name_lower = name_str.to_lowercase();
@@ -1801,14 +1815,14 @@ fn get_foreground_exe() -> Option<String> {
 fn get_foreground_exe() -> Option<String> {
     use objc2::rc::Retained;
     use objc2::runtime::AnyObject;
-    use objc2::{class, msg_send_id};
+    use objc2::{class, msg_send};
     use objc2_foundation::NSString;
 
     unsafe {
-        let ws: Retained<AnyObject> = msg_send_id![class!(NSWorkspace), sharedWorkspace];
-        let app: Option<Retained<AnyObject>> = msg_send_id![&*ws, frontmostApplication];
+        let ws: Retained<AnyObject> = msg_send![class!(NSWorkspace), sharedWorkspace];
+        let app: Option<Retained<AnyObject>> = msg_send![&*ws, frontmostApplication];
         let app = app?;
-        let name: Option<Retained<NSString>> = msg_send_id![&*app, localizedName];
+        let name: Option<Retained<NSString>> = msg_send![&*app, localizedName];
         let name = name?;
         Some(name.to_string().to_lowercase())
     }
@@ -2051,11 +2065,8 @@ pub fn get_caret_position() -> Option<CaretRect> {
 
         // 1. Get the focused UI element.
         let mut focused: CFTypeRef = std::ptr::null();
-        let err = AXUIElementCopyAttributeValue(
-            system_wide,
-            kAXFocusedUIElementAttribute,
-            &mut focused,
-        );
+        let err =
+            AXUIElementCopyAttributeValue(system_wide, kAXFocusedUIElementAttribute, &mut focused);
         CFRelease(system_wide);
         if err != 0 || focused.is_null() {
             return None;
@@ -2063,11 +2074,8 @@ pub fn get_caret_position() -> Option<CaretRect> {
 
         // 2. Try AXSelectedTextRange + AXBoundsForRange (precise caret rect).
         let mut range_val: CFTypeRef = std::ptr::null();
-        let range_err = AXUIElementCopyAttributeValue(
-            focused,
-            kAXSelectedTextRangeAttribute,
-            &mut range_val,
-        );
+        let range_err =
+            AXUIElementCopyAttributeValue(focused, kAXSelectedTextRangeAttribute, &mut range_val);
         if range_err == 0 && !range_val.is_null() {
             let mut bounds_val: CFTypeRef = std::ptr::null();
             let bounds_err = AXUIElementCopyParameterizedAttributeValue(
@@ -2102,10 +2110,8 @@ pub fn get_caret_position() -> Option<CaretRect> {
         // 3. Fallback: focused element AXPosition + AXSize (coarse).
         let mut pos_val: CFTypeRef = std::ptr::null();
         let mut size_val: CFTypeRef = std::ptr::null();
-        let pos_err =
-            AXUIElementCopyAttributeValue(focused, kAXPositionAttribute, &mut pos_val);
-        let size_err =
-            AXUIElementCopyAttributeValue(focused, kAXSizeAttribute, &mut size_val);
+        let pos_err = AXUIElementCopyAttributeValue(focused, kAXPositionAttribute, &mut pos_val);
+        let size_err = AXUIElementCopyAttributeValue(focused, kAXSizeAttribute, &mut size_val);
         CFRelease(focused);
 
         if pos_err == 0 && size_err == 0 && !pos_val.is_null() && !size_val.is_null() {
