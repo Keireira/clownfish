@@ -60,3 +60,11 @@ export const CustomInputActive = styled(CustomInput)`
 	background: var(--glass-bg);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 `;
+
+export const Preview = styled.span`
+	font-size: 11px;
+	color: var(--text-secondary);
+	white-space: nowrap;
+	padding: 0 4px;
+	align-self: center;
+`;

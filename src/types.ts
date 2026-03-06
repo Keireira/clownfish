@@ -13,6 +13,7 @@ export interface Shortcut {
 	trigger: string;
 	expansion: string;
 	variables?: Record<string, string>;
+	plugin_id?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +60,7 @@ export interface StopListEntry {
 	offset: HintsOffset;
 	autocorrect?: boolean;
 	autocorrect_rules?: AutoCorrectRule[];
+	plugin_overrides?: Record<string, boolean>;
 }
 
 const DISPLAY_MAP: Record<string, string> = {

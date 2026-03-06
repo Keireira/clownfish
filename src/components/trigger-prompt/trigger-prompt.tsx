@@ -32,16 +32,16 @@ function toKeyword(name: string): string {
 function uniqueKeyword(base: string, tc: string, existing: string[]): string {
 	if (base.length === 0) return '';
 	const set = new Set(existing);
-	if (!set.has(tc + base + tc)) return base;
+	if (!set.has(tc + base)) return base;
 	for (let i = 2; ; i++) {
 		const candidate = `${base}_${i}`;
-		if (!set.has(tc + candidate + tc)) return candidate;
+		if (!set.has(tc + candidate)) return candidate;
 	}
 }
 
 const TriggerPrompt = ({ char, name, existingTriggers, onAdd, onClose }: Props) => {
 	const t = useLanguage();
-	const [tc, setTc] = useState(':');
+	const [tc, setTc] = useState('\\');
 	const [tcLoaded, setTcLoaded] = useState(false);
 
 	useEffect(() => {
@@ -60,7 +60,7 @@ const TriggerPrompt = ({ char, name, existingTriggers, onAdd, onClose }: Props) 
 	const current = keyword ?? defaultKeyword;
 
 	const trimmed = current.trim();
-	const fullTrigger = tc + trimmed + tc;
+	const fullTrigger = tc + trimmed;
 	const duplicate = trimmed.length > 0 && existingTriggers.includes(fullTrigger);
 	const canAdd = trimmed.length > 0 && !duplicate;
 

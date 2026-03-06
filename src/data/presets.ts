@@ -27,7 +27,6 @@ export const PRESET_CATEGORIES: Category[] = [
 			['¶', 'paragraph pilcrow'],
 			['†', 'dagger'],
 			['‡', 'double dagger'],
-			['…', 'horizontal ellipsis'],
 			[' ', 'non-breaking space'],
 			['​', 'zero-width space'],
 			['‐', 'hyphen'],

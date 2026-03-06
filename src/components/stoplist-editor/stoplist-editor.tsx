@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLanguage } from '../../i18n';
-import type { StopListEntry, AutoCorrectRule, CompassDirection, HintsOffset } from '../../types';
+import type { StopListEntry, AutoCorrectRule, CompassDirection, HintsOffset, Plugin, PluginRegistryEntry } from '../../types';
 import {
 	SettingRow,
 	SettingLabel,
@@ -24,7 +24,10 @@ import {
 	AcDeleteBtn,
 	AcAddRow,
 	AcInput,
-	AcAddBtn
+	AcAddBtn,
+	PluginSection,
+	PluginRow,
+	PluginName
 } from './stoplist-editor.styles';
 
 const COMPASS_GRID: CompassDirection[] = ['NW', 'N', 'NE', 'W', 'auto', 'E', 'SW', 'S', 'SE'];
@@ -51,9 +54,11 @@ const OFFSET_CELLS: { side: keyof HintsOffset; label: string }[] = [
 type Props = {
 	entry: StopListEntry;
 	onChange: (entry: StopListEntry) => void;
+	plugins: Plugin[];
+	registry: PluginRegistryEntry[];
 };
 
-const AppSettingsPanel = ({ entry, onChange }: Props) => {
+const AppSettingsPanel = ({ entry, onChange, plugins, registry }: Props) => {
 	const t = useLanguage();
 	const [newPattern, setNewPattern] = useState('');
 	const [newReplacement, setNewReplacement] = useState('');
@@ -80,6 +85,27 @@ const AppSettingsPanel = ({ entry, onChange }: Props) => {
 	};
 
 	const rules = entry.autocorrect_rules ?? [];
+	const overrides = entry.plugin_overrides ?? {};
+
+	const isPluginActive = (pluginId: string) => {
+		if (pluginId in overrides) return overrides[pluginId];
+		// Fall back to global state
+		return registry.some((r) => r.id === pluginId && r.enabled);
+	};
+
+	const handlePluginToggle = (pluginId: string) => {
+		const currentActive = isPluginActive(pluginId);
+		const globalEnabled = registry.some((r) => r.id === pluginId && r.enabled);
+		const newActive = !currentActive;
+		const next = { ...overrides };
+		if (newActive === globalEnabled) {
+			// Matches global default — remove override
+			delete next[pluginId];
+		} else {
+			next[pluginId] = newActive;
+		}
+		onChange({ ...entry, plugin_overrides: next });
+	};
 
 	const handleAddRule = () => {
 		const pattern = newPattern.trim();
@@ -152,6 +178,24 @@ const AppSettingsPanel = ({ entry, onChange }: Props) => {
 						<AcAddBtn onClick={handleAddRule} disabled={!newPattern.trim() || !newReplacement.trim()}>+</AcAddBtn>
 					</AcAddRow>
 				</AcSection>
+			)}
+			{plugins.length > 1 && (
+				<PluginSection $dimmed={!entry.expansion}>
+					<DetailLabel>{t('stoplist_plugins')}</DetailLabel>
+					{plugins.map((plugin) => {
+						const active = isPluginActive(plugin.id);
+						return (
+							<PluginRow key={plugin.id}>
+								<PluginName>{plugin.name}</PluginName>
+								<ToggleGroup $dimmed={!entry.expansion} onClick={() => entry.expansion && handlePluginToggle(plugin.id)}>
+									<ToggleTrack $on={active}>
+										<ToggleKnob $on={active} />
+									</ToggleTrack>
+								</ToggleGroup>
+							</PluginRow>
+						);
+					})}
+				</PluginSection>
 			)}
 			{entry.expansion && (
 				<DetailPanel>

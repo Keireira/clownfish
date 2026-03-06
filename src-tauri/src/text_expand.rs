@@ -25,6 +25,8 @@ pub struct Shortcut {
     pub expansion: String,
     #[serde(default)]
     pub variables: HashMap<String, String>,
+    #[serde(default)]
+    pub plugin_id: String,
 }
 
 /// A single autocorrect rule: pattern → replacement.
@@ -69,6 +71,10 @@ pub struct StopListEntry {
     /// Extra per-app autocorrect rules (added on top of global rules).
     #[serde(default)]
     pub autocorrect_rules: Vec<AutoCorrectRule>,
+    /// Per-app plugin overrides: plugin_id → enabled.
+    /// Overrides the global enabled/disabled state for this app.
+    #[serde(default)]
+    pub plugin_overrides: HashMap<String, bool>,
 }
 
 fn default_true() -> bool {
@@ -93,6 +99,7 @@ struct AppConfig {
     offset: HintsOffset,
     autocorrect: bool,
     autocorrect_rules: Vec<(String, String)>,
+    plugin_overrides: HashMap<String, bool>,
 }
 
 /// Data stored per-shortcut in the internal lookup map.
@@ -100,6 +107,7 @@ struct AppConfig {
 struct ShortcutData {
     expansion: String,
     variables: HashMap<String, String>,
+    plugin_id: String,
 }
 
 /// Internal state shared between the listener thread and Tauri commands.
@@ -146,8 +154,15 @@ static STATE: LazyLock<Mutex<ExpanderState>> = LazyLock::new(|| {
     })
 });
 
-/// Configurable trigger character (default `:`).
-static TRIGGER_CHAR: LazyLock<Mutex<char>> = LazyLock::new(|| Mutex::new(':'));
+/// Configurable trigger character (default `\`).
+static TRIGGER_CHAR: LazyLock<Mutex<char>> = LazyLock::new(|| Mutex::new('\\'));
+
+/// Globally disabled plugin IDs.
+static DISABLED_PLUGINS: LazyLock<Mutex<Vec<String>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
+
+/// Whether standalone `{{var}}` expansion is globally enabled.
+static VARIABLES_ENABLED: AtomicBool = AtomicBool::new(false);
 
 /// Whether autocorrect is globally enabled.
 static AUTOCORRECT_ENABLED: AtomicBool = AtomicBool::new(false);
@@ -206,6 +221,7 @@ pub fn update_shortcuts(shortcuts: Vec<Shortcut>) {
             ShortcutData {
                 expansion: s.expansion,
                 variables: s.variables,
+                plugin_id: s.plugin_id,
             },
         );
     }
@@ -280,9 +296,37 @@ pub fn expansion_update_stoplist(entries: Vec<StopListEntry>) {
                 offset: e.offset,
                 autocorrect: e.autocorrect,
                 autocorrect_rules: app_rules,
+                plugin_overrides: e.plugin_overrides,
             },
         );
     }
+}
+
+/// Updates the set of globally-disabled plugin IDs.
+#[tauri::command]
+pub fn expansion_update_disabled_plugins(ids: Vec<String>) {
+    let mut list = DISABLED_PLUGINS.lock().unwrap();
+    *list = ids;
+}
+
+/// Computes the effective set of disabled plugin IDs for a given app,
+/// combining the global disabled list with per-app overrides.
+fn effective_disabled_plugins(overrides: &HashMap<String, bool>) -> Vec<String> {
+    let global = DISABLED_PLUGINS.lock().unwrap();
+    let mut disabled = Vec::new();
+    // Globally disabled, unless per-app override enables it.
+    for id in global.iter() {
+        if !overrides.get(id).copied().unwrap_or(false) {
+            disabled.push(id.clone());
+        }
+    }
+    // Globally enabled, but per-app override disables it.
+    for (id, &enabled) in overrides {
+        if !enabled && !global.contains(id) {
+            disabled.push(id.clone());
+        }
+    }
+    disabled
 }
 
 /// Sets the trigger character used to delimit shortcuts.
@@ -362,6 +406,7 @@ fn on_rdev_event(event: Event) -> Option<Event> {
     if !app_expansion && !app_hints && !app_autocorrect {
         return Some(event);
     }
+    let disabled = effective_disabled_plugins(&app_cfg.plugin_overrides);
 
     if let EventType::KeyPress(key) = event.event_type {
         let hints_active = {
@@ -437,7 +482,7 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             let mut state = STATE.lock().unwrap();
             state.buffer.pop();
             if app_hints && !state.buffer.is_empty() {
-                let hints = find_hints(&state);
+                let hints = find_hints(&state, &disabled);
                 drop(state);
                 show_hints(hints);
             } else {
@@ -464,9 +509,18 @@ fn on_rdev_event(event: Event) -> Option<Event> {
             }
 
             if app_expansion {
-                if let Some((trigger_len, data)) = find_match(&state) {
-                    let expansion_str = data.expansion.clone();
-                    let resolved = resolve_expansion(&data.expansion, &data.variables);
+                let fire = match find_match(&state, &disabled) {
+                    MatchResult::Fire(len, data) => {
+                        let resolved = resolve_expansion(&data.expansion, &data.variables);
+                        Some((len, data.expansion.clone(), resolved))
+                    }
+                    MatchResult::FireWithOverflow(len, data, overflow) => {
+                        let resolved = resolve_expansion(&data.expansion, &data.variables);
+                        Some((len, data.expansion.clone(), format!("{}{}", resolved, overflow)))
+                    }
+                    MatchResult::Pending => None,
+                };
+                if let Some((trigger_len, expansion_str, resolved)) = fire {
                     state.buffer.clear();
                     drop(state);
                     clear_hints();
@@ -501,8 +555,22 @@ fn on_rdev_event(event: Event) -> Option<Event> {
                 }
             }
 
+            if VARIABLES_ENABLED.load(Ordering::Relaxed) {
+                if let Some((var_len, resolved)) = find_standalone_variable(&state) {
+                    state.buffer.clear();
+                    drop(state);
+                    clear_hints();
+                    SUPPRESSING.store(true, Ordering::SeqCst);
+                    std::thread::spawn(move || {
+                        perform_replacement(var_len, &resolved);
+                        SUPPRESSING.store(false, Ordering::SeqCst);
+                    });
+                    return Some(event);
+                }
+            }
+
             if app_hints {
-                let hints = find_hints(&state);
+                let hints = find_hints(&state, &disabled);
                 drop(state);
                 show_hints(hints);
             } else {
@@ -586,48 +654,333 @@ fn resolve_expansion(expansion: &str, variables: &HashMap<String, String>) -> St
 
 /// Resolves a single template variable name to its value.
 fn resolve_variable(key: &str, variables: &HashMap<String, String>) -> String {
-    match key {
-        "date" => chrono::Local::now().format("%Y-%m-%d").to_string(),
-        "time" => chrono::Local::now().format("%H:%M").to_string(),
-        _ if key.starts_with("random:") => {
-            let n: usize = key[7..].parse().unwrap_or(6);
-            let n = n.min(64); // cap at 64 chars
-            use std::collections::hash_map::RandomState;
-            use std::hash::{BuildHasher, Hasher};
-            let chars: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
-            let rs = RandomState::new();
-            let mut out = String::with_capacity(n);
-            for i in 0..n {
-                let mut hasher = rs.build_hasher();
-                hasher.write_usize(i);
-                let idx = (hasher.finish() as usize) % chars.len();
-                out.push(chars[idx] as char);
-            }
-            out
+    // Plain date / date with offset / date with format
+    if key == "date"
+        || key.starts_with("date+")
+        || key.starts_with("date-")
+        || key.starts_with("date:")
+    {
+        return resolve_date(key);
+    }
+    // Plain time / time with offset / time with format
+    if key == "time"
+        || key.starts_with("time+")
+        || key.starts_with("time-")
+        || key.starts_with("time:")
+    {
+        return resolve_time(key);
+    }
+    if key.starts_with("random:") {
+        let n: usize = key[7..].parse().unwrap_or(6);
+        let n = n.min(64); // cap at 64 chars
+        use std::collections::hash_map::RandomState;
+        use std::hash::{BuildHasher, Hasher};
+        let chars: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
+        let rs = RandomState::new();
+        let mut out = String::with_capacity(n);
+        for i in 0..n {
+            let mut hasher = rs.build_hasher();
+            hasher.write_usize(i);
+            let idx = (hasher.finish() as usize) % chars.len();
+            out.push(chars[idx] as char);
         }
-        _ => {
-            // User-defined variable lookup.
-            if let Some(val) = variables.get(key) {
-                val.clone()
-            } else {
-                // Unknown — leave as-is.
-                format!("{{{{{}}}}}", key)
-            }
-        }
+        return out;
+    }
+    // User-defined variable lookup.
+    if let Some(val) = variables.get(key) {
+        val.clone()
+    } else {
+        // Unknown — leave as-is.
+        format!("{{{{{}}}}}", key)
     }
 }
 
-/// Returns `(trigger_char_count, expansion)` if the buffer ends with a trigger.
-fn find_match(state: &ExpanderState) -> Option<(usize, &ShortcutData)> {
-    if state.buffer.len() < 3 {
-        return None;
+/// Splits `"date+7d:DD.MM.YYYY"` into `("date+7d", Some("DD.MM.YYYY"))`.
+/// The first `:` after the keyword (and optional offset) is the separator.
+fn split_format<'a>(key: &'a str, prefix: &str) -> (&'a str, Option<&'a str>) {
+    let after = &key[prefix.len()..];
+    if let Some(colon) = after.find(':') {
+        let base_end = prefix.len() + colon;
+        (&key[..base_end], Some(&key[base_end + 1..]))
+    } else {
+        (key, None)
     }
-    for (trigger, data) in &state.shortcuts {
-        if state.buffer.ends_with(trigger) {
-            return Some((trigger.chars().count(), data));
+}
+
+/// Converts a Luxon/moment.js-style format string to a chrono strftime string.
+///
+/// Tokens (longest match wins):
+///   YYYY/yyyy→%Y  YY/yy→%y  MMMM→%B  MMM→%b  MM→%m  M→%-m
+///   dddd→%A  ddd→%a  DD/dd→%d  D/d→%-d
+///   HH→%H  H→%-H  hh→%I  h→%-I  mm→%M  ss→%S  s→%-S  A/a→%p
+///
+/// Literal text: wrap in single quotes, e.g. `DD 'of' MMMM`.
+fn moment_to_strftime(fmt: &str) -> String {
+    // Token table, ordered longest-first per starting character.
+    const TOKENS: &[(&str, &str)] = &[
+        ("YYYY", "%Y"), ("yyyy", "%Y"),
+        ("MMMM", "%B"),
+        ("EEEE", "%A"), ("dddd", "%A"),
+        ("MMM",  "%b"),
+        ("EEE",  "%a"), ("ddd",  "%a"),
+        ("YY", "%y"), ("yy", "%y"),
+        ("MM", "%m"), ("DD", "%d"), ("dd", "%d"),
+        ("HH", "%H"), ("hh", "%I"),
+        ("mm", "%M"), ("ss", "%S"),
+        ("M", "%-m"), ("D", "%-d"), ("d", "%-d"),
+        ("H", "%-H"), ("h", "%-I"),
+        ("m", "%-M"), ("s", "%-S"),
+        ("A", "%p"),  ("a", "%p"),
+    ];
+
+    let mut result = String::with_capacity(fmt.len() * 2);
+    let mut i = 0;
+    while i < fmt.len() {
+        // Single-quote escape: 'literal text'
+        if fmt.as_bytes()[i] == b'\'' {
+            i += 1;
+            while i < fmt.len() {
+                let ch = fmt[i..].chars().next().unwrap();
+                if ch == '\'' { i += 1; break; }
+                if ch == '%' { result.push('%'); } // escape for strftime
+                result.push(ch);
+                i += ch.len_utf8();
+            }
+            continue;
+        }
+        // Escape raw `%` for strftime.
+        if fmt.as_bytes()[i] == b'%' {
+            result.push_str("%%");
+            i += 1;
+            continue;
+        }
+        let rest = &fmt[i..];
+        let mut matched = false;
+        for &(token, replacement) in TOKENS {
+            if rest.starts_with(token) {
+                result.push_str(replacement);
+                i += token.len();
+                matched = true;
+                break;
+            }
+        }
+        if !matched {
+            let ch = rest.chars().next().unwrap();
+            result.push(ch);
+            i += ch.len_utf8();
         }
     }
-    None
+    result
+}
+
+/// Resolves `date`, `date+7d`, `date:DD.MM.YYYY`, `date-1m:DD/MM`, etc.
+/// Units: d=days, w=weeks, m=months, y=years.
+/// Format uses Luxon/moment.js tokens.
+fn resolve_date(key: &str) -> String {
+    use chrono::{Datelike, Local, NaiveDate};
+
+    let (base, user_fmt) = split_format(key, "date");
+    let fmt = match user_fmt {
+        Some(f) => moment_to_strftime(f),
+        None => "%Y-%m-%d".to_string(),
+    };
+
+    let now = Local::now().date_naive();
+    let date = if base == "date" {
+        now
+    } else {
+        let (sign, rest) = if base.starts_with("date+") {
+            (1i32, &base[5..])
+        } else {
+            (-1i32, &base[5..])
+        };
+        if let Some((n, unit)) = parse_offset(rest) {
+            let n = n as i32 * sign;
+            match unit {
+                'd' => now + chrono::Duration::days(n as i64),
+                'w' => now + chrono::Duration::weeks(n as i64),
+                'm' => add_months(now, n),
+                'y' => {
+                    let target_year = now.year() + n;
+                    NaiveDate::from_ymd_opt(target_year, now.month(), now.day())
+                        .or_else(|| NaiveDate::from_ymd_opt(target_year, now.month(), now.day() - 1))
+                        .unwrap_or(now)
+                }
+                _ => now,
+            }
+        } else {
+            now
+        }
+    };
+    use std::fmt::Write;
+    let mut out = String::new();
+    if write!(out, "{}", date.format(&fmt)).is_err() {
+        // User format produced an invalid strftime string — fall back to manual ISO.
+        out.clear();
+        use chrono::Datelike as _;
+        let _ = write!(out, "{}-{:02}-{:02}", date.year(), date.month(), date.day());
+    }
+    out
+}
+
+/// Resolves `time`, `time+2h`, `time:HH:mm:ss`, `time-30m:hh:mm A`, etc.
+/// Units: h=hours, m=minutes, s=seconds.
+/// Format uses Luxon/moment.js tokens.
+fn resolve_time(key: &str) -> String {
+    use chrono::Local;
+
+    let (base, user_fmt) = split_format(key, "time");
+    let fmt = match user_fmt {
+        Some(f) => moment_to_strftime(f),
+        None => "%H:%M".to_string(),
+    };
+
+    let now = Local::now();
+    let dt = if base == "time" {
+        now
+    } else {
+        let (sign, rest) = if base.starts_with("time+") {
+            (1i64, &base[5..])
+        } else {
+            (-1i64, &base[5..])
+        };
+        if let Some((n, unit)) = parse_offset(rest) {
+            let n = n as i64 * sign;
+            match unit {
+                'h' => now + chrono::Duration::hours(n),
+                'm' => now + chrono::Duration::minutes(n),
+                's' => now + chrono::Duration::seconds(n),
+                _ => now,
+            }
+        } else {
+            now
+        }
+    };
+    use std::fmt::Write;
+    let mut out = String::new();
+    if write!(out, "{}", dt.format(&fmt)).is_err() {
+        out.clear();
+        use chrono::Timelike as _;
+        let _ = write!(out, "{:02}:{:02}", dt.time().hour(), dt.time().minute());
+    }
+    out
+}
+
+/// Parses "7d", "1m", "30s" → Some((7, 'd')), Some((1, 'm')), etc.
+fn parse_offset(s: &str) -> Option<(u32, char)> {
+    let unit = s.chars().last()?;
+    if !unit.is_ascii_alphabetic() {
+        return None;
+    }
+    let num_str = &s[..s.len() - unit.len_utf8()];
+    let n: u32 = num_str.parse().ok()?;
+    Some((n, unit))
+}
+
+/// Adds (or subtracts) calendar months to a NaiveDate, clamping day.
+fn add_months(date: chrono::NaiveDate, months: i32) -> chrono::NaiveDate {
+    use chrono::{Datelike, NaiveDate};
+    let total_months = date.year() * 12 + date.month() as i32 - 1 + months;
+    let y = total_months.div_euclid(12);
+    let m = (total_months.rem_euclid(12) + 1) as u32;
+    // Clamp day to valid range for target month
+    let max_day = NaiveDate::from_ymd_opt(y, m + 1, 1)
+        .unwrap_or_else(|| NaiveDate::from_ymd_opt(y + 1, 1, 1).unwrap())
+        .pred_opt()
+        .unwrap()
+        .day();
+    let d = date.day().min(max_day);
+    NaiveDate::from_ymd_opt(y, m, d).unwrap_or(date)
+}
+
+/// Checks if the buffer ends with `{{key}}` and resolves the variable.
+/// Returns `(char_count_of_whole_match, resolved_value)` if found.
+fn find_standalone_variable(state: &ExpanderState) -> Option<(usize, String)> {
+    if !state.buffer.ends_with("}}") {
+        return None;
+    }
+    // Find the last `{{` before the closing `}}`.
+    let body = &state.buffer[..state.buffer.len() - 2];
+    let open = body.rfind("{{")?;
+    let key = &body[open + 2..];
+    // Only resolve built-in variables (date, time, random) — not user-defined.
+    let empty: HashMap<String, String> = HashMap::new();
+    let resolved = resolve_variable(key, &empty);
+    // resolve_variable returns `{{key}}` for unknowns — detect that.
+    if resolved == format!("{{{{{}}}}}", key) {
+        return None;
+    }
+    let full = &state.buffer[open..];
+    let char_count = full.chars().count();
+    Some((char_count, resolved))
+}
+
+/// Result of greedy trigger matching.
+enum MatchResult<'a> {
+    /// Exact match, no longer trigger possible — fire now.
+    Fire(usize, &'a ShortcutData),
+    /// A shorter trigger matched but extra chars were typed past it.
+    /// `(total_chars_to_delete, data, overflow_to_retype)`
+    FireWithOverflow(usize, &'a ShortcutData, String),
+    /// No match yet — still typing or ambiguous.
+    Pending,
+}
+
+/// Greedy trigger matching (LaTeX-style): prefers the longest possible trigger.
+///
+/// * If the current input exactly matches a trigger and no longer trigger shares
+///   the same prefix, fires immediately.
+/// * If a longer trigger *could* still match, returns `Pending`.
+/// * If the input diverges past a previously valid trigger, fires that trigger
+///   and returns the overflow characters to re-type.
+fn find_match<'a>(state: &'a ExpanderState, disabled: &[String]) -> MatchResult<'a> {
+    if state.buffer.len() < 2 {
+        return MatchResult::Pending;
+    }
+    let tc = trigger_char();
+    let Some(tc_pos) = state.buffer.rfind(tc) else {
+        return MatchResult::Pending;
+    };
+    let input = &state.buffer[tc_pos..];
+
+    // 1. Exact match?
+    if let Some(data) = state.shortcuts.get(input) {
+        if !disabled.contains(&data.plugin_id) {
+            let has_longer = state
+                .shortcuts
+                .iter()
+                .any(|(t, d)| t.len() > input.len() && t.starts_with(input) && !disabled.contains(&d.plugin_id));
+            if !has_longer {
+                return MatchResult::Fire(input.chars().count(), data);
+            }
+            // A longer trigger could still come — wait.
+            return MatchResult::Pending;
+        }
+    }
+
+    // 2. Current input is a prefix of some trigger — keep waiting.
+    if state.shortcuts.iter().any(|(t, d)| t.starts_with(input) && !disabled.contains(&d.plugin_id)) {
+        return MatchResult::Pending;
+    }
+
+    // 3. Input diverged — no trigger starts with it.
+    //    Try shorter prefixes (longest first) for a deferred match.
+    let tc_byte_len = tc.len_utf8();
+    for (byte_idx, _) in input.char_indices().rev() {
+        if byte_idx <= tc_byte_len {
+            break;
+        }
+        let prefix = &input[..byte_idx];
+        if let Some(data) = state.shortcuts.get(prefix) {
+            if !disabled.contains(&data.plugin_id) {
+                let overflow = input[byte_idx..].to_string();
+                let total_chars = input.chars().count();
+                return MatchResult::FireWithOverflow(total_chars, data, overflow);
+            }
+        }
+    }
+
+    MatchResult::Pending
 }
 
 /// Returns `(pattern_char_count, replacement)` if the buffer ends with an autocorrect pattern.
@@ -687,7 +1040,12 @@ unsafe extern "system" fn ll_keyboard_proc(code: i32, wparam: usize, lparam: isi
         let is_keydown = wparam == WM_KEYDOWN as usize || wparam == WM_SYSKEYDOWN as usize;
         if is_keydown {
             let kb = &*(lparam as *const KBDLLHOOKSTRUCT);
-            if on_win_key_down(kb.vkCode as u16, kb.scanCode) {
+            // catch_unwind prevents panics from propagating through the extern "system" boundary,
+            // which would abort the process.
+            let result = std::panic::catch_unwind(|| {
+                on_win_key_down(kb.vkCode as u16, kb.scanCode)
+            });
+            if let Ok(true) = result {
                 return 1; // consume — don't pass to the application
             }
         }
@@ -713,6 +1071,7 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
     if !app_expansion && !app_hints && !app_autocorrect {
         return false;
     }
+    let disabled = effective_disabled_plugins(&app_cfg.plugin_overrides);
 
     let hints_active = { !ACTIVE_HINTS.lock().unwrap().is_empty() };
 
@@ -791,7 +1150,7 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
             let mut state = STATE.lock().unwrap();
             state.buffer.pop();
             if app_hints && !state.buffer.is_empty() {
-                let hints = find_hints(&state);
+                let hints = find_hints(&state, &disabled);
                 drop(state);
                 show_hints(hints);
             } else {
@@ -827,9 +1186,18 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
         }
 
         if app_expansion {
-            if let Some((trigger_len, data)) = find_match(&state) {
-                let expansion_str = data.expansion.clone();
-                let resolved = resolve_expansion(&data.expansion, &data.variables);
+            let fire = match find_match(&state, &disabled) {
+                MatchResult::Fire(len, data) => {
+                    let resolved = resolve_expansion(&data.expansion, &data.variables);
+                    Some((len, data.expansion.clone(), resolved))
+                }
+                MatchResult::FireWithOverflow(len, data, overflow) => {
+                    let resolved = resolve_expansion(&data.expansion, &data.variables);
+                    Some((len, data.expansion.clone(), format!("{}{}", resolved, overflow)))
+                }
+                MatchResult::Pending => None,
+            };
+            if let Some((trigger_len, expansion_str, resolved)) = fire {
                 state.buffer.clear();
                 drop(state);
                 clear_hints();
@@ -844,7 +1212,7 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
                     perform_replacement(trigger_len, &resolved);
                     SUPPRESSING.store(false, Ordering::SeqCst);
                 });
-                return false; // don't consume the triggering character
+                return false;
             }
         }
 
@@ -864,8 +1232,22 @@ fn on_win_key_down(vk: u16, scan: u32) -> bool {
             }
         }
 
+        if VARIABLES_ENABLED.load(Ordering::Relaxed) {
+            if let Some((var_len, resolved)) = find_standalone_variable(&state) {
+                state.buffer.clear();
+                drop(state);
+                clear_hints();
+                SUPPRESSING.store(true, Ordering::SeqCst);
+                std::thread::spawn(move || {
+                    perform_replacement(var_len, &resolved);
+                    SUPPRESSING.store(false, Ordering::SeqCst);
+                });
+                return false;
+            }
+        }
+
         if app_hints {
-            let hints = find_hints(&state);
+            let hints = find_hints(&state, &disabled);
             drop(state);
             show_hints(hints);
         } else {
@@ -972,14 +1354,15 @@ fn win_vk_to_char(vk: u16, scan: u32) -> Option<char> {
 // Hints
 // ---------------------------------------------------------------------------
 
-/// Generates Unicode character hints for `\uXXX`-style prefixes.
+/// Generates Unicode character hints for `uXXX`-style prefixes.
 ///
-/// `prefix` is the text after the trigger char (e.g. `\u223`).
-/// Returns all valid `Shortcut` entries where `trigger` is the code (e.g. `\u2230`)
-/// and `expansion` is the actual character.
+/// `prefix` is the text after the trigger char (e.g. `u223`).
+/// Returns all valid `Shortcut` entries where `trigger` uses the current
+/// trigger char (e.g. `\u2230`) and `expansion` is the actual character.
 fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
-    // Must start with \u followed by hex digits.
-    let rest = match prefix.strip_prefix("\\u") {
+    let tc = trigger_char();
+    // After stripping the trigger char, the prefix should start with "u" + hex digits.
+    let rest = match prefix.strip_prefix('u') {
         Some(r) => r,
         None => return vec![],
     };
@@ -1004,9 +1387,10 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                     if let Some(ch) = char::from_u32(cp) {
                         if !ch.is_control() {
                             hints.push(Shortcut {
-                                trigger: format!("\\u{}", code_str),
+                                trigger: format!("{}u{}", tc, code_str),
                                 expansion: ch.to_string(),
                                 variables: HashMap::new(),
+                                plugin_id: String::new(),
                             });
                         }
                     }
@@ -1019,9 +1403,10 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                 if let Some(ch) = char::from_u32(cp) {
                     if !ch.is_control() {
                         hints.push(Shortcut {
-                            trigger: format!("\\u{}", rest.to_ascii_uppercase()),
+                            trigger: format!("{}u{}", tc, rest.to_ascii_uppercase()),
                             expansion: ch.to_string(),
                             variables: HashMap::new(),
+                            plugin_id: String::new(),
                         });
                     }
                 }
@@ -1033,9 +1418,10 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                     if let Some(ch) = char::from_u32(cp) {
                         if !ch.is_control() {
                             hints.push(Shortcut {
-                                trigger: format!("\\u{}", code_str.to_ascii_uppercase()),
+                                trigger: format!("{}u{}", tc, code_str.to_ascii_uppercase()),
                                 expansion: ch.to_string(),
                                 variables: HashMap::new(),
+                                plugin_id: String::new(),
                             });
                         }
                     }
@@ -1048,9 +1434,10 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
                 if let Some(ch) = char::from_u32(cp) {
                     if !ch.is_control() {
                         hints.push(Shortcut {
-                            trigger: format!("\\u{}", rest.to_ascii_uppercase()),
+                            trigger: format!("{}u{}", tc, rest.to_ascii_uppercase()),
                             expansion: ch.to_string(),
                             variables: HashMap::new(),
+                            plugin_id: String::new(),
                         });
                     }
                 }
@@ -1063,32 +1450,29 @@ fn find_unicode_hints(prefix: &str) -> Vec<Shortcut> {
 }
 
 /// Finds shortcuts whose trigger starts with the current open prefix.
-/// An "open prefix" is the trigger char followed by 1+ chars without a closing trigger char.
-fn find_hints(state: &ExpanderState) -> Vec<Shortcut> {
+/// An "open prefix" is the trigger char followed by 1+ chars (LaTeX-style, no closing char).
+fn find_hints(state: &ExpanderState, disabled: &[String]) -> Vec<Shortcut> {
     let tc = trigger_char();
     // Find the last trigger char in the buffer.
     let Some(tc_pos) = state.buffer.rfind(tc) else {
         return vec![];
     };
     let prefix = &state.buffer[tc_pos..];
-    // Need at least trigger char + 1 char, and must NOT end with trigger char (completed trigger).
-    if prefix.len() < 2 || prefix.ends_with(tc) && prefix.len() > 1 {
-        return vec![];
-    }
-    // Don't show hints if the prefix itself contains a second trigger char (completed).
-    if prefix.len() > 1 && prefix[1..].contains(tc) {
+    // Need at least trigger char + 1 char.
+    if prefix.len() < 2 {
         return vec![];
     }
 
     let mut hints: Vec<Shortcut> = state
         .shortcuts
         .iter()
-        .filter(|(trigger, _)| trigger.starts_with(prefix))
+        .filter(|(trigger, data)| trigger.starts_with(prefix) && !disabled.contains(&data.plugin_id))
         .take(6)
         .map(|(trigger, data)| Shortcut {
             trigger: trigger.clone(),
             expansion: data.expansion.clone(),
             variables: data.variables.clone(),
+            plugin_id: data.plugin_id.clone(),
         })
         .collect();
     hints.sort_by(|a, b| a.trigger.len().cmp(&b.trigger.len()));
@@ -1182,6 +1566,16 @@ pub fn autocorrect_set_enabled(enabled: bool) {
 #[tauri::command]
 pub fn autocorrect_is_enabled() -> bool {
     AUTOCORRECT_ENABLED.load(Ordering::Relaxed)
+}
+
+#[tauri::command]
+pub fn expansion_set_variables_enabled(enabled: bool) {
+    VARIABLES_ENABLED.store(enabled, Ordering::Relaxed);
+}
+
+#[tauri::command]
+pub fn expansion_is_variables_enabled() -> bool {
+    VARIABLES_ENABLED.load(Ordering::Relaxed)
 }
 
 #[tauri::command]
@@ -1770,6 +2164,7 @@ fn get_app_config() -> AppConfig {
         offset: HintsOffset::default(),
         autocorrect: true,
         autocorrect_rules: Vec::new(),
+        plugin_overrides: HashMap::new(),
     }
 }
 
@@ -2045,6 +2440,10 @@ pub fn get_caret_position() -> Option<CaretRect> {
         ) -> i32;
         fn AXValueGetValue(value: AXValueRef, type_: i32, value_ptr: *mut c_void) -> bool;
 
+    }
+
+    #[link(name = "HIServices", kind = "framework")]
+    extern "C" {
         static kAXFocusedUIElementAttribute: CFStringRef;
         static kAXSelectedTextRangeAttribute: CFStringRef;
         static kAXBoundsForRangeParameterizedAttribute: CFStringRef;
@@ -2153,4 +2552,52 @@ pub fn get_caret_position() -> Option<CaretRect> {
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn get_caret_position() -> Option<CaretRect> {
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_moment_to_strftime() {
+        assert_eq!(moment_to_strftime("DD.MM.YYYY"), "%d.%m.%Y");
+        assert_eq!(moment_to_strftime("DD-MM-YYYY"), "%d-%m-%Y");
+        assert_eq!(moment_to_strftime("YYYY/MM/DD"), "%Y/%m/%d");
+        assert_eq!(moment_to_strftime("D.M.YYYY"), "%-d.%-m.%Y");
+        assert_eq!(moment_to_strftime("HH:mm:ss"), "%H:%M:%S");
+        assert_eq!(moment_to_strftime("hh:mm A"), "%I:%M %p");
+        assert_eq!(moment_to_strftime("DD MMMM YYYY"), "%d %B %Y");
+    }
+
+    #[test]
+    fn test_resolve_date_formats() {
+        // These must not panic.
+        let r = resolve_date("date");
+        assert!(!r.is_empty());
+
+        let r = resolve_date("date:DD.MM.YYYY");
+        assert!(!r.is_empty());
+        // Should be like "06.03.2026"
+        assert_eq!(r.len(), 10);
+
+        let r = resolve_date("date:YYYY-MM-DD");
+        assert!(!r.is_empty());
+    }
+
+    #[test]
+    fn test_resolve_time_formats() {
+        let r = resolve_time("time");
+        assert!(!r.is_empty());
+
+        let r = resolve_time("time:HH:mm:ss");
+        assert!(!r.is_empty());
+    }
+
+    #[test]
+    fn test_split_format() {
+        assert_eq!(split_format("date", "date"), ("date", None));
+        assert_eq!(split_format("date:DD.MM", "date"), ("date", Some("DD.MM")));
+        assert_eq!(split_format("date+7d", "date"), ("date+7d", None));
+        assert_eq!(split_format("date+7d:DD.MM", "date"), ("date+7d", Some("DD.MM")));
+    }
 }

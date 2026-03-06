@@ -11,25 +11,32 @@ initLanguage();
 // Migrate to plugin system (idempotent) then sync to Rust backend
 (async () => {
 	try {
-		const { migrateToPluginSystem, ensureBuiltinPlugins, loadMergedData } = await import('./plugin-store');
+		const { migrateToPluginSystem, ensureBuiltinPlugins, loadMergedData, loadPluginRegistry, loadAllPlugins, mergeAllShortcuts, getDisabledPluginIds } = await import('./plugin-store');
 		await migrateToPluginSystem();
 		await ensureBuiltinPlugins();
 
 		const { invoke } = await import('@tauri-apps/api/core');
-		const { loadExpansionEnabled, loadHintsPosition, loadStopList, loadUnicodeHints, loadAutocorrectEnabled } = await import('./store');
-		const [merged, enabled, hintsPos, stopList, unicodeHints, autocorrectEnabled] = await Promise.all([
+		const { loadExpansionEnabled, loadHintsPosition, loadStopList, loadUnicodeHints, loadAutocorrectEnabled, loadVariablesEnabled } = await import('./store');
+		const [merged, enabled, hintsPos, stopList, unicodeHints, autocorrectEnabled, variablesEnabled] = await Promise.all([
 			loadMergedData(),
 			loadExpansionEnabled(),
 			loadHintsPosition(),
 			loadStopList(),
 			loadUnicodeHints(),
-			loadAutocorrectEnabled()
+			loadAutocorrectEnabled(),
+			loadVariablesEnabled()
 		]);
-		await invoke('expansion_update_shortcuts', { shortcuts: merged.shortcuts });
+		// Send ALL shortcuts to Rust (enabled + disabled) so per-app overrides work.
+		const registry = await loadPluginRegistry();
+		const allPlugins = await loadAllPlugins(registry);
+		const allShortcuts = mergeAllShortcuts(allPlugins, registry);
+		await invoke('expansion_update_shortcuts', { shortcuts: allShortcuts });
+		await invoke('expansion_update_disabled_plugins', { ids: getDisabledPluginIds(registry) });
 		await invoke('expansion_set_enabled', { enabled });
 		await invoke('expansion_set_hints_mode', { mode: hintsPos });
 		await invoke('expansion_update_stoplist', { entries: stopList });
 		await invoke('expansion_set_unicode_hints', { enabled: unicodeHints });
+		await invoke('expansion_set_variables_enabled', { enabled: variablesEnabled });
 		await invoke('autocorrect_set_enabled', { enabled: autocorrectEnabled });
 		await invoke('autocorrect_update_rules', { rules: merged.autocorrect });
 	} catch (err) {

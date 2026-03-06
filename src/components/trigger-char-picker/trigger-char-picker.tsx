@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { loadTriggerChar, saveTriggerChar } from '../../store';
-import { Wrapper, Option, CustomInput, CustomInputActive } from './trigger-char-picker.styles';
+import { Wrapper, Option, CustomInput, CustomInputActive, Preview } from './trigger-char-picker.styles';
 import type { Shortcut } from '../../types';
 
-const PRESETS = [':', '/', ';', '#', '~', '$'];
+const PRESETS = ['\\', '/', ';', '#', '~', '$'];
 
 type Props = {
 	shortcuts: Shortcut[];
@@ -12,7 +12,7 @@ type Props = {
 };
 
 const TriggerCharPicker = ({ shortcuts, onShortcutsChange }: Props) => {
-	const [ch, setCh] = useState(':');
+	const [ch, setCh] = useState('\\');
 
 	useEffect(() => {
 		loadTriggerChar().then(setCh);
@@ -25,11 +25,11 @@ const TriggerCharPicker = ({ shortcuts, onShortcutsChange }: Props) => {
 		await saveTriggerChar(newCh);
 		await invoke('expansion_set_trigger_char', { ch: newCh });
 
-		// Re-wrap all shortcut triggers: replace old delimiter with new one
+		// Re-wrap all shortcut triggers: replace old prefix with new one
 		const updated = shortcuts.map((s) => {
 			let trigger = s.trigger;
-			if (trigger.startsWith(oldCh) && trigger.endsWith(oldCh)) {
-				trigger = newCh + trigger.slice(1, -1) + newCh;
+			if (trigger.startsWith(oldCh)) {
+				trigger = newCh + trigger.slice(oldCh.length);
 			}
 			return { ...s, trigger };
 		});
@@ -55,6 +55,7 @@ const TriggerCharPicker = ({ shortcuts, onShortcutsChange }: Props) => {
 					if (val.length === 1) applyChange(val);
 				}}
 			/>
+			<Preview>{ch}alpha → α</Preview>
 		</Wrapper>
 	);
 };

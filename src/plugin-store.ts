@@ -115,11 +115,36 @@ export function mergePlugins(
 		const plugin = plugins.find((p) => p.id === entry.id);
 		if (!plugin) continue;
 		categories.push(...plugin.categories);
-		shortcuts.push(...plugin.shortcuts);
+		shortcuts.push(...plugin.shortcuts.map(s => ({ ...s, plugin_id: plugin.id })));
 		if (plugin.autocorrect) autocorrect.push(...plugin.autocorrect);
 	}
 
 	return { categories, shortcuts, autocorrect };
+}
+
+/**
+ * Returns shortcuts from ALL plugins (enabled and disabled), each tagged with plugin_id.
+ * Sent to Rust so per-app overrides can enable globally-disabled plugins.
+ */
+export function mergeAllShortcuts(
+	plugins: Plugin[],
+	registry: PluginRegistryEntry[]
+): Shortcut[] {
+	const sorted = [...registry].sort((a, b) => a.order - b.order);
+	const shortcuts: Shortcut[] = [];
+	for (const entry of sorted) {
+		const plugin = plugins.find((p) => p.id === entry.id);
+		if (!plugin) continue;
+		shortcuts.push(...plugin.shortcuts.map(s => ({ ...s, plugin_id: plugin.id })));
+	}
+	return shortcuts;
+}
+
+/**
+ * Returns the list of globally-disabled plugin IDs.
+ */
+export function getDisabledPluginIds(registry: PluginRegistryEntry[]): string[] {
+	return registry.filter((r) => !r.enabled).map((r) => r.id);
 }
 
 /**
@@ -134,7 +159,7 @@ export async function loadMergedData(): Promise<{ categories: Category[]; shortc
 		const { loadCategories, loadShortcuts } = await import('./store');
 		return {
 			categories: await loadCategories(),
-			shortcuts: await loadShortcuts(),
+			shortcuts: (await loadShortcuts()).map(s => ({ ...s, plugin_id: 'default' })),
 			autocorrect: []
 		};
 	}

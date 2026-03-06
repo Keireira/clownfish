@@ -79,7 +79,7 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 	const [editTrigger, setEditTrigger] = useState('');
 	const [editExpansion, setEditExpansion] = useState('');
 	const [editVars, setEditVars] = useState<[string, string][]>([]);
-	const [tc, setTc] = useState(':');
+	const [tc, setTc] = useState('\\');
 	const editRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -89,16 +89,15 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 	const stripTc = (s: string) => {
 		let r = s;
 		if (r.startsWith(tc)) r = r.slice(1);
-		if (r.endsWith(tc)) r = r.slice(0, -1);
 		return r;
 	};
 
 	const handleAdd = () => {
-		const keyword = newTrigger.trim().replace(new RegExp(`^\\${tc}|\\${tc}$`, 'g'), '');
+		const keyword = newTrigger.trim().replace(new RegExp(`^\\${tc}`, 'g'), '');
 		const expansion = newExpansion.trim();
 		if (!keyword || !expansion) return;
 
-		const trigger = tc + keyword + tc;
+		const trigger = tc + keyword;
 		if (shortcuts.some((s) => s.trigger === trigger)) return;
 
 		onChange([...shortcuts, { trigger, expansion }]);
@@ -129,13 +128,13 @@ const ShortcutEditor = ({ shortcuts, onChange, onDelete, filterQuery }: Props) =
 
 	const commitEdit = () => {
 		if (editIdx === null) return;
-		const keyword = editTrigger.trim().replace(new RegExp(`^\\${tc}|\\${tc}$`, 'g'), '');
+		const keyword = editTrigger.trim().replace(new RegExp(`^\\${tc}`, 'g'), '');
 		const expansion = editExpansion.trim();
 		if (!keyword || !expansion) {
 			setEditIdx(null);
 			return;
 		}
-		const trigger = tc + keyword + tc;
+		const trigger = tc + keyword;
 
 		if (shortcuts.some((s, i) => i !== editIdx && s.trigger === trigger)) {
 			setEditIdx(null);
