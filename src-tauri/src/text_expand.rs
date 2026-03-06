@@ -657,7 +657,7 @@ fn find_autocorrect(
 // ---------------------------------------------------------------------------
 
 #[cfg(target_os = "windows")]
-unsafe fn run_win_hook() {
+unsafe fn run_win_hook() { unsafe {
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
@@ -677,10 +677,10 @@ unsafe fn run_win_hook() {
     let mut msg: MSG = std::mem::zeroed();
     while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) > 0 {}
     UnhookWindowsHookEx(hook);
-}
+}}
 
 #[cfg(target_os = "windows")]
-unsafe extern "system" fn ll_keyboard_proc(code: i32, wparam: usize, lparam: isize) -> isize {
+unsafe extern "system" fn ll_keyboard_proc(code: i32, wparam: usize, lparam: isize) -> isize { unsafe {
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
     if code >= 0 {
@@ -693,7 +693,7 @@ unsafe extern "system" fn ll_keyboard_proc(code: i32, wparam: usize, lparam: isi
         }
     }
     CallNextHookEx(std::ptr::null_mut(), code, wparam, lparam)
-}
+}}
 
 /// Core key processing for Windows.  Returns `true` to consume the keystroke.
 #[cfg(target_os = "windows")]
@@ -1634,7 +1634,7 @@ fn list_running_apps() -> Vec<RunningApp> {
     let mut results: Vec<RunningApp> = Vec::new();
     let ptr = &mut results as *mut Vec<RunningApp>;
 
-    unsafe extern "system" fn enum_cb(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    unsafe extern "system" fn enum_cb(hwnd: HWND, lparam: LPARAM) -> BOOL { unsafe {
         let results = &mut *(lparam as *mut Vec<RunningApp>);
 
         // Skip invisible windows.
@@ -1672,7 +1672,7 @@ fn list_running_apps() -> Vec<RunningApp> {
 
         results.push(RunningApp { exe, title });
         1 // TRUE — continue
-    }
+    }}
 
     unsafe {
         EnumWindows(Some(enum_cb), ptr as LPARAM);
@@ -1966,7 +1966,7 @@ fn get_caret_position_uia() -> Option<CaretRect> {
 #[cfg(target_os = "windows")]
 unsafe fn parse_safearray_rect(
     sa_ptr: *mut windows::Win32::System::Com::SAFEARRAY,
-) -> Option<CaretRect> {
+) -> Option<CaretRect> { unsafe {
     if sa_ptr.is_null() {
         return None;
     }
@@ -1986,7 +1986,7 @@ unsafe fn parse_safearray_rect(
         right: x + w,
         bottom: y + h,
     })
-}
+}}
 
 /// macOS: uses the Accessibility API to get the caret position.
 ///
