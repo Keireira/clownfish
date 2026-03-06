@@ -130,19 +130,54 @@ export const EditExpansionInput = styled(EditInput)`
 	width: 60px;
 `;
 
-export const EditExpansionTextarea = styled.textarea`
+export const TextareaWrap = styled.div`
+	position: relative;
 	flex: 1;
+	background: var(--fill-light);
+	border-radius: 6px;
+`;
+
+export const HighlightDiv = styled.div`
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 5px 8px;
+	font-size: 12px;
+	font-family: inherit;
+	line-height: 1.4;
+	color: transparent;
+	pointer-events: none;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	overflow: hidden;
+`;
+
+export const VarHighlight = styled.mark`
+	background: rgba(88, 166, 255, 0.15);
+	color: transparent;
+	border-radius: 2px;
+`;
+
+export const EditExpansionTextarea = styled.textarea`
+	width: 100%;
 	padding: 5px 8px;
 	border: 1px solid var(--border);
 	border-radius: 6px;
-	background: var(--fill-light);
+	background: transparent;
 	color: var(--text-primary);
 	font-size: 12px;
 	font-family: inherit;
+	line-height: 1.4;
 	outline: none;
 	resize: none;
 	min-height: 26px;
+	max-height: 200px;
+	overflow-y: auto;
 	field-sizing: content;
+	position: relative;
+	z-index: 1;
 
 	&:focus {
 		border-color: var(--accent-border);
@@ -423,6 +458,106 @@ export const EmptyState = styled.p`
 	color: var(--text-tertiary);
 	text-align: center;
 	padding: 24px 0;
+`;
+
+// ---------------------------------------------------------------------------
+// Variable insertion dropdown
+// ---------------------------------------------------------------------------
+
+export const VarInsertBtn = styled.button`
+	padding: 4px 8px;
+	font-size: 11px;
+	font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+	background: var(--fill);
+	color: var(--text-tertiary);
+	border: 1px solid var(--border-medium);
+	border-radius: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	align-self: flex-start;
+
+	&:hover {
+		background: var(--fill-hover);
+		color: var(--text-secondary);
+	}
+`;
+
+export const VarDropdownWrap = styled.div`
+	position: relative;
+`;
+
+export const VarDropdown = styled.div`
+	position: absolute;
+	top: calc(100% + 4px);
+	right: 0;
+	min-width: 160px;
+	padding: 4px;
+	border-radius: 8px;
+	background: var(--bg-elevated);
+	border: 1px solid var(--border-medium);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+`;
+
+export const VarDropdownItem = styled.button`
+	padding: 5px 8px;
+	font-size: 11px;
+	font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+	background: none;
+	color: var(--text-secondary);
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	text-align: left;
+
+	&:hover {
+		background: var(--fill-hover);
+		color: var(--text-primary);
+	}
+`;
+
+// ---------------------------------------------------------------------------
+// Preview section
+// ---------------------------------------------------------------------------
+
+export const PreviewSection = styled.div`
+	padding: 8px 10px;
+	border-radius: 6px;
+	background: var(--fill-subtle);
+	border: 1px dashed var(--border);
+`;
+
+export const PreviewLabel = styled.div`
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--text-label);
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+	margin-bottom: 4px;
+`;
+
+export const PreviewText = styled.div`
+	font-size: 12px;
+	color: var(--text-secondary);
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	line-height: 1.4;
+`;
+
+// ---------------------------------------------------------------------------
+// Ctrl+Enter hint
+// ---------------------------------------------------------------------------
+
+export const CtrlEnterHint = styled.span`
+	font-size: 10px;
+	color: var(--text-hint);
+	align-self: center;
+	white-space: nowrap;
+	flex-shrink: 0;
 `;
 
 export default styled.div`

@@ -2,6 +2,7 @@ import { load, type Store } from '@tauri-apps/plugin-store';
 import { CATEGORIES as DEFAULT_CATEGORIES } from './data/characters';
 import { DEFAULT_SHORTCUTS } from './data/shortcuts';
 import { DEFAULT_AUTOCORRECT_RULES } from './data/autocorrect-rules';
+import { GITMOJI_SHORTCUTS } from './data/gitmoji';
 import type { AutoCorrectRule, Category, Plugin, PluginId, PluginRegistryEntry, Shortcut } from './types';
 
 // ---------------------------------------------------------------------------
@@ -114,11 +115,36 @@ export function mergePlugins(
 		const plugin = plugins.find((p) => p.id === entry.id);
 		if (!plugin) continue;
 		categories.push(...plugin.categories);
-		shortcuts.push(...plugin.shortcuts);
+		shortcuts.push(...plugin.shortcuts.map(s => ({ ...s, plugin_id: plugin.id })));
 		if (plugin.autocorrect) autocorrect.push(...plugin.autocorrect);
 	}
 
 	return { categories, shortcuts, autocorrect };
+}
+
+/**
+ * Returns shortcuts from ALL plugins (enabled and disabled), each tagged with plugin_id.
+ * Sent to Rust so per-app overrides can enable globally-disabled plugins.
+ */
+export function mergeAllShortcuts(
+	plugins: Plugin[],
+	registry: PluginRegistryEntry[]
+): Shortcut[] {
+	const sorted = [...registry].sort((a, b) => a.order - b.order);
+	const shortcuts: Shortcut[] = [];
+	for (const entry of sorted) {
+		const plugin = plugins.find((p) => p.id === entry.id);
+		if (!plugin) continue;
+		shortcuts.push(...plugin.shortcuts.map(s => ({ ...s, plugin_id: plugin.id })));
+	}
+	return shortcuts;
+}
+
+/**
+ * Returns the list of globally-disabled plugin IDs.
+ */
+export function getDisabledPluginIds(registry: PluginRegistryEntry[]): string[] {
+	return registry.filter((r) => !r.enabled).map((r) => r.id);
 }
 
 /**
@@ -133,7 +159,7 @@ export async function loadMergedData(): Promise<{ categories: Category[]; shortc
 		const { loadCategories, loadShortcuts } = await import('./store');
 		return {
 			categories: await loadCategories(),
-			shortcuts: await loadShortcuts(),
+			shortcuts: (await loadShortcuts()).map(s => ({ ...s, plugin_id: 'default' })),
 			autocorrect: []
 		};
 	}
@@ -156,6 +182,27 @@ export function getDefaultPluginTemplate(): Plugin {
 		shortcuts: DEFAULT_SHORTCUTS,
 		autocorrect: DEFAULT_AUTOCORRECT_RULES
 	};
+}
+
+export function getGitmojiPluginTemplate(): Plugin {
+	return {
+		id: 'gitmoji',
+		name: 'Gitmoji',
+		version: '1.0.0',
+		builtin: true,
+		categories: [],
+		shortcuts: GITMOJI_SHORTCUTS,
+		autocorrect: []
+	};
+}
+
+export function getBuiltinPluginTemplate(id: PluginId): Plugin {
+	switch (id) {
+		case 'gitmoji':
+			return getGitmojiPluginTemplate();
+		default:
+			return getDefaultPluginTemplate();
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -185,11 +232,15 @@ export async function migrateToPluginSystem(): Promise<void> {
 		autocorrect: DEFAULT_AUTOCORRECT_RULES
 	};
 
-	// Save plugin file
+	// Save plugin files
 	await savePlugin(defaultPlugin);
+	await savePlugin(getGitmojiPluginTemplate());
 
 	// Save registry
-	await savePluginRegistry([{ id: 'default', enabled: true, order: 0 }]);
+	await savePluginRegistry([
+		{ id: 'default', enabled: true, order: 0 },
+		{ id: 'gitmoji', enabled: false, order: 1 }
+	]);
 
 	// Clean up old keys
 	try {
@@ -199,5 +250,35 @@ export async function migrateToPluginSystem(): Promise<void> {
 		await store.save();
 	} catch {
 		// non-critical
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Ensure built-in plugins exist (for existing users who already migrated)
+// ---------------------------------------------------------------------------
+
+const BUILTIN_PLUGINS: { id: PluginId; order: number; template: () => Plugin }[] = [
+	{ id: 'default', order: 0, template: getDefaultPluginTemplate },
+	{ id: 'gitmoji', order: 1, template: getGitmojiPluginTemplate }
+];
+
+export async function ensureBuiltinPlugins(): Promise<void> {
+	const registry = await loadPluginRegistry();
+	if (registry.length === 0) return; // not yet migrated — migration will handle it
+
+	let changed = false;
+	const newRegistry = [...registry];
+	const maxOrder = registry.reduce((max, r) => Math.max(max, r.order), -1);
+
+	for (const bp of BUILTIN_PLUGINS) {
+		if (registry.some((r) => r.id === bp.id)) continue;
+		// Plugin missing — add it
+		await savePlugin(bp.template());
+		newRegistry.push({ id: bp.id, enabled: bp.id !== 'gitmoji', order: maxOrder + 1 + bp.order });
+		changed = true;
+	}
+
+	if (changed) {
+		await savePluginRegistry(newRegistry);
 	}
 }

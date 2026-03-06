@@ -151,6 +151,26 @@ export async function saveAutocorrectEnabled(enabled: boolean): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Variables as shortcuts (global {{var}} expansion)
+// ---------------------------------------------------------------------------
+
+export async function loadVariablesEnabled(): Promise<boolean> {
+	try {
+		const store = await getStore();
+		const val = await store.get<boolean>('variables_enabled');
+		return val ?? false;
+	} catch {
+		return false;
+	}
+}
+
+export async function saveVariablesEnabled(enabled: boolean): Promise<void> {
+	const store = await getStore();
+	await store.set('variables_enabled', enabled);
+	await store.save();
+}
+
+// ---------------------------------------------------------------------------
 // Trigger character
 // ---------------------------------------------------------------------------
 
@@ -162,7 +182,7 @@ export async function loadTriggerChar(): Promise<string> {
 	} catch {
 		/* use default */
 	}
-	return ':';
+	return '\\';
 }
 
 export async function saveTriggerChar(ch: string): Promise<void> {

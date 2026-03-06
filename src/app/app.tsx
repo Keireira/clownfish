@@ -119,12 +119,12 @@ export default function App() {
 		async (keyword: string) => {
 			if (!promptChar) return;
 			try {
-				const { loadPluginRegistry, loadAllPlugins, savePlugin, mergePlugins } = await import('../plugin-store');
+				const { loadPluginRegistry, loadAllPlugins, savePlugin, mergePlugins, mergeAllShortcuts, getDisabledPluginIds } = await import('../plugin-store');
 				const { loadTriggerChar } = await import('../store');
 				const { emitEvent } = await import('../events');
 				const { invoke } = await import('@tauri-apps/api/core');
 				const tc = await loadTriggerChar();
-				const newShortcut = { trigger: tc + keyword + tc, expansion: promptChar[0] };
+				const newShortcut = { trigger: tc + keyword, expansion: promptChar[0] };
 
 				// Find which plugin owns the character's category, default to first enabled
 				const registry = await loadPluginRegistry();
@@ -142,7 +142,8 @@ export default function App() {
 				}
 
 				const merged = mergePlugins(plugins, registry);
-				await invoke('expansion_update_shortcuts', { shortcuts: merged.shortcuts });
+				await invoke('expansion_update_shortcuts', { shortcuts: mergeAllShortcuts(plugins, registry) });
+				await invoke('expansion_update_disabled_plugins', { ids: getDisabledPluginIds(registry) });
 				await emitEvent('shortcuts-changed');
 				setShortcuts(merged.shortcuts);
 				showToast(t('shortcut_added') as string);

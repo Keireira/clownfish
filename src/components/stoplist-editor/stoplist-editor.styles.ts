@@ -254,6 +254,25 @@ export const AcAddBtn = styled.button`
 	}
 `;
 
+export const PluginSection = styled.div<{ $dimmed?: boolean }>`
+	padding: 10px 16px;
+	border-top: 1px solid var(--border);
+	opacity: ${(p) => (p.$dimmed ? 0.4 : 1)};
+	transition: opacity 0.2s;
+`;
+
+export const PluginRow = styled.div`
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 0;
+`;
+
+export const PluginName = styled.span`
+	font-size: 12px;
+	color: var(--text-primary);
+`;
+
 export const DropOverlay = styled.div`
 	position: absolute;
 	inset: 0;

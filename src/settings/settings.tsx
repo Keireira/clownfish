@@ -33,7 +33,10 @@ import {
 	savePlugin,
 	deletePluginFile,
 	mergePlugins,
-	getDefaultPluginTemplate
+	mergeAllShortcuts,
+	getDisabledPluginIds,
+	getDefaultPluginTemplate,
+	getBuiltinPluginTemplate
 } from '../plugin-store';
 import { emitEvent } from '../events';
 import { invoke } from '@tauri-apps/api/core';
@@ -51,6 +54,7 @@ import ExpansionToggle from '../components/expansion-toggle';
 import HintsPositionPicker from '../components/hints-position';
 import UnicodeHintsToggle from '../components/unicode-hints-toggle/unicode-hints-toggle';
 import AutocorrectToggle from '../components/autocorrect-toggle';
+import VariablesToggle from '../components/variables-toggle/variables-toggle';
 import HotkeyPicker from '../components/hotkey-picker';
 import TriggerCharPicker from '../components/trigger-char-picker';
 import ShortcutEditor from '../components/shortcut-editor';
@@ -288,9 +292,9 @@ const Settings = () => {
 			await savePluginRegistry(registry);
 		}
 
-		// Always sync merged shortcuts to Rust
-		const m = mergePlugins(plugins, registry);
-		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		// Always sync all shortcuts + disabled plugins to Rust
+		await invoke('expansion_update_shortcuts', { shortcuts: mergeAllShortcuts(plugins, registry) });
+		await invoke('expansion_update_disabled_plugins', { ids: getDisabledPluginIds(registry) });
 		await emitEvent('shortcuts-changed');
 		await emitEvent('categories-changed');
 
@@ -505,18 +509,20 @@ const Settings = () => {
 
 	/* ---- Save / Reset ---- */
 	const handleReset = async () => {
-		const defaultTemplate = getDefaultPluginTemplate();
-
-		// Reset default plugin to template
-		const newPlugins = plugins.map((p) => (p.builtin ? { ...defaultTemplate } : p));
-		// Remove non-builtin plugins
-		const builtinOnly = newPlugins.filter((p) => p.builtin);
+		// Reset each builtin plugin to its own template, drop non-builtin
+		const builtinOnly = plugins
+			.filter((p) => p.builtin)
+			.map((p) => getBuiltinPluginTemplate(p.id));
+		// Ensure gitmoji is present even if it was missing from the list
+		if (!builtinOnly.some((p) => p.id === 'gitmoji')) {
+			builtinOnly.push(getBuiltinPluginTemplate('gitmoji'));
+		}
 		for (const p of plugins) {
 			if (!p.builtin) await deletePluginFile(p.id);
 		}
 		setPlugins(builtinOnly);
 
-		const newRegistry = [{ id: 'default', enabled: true, order: 0 }];
+		const newRegistry = builtinOnly.map((p, i) => ({ id: p.id, enabled: p.id !== 'gitmoji', order: i }));
 		setRegistry(newRegistry);
 
 		for (const p of builtinOnly) {
@@ -525,8 +531,8 @@ const Settings = () => {
 		}
 		await savePluginRegistry(newRegistry);
 
-		const m = mergePlugins(builtinOnly, newRegistry);
-		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		await invoke('expansion_update_shortcuts', { shortcuts: mergeAllShortcuts(builtinOnly, newRegistry) });
+		await invoke('expansion_update_disabled_plugins', { ids: getDisabledPluginIds(newRegistry) });
 		await emitEvent('shortcuts-changed');
 		await emitEvent('categories-changed');
 
@@ -563,7 +569,8 @@ const Settings = () => {
 
 		// Sync shortcuts + autocorrect to Rust + notify other windows
 		const m = mergePlugins(allPlugins, reg);
-		await invoke('expansion_update_shortcuts', { shortcuts: m.shortcuts });
+		await invoke('expansion_update_shortcuts', { shortcuts: mergeAllShortcuts(allPlugins, reg) });
+		await invoke('expansion_update_disabled_plugins', { ids: getDisabledPluginIds(reg) });
 		await invoke('autocorrect_update_rules', { rules: m.autocorrect });
 		await invoke('expansion_update_stoplist', { entries: backup.stop_list });
 		await emitEvent('shortcuts-changed');
@@ -783,6 +790,10 @@ const Settings = () => {
 										<UnicodeHintsToggle />
 									</SettingsRow>
 									<SettingsRow>
+										<SettingsRowLabel>{t('variables_enabled_label')}</SettingsRowLabel>
+										<VariablesToggle />
+									</SettingsRow>
+									<SettingsRow>
 										<SettingsRowLabel>{t('autocorrect_enabled_label')}</SettingsRowLabel>
 										<AutocorrectToggle />
 									</SettingsRow>
@@ -874,6 +885,8 @@ const Settings = () => {
 									setStopList(stopList.map((e) => (e.exe === updated.exe ? updated : e)));
 									setStopListDirty(true);
 								}}
+								plugins={plugins}
+								registry={registry}
 							/>
 						)}
 
@@ -918,7 +931,7 @@ const Settings = () => {
 						onAdd={(keyword) => {
 							import('../store').then(({ loadTriggerChar }) => {
 								loadTriggerChar().then((tc) => {
-									const newShortcut = { trigger: tc + keyword + tc, expansion: promptChar[0] };
+									const newShortcut = { trigger: tc + keyword, expansion: promptChar[0] };
 									// Add to the plugin that owns the character
 									const ownerPlugin =
 										plugins.find((p) => p.categories.some((cat) => cat.chars.some(([ch]) => ch === promptChar[0]))) ||

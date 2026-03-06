@@ -84,7 +84,7 @@ fn cursor_position_logical(scale: f64) -> Option<(f64, f64)> {
             x: f64,
             y: f64,
         }
-        extern "C" {
+        unsafe extern "C" {
             fn CGEventCreate(source: *const std::ffi::c_void) -> *const std::ffi::c_void;
             fn CGEventGetLocation(event: *const std::ffi::c_void) -> CGPoint;
             fn CFRelease(cf: *const std::ffi::c_void);
